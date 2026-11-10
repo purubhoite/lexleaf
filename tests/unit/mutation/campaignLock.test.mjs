@@ -25,7 +25,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -431,17 +431,29 @@ describe('durable writes', () => {
 
 describe('where the recovery state lives', () => {
   it('keeps nothing a recovery depends on inside node_modules', () => {
-    const paths = campaignPaths('/repo');
+    const repositoryRoot = mkdtempSync(join(tmpdir(), 'mutation-repository-'));
+    const paths = campaignPaths(repositoryRoot);
+    const stateRoot = resolve(repositoryRoot, '.mutation-state');
+    const isWithinDirectory = (parent, candidate) => {
+      const rel = relative(resolve(parent), resolve(candidate));
+      return rel === '' || (!isAbsolute(rel) && rel !== '..' && !rel.startsWith(`..${sep}`));
+    };
 
-    for (const path of [
-      paths.stateDirectory,
-      paths.lockFile,
-      paths.markerFile,
-      paths.journalFile,
-      paths.journalDirectory,
-    ]) {
-      expect(path.includes('node_modules')).toBe(false);
-      expect(path.startsWith('/repo/.mutation-state')).toBe(true);
+    try {
+      for (const path of [
+        paths.stateDirectory,
+        paths.lockFile,
+        paths.markerFile,
+        paths.journalFile,
+        paths.journalDirectory,
+        paths.claimFile,
+        paths.readerDirectory,
+      ]) {
+        expect(isWithinDirectory(stateRoot, path)).toBe(true);
+        expect(path.toLowerCase()).not.toContain(`node_modules${sep}`.toLowerCase());
+      }
+    } finally {
+      rmSync(repositoryRoot, { recursive: true, force: true });
     }
   });
 });

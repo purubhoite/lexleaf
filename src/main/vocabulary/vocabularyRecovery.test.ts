@@ -93,6 +93,7 @@ describe('vocabulary recovery inspection and quarantine', () => {
     try {
       await coordinator.create(source);
       expect((await inspectVocabularyRecovery(sourcePath, coordinator)).decision).toBe('normal');
+      source.close();
       await rm(sourcePath);
       const missing = await inspectVocabularyRecovery(sourcePath, coordinator);
       expect(missing.live.status).toBe('missing');
@@ -100,7 +101,11 @@ describe('vocabulary recovery inspection and quarantine', () => {
       expect(await coordinator.inspect()).toHaveLength(1);
       expect(inspectLiveVocabularyDatabase(sourcePath).status).toBe('missing');
     } finally {
-      source.close();
+      try {
+        source.close();
+      } catch {
+        // The live handle was explicitly closed before Windows cleanup.
+      }
       await rm(root, { recursive: true, force: true });
     }
   });

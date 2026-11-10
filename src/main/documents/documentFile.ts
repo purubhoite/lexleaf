@@ -1,4 +1,4 @@
-import { basename, win32 } from 'node:path';
+import { posix, win32 } from 'node:path';
 
 import type { DocumentFailureReason, DocumentRequestResult } from '@shared/ipc/contracts';
 
@@ -55,7 +55,7 @@ export interface ReadDocumentOptions {
  */
 export const displayName = (path: string): string => {
   const windowsPath = /^[A-Za-z]:[\\/]/u.test(path) || path.startsWith('\\\\');
-  const candidate = windowsPath ? win32.basename(path) : basename(path);
+  const candidate = windowsPath ? win32.basename(path) : posix.basename(path);
 
   return (
     candidate
