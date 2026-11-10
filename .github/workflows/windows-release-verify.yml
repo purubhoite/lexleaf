@@ -38,15 +38,47 @@ jobs:
       - name: Format check for changed public files
         shell: pwsh
         run: |
-          # The workflow checkout is intentionally shallow; compare the two
-          # fetched tree tips directly rather than requiring a merge base.
+          # Workflow YAML is checked by actionlint below. Keep all other
+          # supported public text/configuration files in the Prettier gate.
           $files = git diff --name-only FETCH_HEAD HEAD |
-            Where-Object { $_ -match '\.(c?js|mjs|json|md|ts|tsx|yaml|yml)$' }
+            Where-Object {
+              $_ -match '\.(c?js|mjs|json|md|ts|tsx|yaml|yml)$' -and
+              $_ -notmatch '^\.github/workflows/.*\.ya?ml$'
+            }
           if (-not $files) { throw 'no supported changed files found for format check' }
           foreach ($file in $files) {
             npx prettier --check --end-of-line lf --ignore-unknown -- $file
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
+
+      - name: Install pinned actionlint
+        shell: pwsh
+        run: |
+          $version = '1.7.12'
+          $archive = Join-Path $env:RUNNER_TEMP "actionlint_$version.zip"
+          $url = "https://github.com/rhysd/actionlint/releases/download/v$version/actionlint_${version}_windows_amd64.zip"
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $expected = '6e7241b51e6817ea6a047693d8e6fed13b31819c9a0dd6c5a726e1592d22f6e9'
+          $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "actionlint archive checksum mismatch: $actual" }
+          $bin = Join-Path $env:RUNNER_TEMP 'actionlint'
+          Expand-Archive -Path $archive -DestinationPath $bin -Force
+          "ACTIONLINT_BIN=$bin\actionlint.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+
+      - name: Validate GitHub Actions workflows
+        shell: pwsh
+        run: |
+          & $env:ACTIONLINT_BIN -color .github/workflows/*.yml .github/workflows/*.yaml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify workflow safety invariants
+        shell: pwsh
+        run: |
+          git diff --check
+          $workflow = Get-Content .github/workflows/windows-release-verify.yml -Raw
+          if ($workflow -notmatch '(?m)^\s*workflow_dispatch:\s*$') { throw 'workflow_dispatch missing' }
+          if ($workflow -notmatch '(?m)^\s*contents:\s*read\s*$') { throw 'read-only contents permission missing' }
+          if ($workflow -match 'actions/upload-artifact|gh release|git tag') { throw 'publishing operation detected' }
 
       - name: Unit tests
         run: npm test
