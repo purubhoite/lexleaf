@@ -1,6 +1,7 @@
 # Lexleaf
 
-Lexleaf is a local-first desktop PDF reader for discovering unfamiliar words while reading. PDF documents and saved vocabulary stay on the computer; the application does not require an account, subscription, telemetry service or cloud document upload.
+Are you tired of heading towards google or a dictionary anytime you encounter a word you don't know?
+Lexleaf is a local-first desktop PDF reader with a simple yet helpful feature, you get the meaning of any word you select in an instant, completely offline, and you don't need to ever leave your reading. PDF documents and saved vocabulary stay on the computer; the application does not require an account, subscription, telemetry service or cloud document upload.
 
 ## V1 status
 
