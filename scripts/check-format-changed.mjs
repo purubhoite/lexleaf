@@ -24,11 +24,13 @@ for (const file of changed) {
 
   const source = readFileSync(absolute, 'utf8').replace(/\r\n/gu, '\n');
   const config = (await prettier.resolveConfig(absolute)) ?? {};
-  const formatted = await prettier.format(source, {
-    ...config,
-    filepath: absolute,
-    endOfLine: 'lf',
-  });
+  const formatted = (
+    await prettier.format(source, {
+      ...config,
+      filepath: absolute,
+      endOfLine: 'lf',
+    })
+  ).replace(/\r\n/gu, '\n');
   if (source !== formatted) failures.push(file);
 }
 
