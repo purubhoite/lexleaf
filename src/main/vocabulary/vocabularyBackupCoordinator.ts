@@ -124,7 +124,13 @@ const flushDirectory = async (path: string): Promise<void> => {
     // documented unsupported-operation errors are non-fatal; permission,
     // I/O and descriptor failures must abort publication.
     const code = (error as NodeJS.ErrnoException).code;
-    if (code !== 'ENOTSUP' && code !== 'EOPNOTSUPP' && code !== 'EINVAL' && code !== 'EISDIR') {
+    const unsupportedDirectorySync =
+      code === 'ENOTSUP' || code === 'EOPNOTSUPP' || code === 'EINVAL' || code === 'EISDIR';
+    // Windows does not support fsync on directory handles. This exception is
+    // deliberately scoped to this directory-only durability barrier: regular
+    // file sync failures remain fatal, and POSIX directory-sync failures still
+    // propagate so their stronger durability contract is preserved.
+    if (!(process.platform === 'win32' && code === 'EPERM') && !unsupportedDirectorySync) {
       throw error;
     }
   }

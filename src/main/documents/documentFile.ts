@@ -133,7 +133,7 @@ export const readDocumentFile = async (
       status: 'opened',
       document: {
         id: computeDocumentId(bytes),
-        name: basename(path),
+        name,
         sizeBytes: bytes.byteLength,
         bytes,
         // Reading state is attached by the service that owns it; reading a
