@@ -100,7 +100,10 @@ const sha256 = async (path: string): Promise<string> =>
     .digest('hex');
 
 const flushFile = async (path: string): Promise<void> => {
-  const handle = await openFile(path, 'r');
+  // These files are created or modified by this transaction. Open read/write
+  // so sync() is a real durability barrier on Windows rather than a read-only
+  // handle whose flush semantics vary by runtime/filesystem.
+  const handle = await openFile(path, 'r+');
   try {
     await handle.sync();
   } finally {

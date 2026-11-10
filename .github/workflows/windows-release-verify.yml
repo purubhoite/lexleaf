@@ -28,6 +28,15 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Unit tests
+        run: npm test
+
       - name: Focused dictionary and packaging tests
         run: npm test -- --run src/main/dictionary src/renderer/src/reader/dictionary tests/integration/dictionaryArtifact.test.ts
 

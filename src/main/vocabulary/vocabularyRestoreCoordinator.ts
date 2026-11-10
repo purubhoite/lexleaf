@@ -55,7 +55,9 @@ const digest = async (path: string): Promise<string> =>
     .update(await readFile(path))
     .digest('hex');
 const syncFile = async (path: string): Promise<void> => {
-  const handle = await openFile(path, 'r');
+  // The temporary database is created by this transaction; use a writable
+  // descriptor so sync() provides the required flush barrier on Windows.
+  const handle = await openFile(path, 'r+');
   try {
     await handle.sync();
   } finally {
