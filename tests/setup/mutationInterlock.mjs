@@ -21,19 +21,24 @@
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  assessRecovery,
-  campaignPaths,
-  interlockDecision,
-  isAuthorisedSubprocess,
-  readLockFile,
-  readMarkerFile,
-  registerReader,
-} from '../../scripts/mutation/campaignLock.mjs';
+const mutationCampaign = await import('../../scripts/mutation/campaignLock.mjs').catch(() => null);
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 export const setup = () => {
+  // Mutation tooling is intentionally omitted from the public snapshot.
+  // Ordinary public tests remain runnable when it is unavailable.
+  if (mutationCampaign === null) return;
+
+  const {
+    assessRecovery,
+    campaignPaths,
+    interlockDecision,
+    isAuthorisedSubprocess,
+    readLockFile,
+    readMarkerFile,
+    registerReader,
+  } = mutationCampaign;
   const { lockFile, markerFile } = campaignPaths(projectRoot);
   const { record, exists } = readLockFile(lockFile);
 

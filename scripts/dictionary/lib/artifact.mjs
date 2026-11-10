@@ -205,7 +205,13 @@ export const writeArtifact = ({ outDir, entries, exceptions, source, licenceHead
       commit: source.commit,
       archiveUrl: source.archive.url,
       archiveSha256: source.archive.sha256,
-      pronunciationExcluded: true,
+      pronunciationExcluded: counts.pronunciations === 0,
+      ...(counts.pronunciations === 0 || source.pronunciation === undefined
+        ? {}
+        : {
+            pronunciationUrl: source.pronunciation.url,
+            pronunciationSha256: source.pronunciation.sha256,
+          }),
     },
     licences: source.licences,
     modified: true,

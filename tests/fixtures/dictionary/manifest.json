@@ -6,6 +6,7 @@
     "release": "fixture-1",
     "archiveUrl": "file://tests/fixtures/dictionary/source.json",
     "archiveSha256": "6efb98dc119b4ed4605b1f129d2453212fbae372c46c0aa3107fed9709727a36",
+    "pronunciationExcluded": false,
     "pronunciationUrl": "file://tests/fixtures/dictionary/source.json",
     "pronunciationSha256": "6efb98dc119b4ed4605b1f129d2453212fbae372c46c0aa3107fed9709727a36"
   },

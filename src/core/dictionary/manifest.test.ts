@@ -10,6 +10,7 @@ const valid = {
     release: '2024',
     archiveUrl: 'https://example.invalid/wordnet.zip',
     archiveSha256: 'abc',
+    pronunciationExcluded: false,
     pronunciationUrl: 'https://example.invalid/wordnet.xml.gz',
     pronunciationSha256: 'def',
   },
@@ -50,8 +51,23 @@ describe('dictionary manifest', () => {
     expect(parseDictionaryManifest('{')).toBeNull();
   });
 
+  it('accepts an excluded pronunciation source without pronunciation metadata', () => {
+    const candidate = {
+      ...valid,
+      source: { ...valid.source, pronunciationExcluded: true },
+      counts: { headwords: 10, senses: 20, pronunciations: 0 },
+    };
+    delete candidate.source.pronunciationUrl;
+    delete candidate.source.pronunciationSha256;
+    expect(parse(candidate)).not.toBeNull();
+  });
+
   it.each([
     ['an unknown format version', { ...valid, formatVersion: 2 }],
+    ['missing pronunciation exclusion policy', { ...valid, source: { ...valid.source, pronunciationExcluded: undefined } }],
+    ['excluded pronunciation with metadata', { ...valid, source: { ...valid.source, pronunciationExcluded: true } }],
+    ['excluded pronunciation with a positive count', { ...valid, source: { ...valid.source, pronunciationExcluded: true }, counts: { pronunciations: 1 } }],
+    ['included pronunciation without metadata', { ...valid, source: { ...valid.source, pronunciationExcluded: false, pronunciationUrl: undefined } }],
     ['a missing source', { ...valid, source: undefined }],
     ['a source without a checksum', { ...valid, source: { ...valid.source, archiveSha256: '' } }],
     ['no licences', { ...valid, licences: [] }],
