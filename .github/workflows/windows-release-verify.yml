@@ -101,7 +101,7 @@ jobs:
               throw 'publishing operation detected'
           }
           $releaseText = Get-Content '.github/workflows/release-windows.yml' -Raw
-          foreach ($required in @('workflow_dispatch:', "github.ref == 'refs/heads/main'", 'LEXLEAF_DICTIONARY_REDISTRIBUTION_APPROVED', 'gh release create', 'contents: write', 'environment: lexleaf-public-release')) {
+          foreach ($required in @('workflow_dispatch:', "github.ref == 'refs/heads/main'", 'license_compliance_confirmation', 'gh release create', 'contents: write', 'environment: lexleaf-public-release')) {
               if ($releaseText -notmatch [regex]::Escape($required)) { throw "release workflow safety gate missing: $required" }
           }
 

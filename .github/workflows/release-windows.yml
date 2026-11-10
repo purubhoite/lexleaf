@@ -11,6 +11,15 @@ on:
         description: 'Exact verified commit SHA to release'
         required: true
         type: string
+      license_compliance_confirmation:
+        description: 'Type REVIEWED OEWN AND PRINCETON LICENSES'
+        required: true
+        type: string
+      dry_run:
+        description: 'Prepare and verify without creating a tag or release'
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -24,9 +33,7 @@ jobs:
     permissions:
       contents: write
     env:
-      GH_TOKEN: ${{ github.token }}
       SOURCE_SHA: ${{ inputs.source_sha }}
-      EXPECTED_APPROVAL: ${{ vars.LEXLEAF_DICTIONARY_REDISTRIBUTION_APPROVED }}
     steps:
       - name: Check out the exact approved source
         uses: actions/checkout@v4
@@ -49,8 +56,8 @@ jobs:
           if ('${{ inputs.release_confirmation }}' -cne $expectedConfirmation) {
             throw "Release confirmation does not match $expectedConfirmation"
           }
-          if ($env:EXPECTED_APPROVAL -cne 'true') {
-            throw 'LEXLEAF_DICTIONARY_REDISTRIBUTION_APPROVED is not true in the protected release environment.'
+          if ('${{ inputs.license_compliance_confirmation }}' -cne 'REVIEWED OEWN AND PRINCETON LICENSES') {
+            throw 'License-compliance confirmation is missing or incorrect.'
           }
           if ('${{ github.ref }}' -cne 'refs/heads/main') {
             throw 'Releases may only run from main.'
@@ -71,7 +78,10 @@ jobs:
         run: npm ci
 
       - name: Prepare and verify production dictionary
-        run: npm run dictionary:prepare:production
+        run: |
+          npm run dictionary:prepare:production
+          npm run dictionary:verify:production
+          npm run verify:license-compliance
 
       - name: Static validation
         shell: pwsh
@@ -120,8 +130,15 @@ jobs:
           "INSTALLER_PATH=$published" | Out-File $env:GITHUB_ENV -Encoding utf8
           "CHECKSUM_PATH=$(Join-Path $installer.DirectoryName 'SHA256SUMS.txt')" | Out-File $env:GITHUB_ENV -Encoding utf8
 
+      - name: Dry-run release eligibility
+        if: inputs.dry_run
+        run: echo 'Dry run passed; no tag or GitHub Release will be created.'
+
       - name: Publish GitHub Release
+        if: ${{ !inputs.dry_run }}
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           $notes = @"
           Lexleaf $env:LEXLEAF_VERSION for Windows x64.
