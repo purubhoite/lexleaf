@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import prettier from 'prettier';
+import { createRequire } from 'node:module';
+import { execFileSync, spawnSync } from 'node:child_process';
 
+const require = createRequire(import.meta.url);
+const prettierCli = require.resolve('prettier/bin/prettier.cjs');
 const [base = 'FETCH_HEAD', head = 'HEAD'] = process.argv.slice(2);
 const supported = /\.(?:c?js|mjs|json|md|ts|tsx|ya?ml)$/u;
 const workflow = /^\.github\/workflows\/.*\.ya?ml$/u;
@@ -16,27 +16,11 @@ if (changed.length === 0) {
   throw new Error('no supported non-workflow files found for Prettier check');
 }
 
-const failures = [];
-for (const file of changed) {
-  const absolute = resolve(file);
-  const info = await prettier.getFileInfo(absolute, { ignorePath: '.prettierignore' });
-  if (info.ignored || info.inferredParser === null) continue;
+const result = spawnSync(
+  process.execPath,
+  [prettierCli, '--check', '--end-of-line', 'lf', '--ignore-unknown', '--', ...changed],
+  { stdio: 'inherit' },
+);
 
-  const source = readFileSync(absolute, 'utf8').replace(/\r\n/gu, '\n');
-  const config = (await prettier.resolveConfig(absolute)) ?? {};
-  const formatted = (
-    await prettier.format(source, {
-      ...config,
-      filepath: absolute,
-      endOfLine: 'lf',
-    })
-  ).replace(/\r\n/gu, '\n');
-  if (source !== formatted) failures.push(file);
-}
-
-if (failures.length > 0) {
-  console.error(`Prettier formatting failed for: ${failures.join(', ')}`);
-  process.exitCode = 1;
-} else {
-  console.log(`Prettier verified ${changed.length} changed non-workflow file(s).`);
-}
+if (result.error) throw result.error;
+process.exitCode = result.status ?? 1;
