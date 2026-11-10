@@ -36,20 +36,7 @@ jobs:
         run: npm run lint
 
       - name: Format check for changed public files
-        shell: pwsh
-        run: |
-          # Workflow YAML is checked by actionlint below. Keep all other
-          # supported public text/configuration files in the Prettier gate.
-          $files = git diff --name-only FETCH_HEAD HEAD |
-            Where-Object {
-              $_ -match '\.(c?js|mjs|json|md|ts|tsx|yaml|yml)$' -and
-              $_ -notmatch '^\.github/workflows/.*\.ya?ml$'
-            }
-          if (-not $files) { throw 'no supported changed files found for format check' }
-          foreach ($file in $files) {
-            npx prettier --check --end-of-line lf --ignore-unknown -- $file
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          }
+        run: node scripts/check-format-changed.mjs FETCH_HEAD HEAD
 
       - name: Install pinned actionlint
         shell: pwsh
