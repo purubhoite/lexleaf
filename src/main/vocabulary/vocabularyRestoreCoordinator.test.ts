@@ -41,11 +41,12 @@ describe('vocabulary restore coordinator', () => {
     expect(result.state).toBe('succeeded');
     expect(closed).toBe(1);
     expect(result.preservedPath).not.toBeNull();
-    expect(
-      new DatabaseSync(livePath, { readOnly: true })
-        .prepare("SELECT id FROM documents WHERE id='old'")
-        .get(),
-    ).toBeTruthy();
+    const restored = new DatabaseSync(livePath, { readOnly: true });
+    try {
+      expect(restored.prepare("SELECT id FROM documents WHERE id='old'").get()).toBeTruthy();
+    } finally {
+      restored.close();
+    }
     expect(await backups.verify(manifest.backupId)).not.toBeNull();
     await rm(root, { recursive: true, force: true });
   });
