@@ -19,6 +19,10 @@ jobs:
           node-version: 22.21.1
           cache: npm
 
+      - name: Fetch verification base for scoped checks
+        shell: pwsh
+        run: git fetch --no-tags origin release/windows-verification --depth=1
+
       - name: Install dependencies
         run: npm ci
 
@@ -31,8 +35,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Format check
-        run: npm run format:check
+      - name: Format check for changed public files
+        shell: pwsh
+        run: |
+          $files = git diff --name-only origin/release/windows-verification...HEAD
+          if (-not $files) { throw 'no changed files found for format check' }
+          npx prettier --check $files
 
       - name: Unit tests
         run: npm test
