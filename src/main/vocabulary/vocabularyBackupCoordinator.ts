@@ -116,9 +116,14 @@ const flushDirectory = async (path: string): Promise<void> => {
     } finally {
       await handle.close();
     }
-  } catch {
-    // Directory fsync is unsupported on some platforms; publication remains
-    // same-filesystem and validation has already completed.
+  } catch (error: unknown) {
+    // Some platforms do not permit opening directories for fsync. Only those
+    // documented unsupported-operation errors are non-fatal; permission,
+    // I/O and descriptor failures must abort publication.
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code !== 'ENOTSUP' && code !== 'EOPNOTSUPP' && code !== 'EINVAL' && code !== 'EISDIR') {
+      throw error;
+    }
   }
 };
 
