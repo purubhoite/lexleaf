@@ -55,8 +55,23 @@ jobs:
       - name: Validate GitHub Actions workflows
         shell: pwsh
         run: |
-          & $env:ACTIONLINT_BIN -color .github/workflows/*.yml .github/workflows/*.yaml
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $workflowFiles = @(
+              Get-ChildItem -LiteralPath '.github/workflows' -File |
+              Where-Object { $_.Extension -in @('.yml', '.yaml') } |
+              ForEach-Object { $_.FullName }
+          )
+
+          if ($workflowFiles.Count -eq 0) {
+              throw 'No GitHub Actions workflow files found.'
+          }
+
+          Write-Host "Validating $($workflowFiles.Count) workflow files with actionlint..."
+
+          & $env:ACTIONLINT_BIN -color @workflowFiles
+
+          if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+          }
 
       - name: Verify workflow safety invariants
         shell: pwsh
