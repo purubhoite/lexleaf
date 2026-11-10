@@ -77,27 +77,32 @@ jobs:
         shell: pwsh
         run: |
           git diff --check
-          $workflowPath = '.github/workflows/windows-release-verify.yml'
-          $workflowLines = Get-Content $workflowPath
-          if (-not ($workflowLines -match '^\s*workflow_dispatch:\s*$')) { throw 'workflow_dispatch missing' }
-          if (-not ($workflowLines -match '^\s*contents:\s*read\s*$')) { throw 'read-only contents permission missing' }
-
-          # Inspect executable workflow fields, not comments, descriptions, or this scanner's source.
+          $workflowFiles = @(Get-ChildItem -LiteralPath '.github/workflows' -File | Where-Object { $_.Extension -in @('.yml', '.yaml') })
           $violations = @()
-          for ($i = 0; $i -lt $workflowLines.Count; $i++) {
-              $line = $workflowLines[$i]
-              $trimmed = $line.Trim()
-              if ($trimmed.StartsWith('#')) { continue }
-              if ($trimmed -match '^uses:\s*actions/upload-artifact(?:@|\s|$)') {
-                  $violations += "${workflowPath}:$($i + 1): actions/upload-artifact"
-              }
-              if ($trimmed -match '^(?:gh\s+release(?:\s+create|\s+upload-)|git\s+tag(?:\s|$)|git\s+push\s+.*--tags(?:\s|$))') {
-                  $violations += "${workflowPath}:$($i + 1): $trimmed"
+          foreach ($file in $workflowFiles) {
+              $lines = Get-Content $file.FullName
+              $releaseWorkflow = $file.Name -eq 'release-windows.yml'
+              for ($i = 0; $i -lt $lines.Count; $i++) {
+                  $trimmed = $lines[$i].Trim()
+                  if ($trimmed.StartsWith('#')) { continue }
+                  if ($trimmed -match '^uses:\s*actions/upload-artifact(?:@|\s|$)') {
+                      $violations += "$($file.FullName):$($i + 1): actions/upload-artifact"
+                  }
+                  if ($trimmed -match '^(?:gh\s+release\s+upload|git\s+tag(?:\s|$)|git\s+push\s+.*--tags(?:\s|$))') {
+                      $violations += "$($file.FullName):$($i + 1): $trimmed"
+                  }
+                  if (-not $releaseWorkflow -and $trimmed -match '^gh\s+release\s+create(?:\s|$)') {
+                      $violations += "$($file.FullName):$($i + 1): unauthorized gh release create"
+                  }
               }
           }
           if ($violations.Count -gt 0) {
               $violations | ForEach-Object { Write-Error $_ }
               throw 'publishing operation detected'
+          }
+          $releaseText = Get-Content '.github/workflows/release-windows.yml' -Raw
+          foreach ($required in @('workflow_dispatch:', "github.ref == 'refs/heads/main'", 'LEXLEAF_DICTIONARY_REDISTRIBUTION_APPROVED', 'gh release create', 'contents: write', 'environment: lexleaf-public-release')) {
+              if ($releaseText -notmatch [regex]::Escape($required)) { throw "release workflow safety gate missing: $required" }
           }
 
       - name: Unit tests
@@ -119,7 +124,7 @@ jobs:
         run: node scripts/packaging/verify-packaged-output.mjs dist/win-unpacked
 
       - name: Build NSIS installer
-        run: npx electron-builder --win nsis --x64 --config electron-builder.yml
+        run: npx electron-builder --win nsis --x64 --config electron-builder.yml --publish never
 
       - name: Inspect installer and install silently
         shell: pwsh

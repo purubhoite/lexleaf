@@ -1,0 +1,135 @@
+name: Release Lexleaf for Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_confirmation:
+        description: 'Type PUBLISH LEXLEAF followed by the package version'
+        required: true
+        type: string
+      source_sha:
+        description: 'Exact verified commit SHA to release'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build and publish approved Windows release
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    environment: lexleaf-public-release
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      EXPECTED_APPROVAL: ${{ vars.LEXLEAF_DICTIONARY_REDISTRIBUTION_APPROVED }}
+    steps:
+      - name: Check out the exact approved source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.21.1
+          cache: npm
+
+      - name: Verify release eligibility
+        shell: pwsh
+        run: |
+          $package = Get-Content package.json -Raw | ConvertFrom-Json
+          $version = [string]$package.version
+          $expectedConfirmation = "PUBLISH LEXLEAF $version"
+          if ('${{ inputs.release_confirmation }}' -cne $expectedConfirmation) {
+            throw "Release confirmation does not match $expectedConfirmation"
+          }
+          if ($env:EXPECTED_APPROVAL -cne 'true') {
+            throw 'LEXLEAF_DICTIONARY_REDISTRIBUTION_APPROVED is not true in the protected release environment.'
+          }
+          if ('${{ github.ref }}' -cne 'refs/heads/main') {
+            throw 'Releases may only run from main.'
+          }
+          if ('${{ inputs.source_sha }}' -notmatch '^[0-9a-f]{40}$') {
+            throw 'source_sha must be a full 40-character commit SHA.'
+          }
+          $tag = "v$version"
+          $existing = gh api "repos/${{ github.repository }}/git/ref/tags/$tag" 2>$null
+          if ($LASTEXITCODE -eq 0 -and $existing) { throw "Tag $tag already exists." }
+          $runs = gh api "repos/${{ github.repository }}/actions/workflows/windows-release-verify.yml/runs?head_sha=$env:SOURCE_SHA&status=completed&per_page=20" | ConvertFrom-Json
+          $verified = @($runs.workflow_runs | Where-Object { $_.conclusion -eq 'success' -and $_.head_sha -eq $env:SOURCE_SHA })
+          if ($verified.Count -eq 0) { throw 'No successful Windows verification run exists for source_sha.' }
+          "LEXLEAF_VERSION=$version" | Out-File $env:GITHUB_ENV -Encoding utf8
+          "LEXLEAF_TAG=$tag" | Out-File $env:GITHUB_ENV -Encoding utf8
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Prepare and verify production dictionary
+        run: npm run dictionary:prepare:production
+
+      - name: Static validation
+        shell: pwsh
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run format:check
+          node scripts/check-format-changed.mjs $env:SOURCE_SHA HEAD
+          git diff --check
+
+      - name: Validate workflows with pinned actionlint
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'actionlint.zip'
+          Invoke-WebRequest -Uri 'https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_windows_amd64.zip' -OutFile $archive
+          $expected = '6e7241b51e6817ea6a047693d8e6fed13b31819c9a0dd6c5a726e1592d22f6e9'
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'actionlint checksum mismatch' }
+          Expand-Archive $archive (Join-Path $env:RUNNER_TEMP 'actionlint') -Force
+          $files = @(Get-ChildItem -LiteralPath '.github/workflows' -File | Where-Object { $_.Extension -in @('.yml', '.yaml') } | ForEach-Object FullName)
+          if ($files.Count -eq 0) { throw 'No workflow files found.' }
+          & (Join-Path $env:RUNNER_TEMP 'actionlint/actionlint.exe') -color @files
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Run unit and integration tests
+        run: |
+          npm test
+          npm run test:integration
+
+      - name: Build application and Windows installer
+        run: |
+          npm run build
+          npx electron-builder --win dir --x64 --config electron-builder.yml --publish never
+          node scripts/packaging/verify-packaged-output.mjs dist/win-unpacked
+          npx electron-builder --win nsis --x64 --config electron-builder.yml --publish never
+
+      - name: Verify installer and create checksum
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem dist -Filter '*.exe' -Recurse | Sort-Object Length -Descending | Select-Object -First 1
+          if ($null -eq $installer) { throw 'NSIS installer was not generated.' }
+          $expectedName = "Lexleaf-$env:LEXLEAF_VERSION-x64-setup.exe"
+          Copy-Item $installer.FullName (Join-Path $installer.DirectoryName $expectedName)
+          $published = Join-Path $installer.DirectoryName $expectedName
+          $hash = (Get-FileHash $published -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $expectedName" | Out-File (Join-Path $installer.DirectoryName 'SHA256SUMS.txt') -Encoding ascii
+          "INSTALLER_PATH=$published" | Out-File $env:GITHUB_ENV -Encoding utf8
+          "CHECKSUM_PATH=$(Join-Path $installer.DirectoryName 'SHA256SUMS.txt')" | Out-File $env:GITHUB_ENV -Encoding utf8
+
+      - name: Publish GitHub Release
+        shell: pwsh
+        run: |
+          $notes = @"
+          Lexleaf $env:LEXLEAF_VERSION for Windows x64.
+
+          Lexleaf is an offline-first PDF reader with local dictionary lookup.
+          Install the Windows x64 installer and verify SHA256SUMS.txt before running it.
+
+          The installer is unsigned; Windows SmartScreen may display a warning.
+          The bundled Open English WordNet dictionary is distributed with its separate attribution and license notices.
+          "@
+          gh release create $env:LEXLEAF_TAG $env:INSTALLER_PATH $env:CHECKSUM_PATH --title "Lexleaf $env:LEXLEAF_VERSION" --notes $notes
