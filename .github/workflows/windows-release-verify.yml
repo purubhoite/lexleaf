@@ -43,7 +43,10 @@ jobs:
           $files = git diff --name-only FETCH_HEAD HEAD |
             Where-Object { $_ -match '\.(c?js|mjs|json|md|ts|tsx|yaml|yml)$' }
           if (-not $files) { throw 'no supported changed files found for format check' }
-          npx prettier --check $files
+          foreach ($file in $files) {
+            npx prettier --check --ignore-unknown -- $file
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: Unit tests
         run: npm test
