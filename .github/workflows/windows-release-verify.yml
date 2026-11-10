@@ -38,8 +38,11 @@ jobs:
       - name: Format check for changed public files
         shell: pwsh
         run: |
-          $files = git diff --name-only origin/release/windows-verification...HEAD
-          if (-not $files) { throw 'no changed files found for format check' }
+          # The workflow checkout is intentionally shallow; compare the two
+          # fetched tree tips directly rather than requiring a merge base.
+          $files = git diff --name-only FETCH_HEAD HEAD |
+            Where-Object { $_ -match '\.(c?js|mjs|json|md|ts|tsx|yaml|yml)$' }
+          if (-not $files) { throw 'no supported changed files found for format check' }
           npx prettier --check $files
 
       - name: Unit tests
