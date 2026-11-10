@@ -53,11 +53,17 @@ export interface ReadDocumentOptions {
  * length is capped so a pathological name cannot become a wall of text in
  * the failure screen.
  */
-export const displayName = (path: string): string =>
-  (/^[A-Za-z]:[\\/]/u.test(path) ? win32.basename(path) : basename(path))
-    // eslint-disable-next-line no-control-regex -- a rendered name may not carry control characters
-    .replace(/[\\/\u0000-\u001f\u007f]/gu, '')
-    .slice(0, MAX_NAME_LENGTH);
+export const displayName = (path: string): string => {
+  const windowsPath = /^[A-Za-z]:[\\/]/u.test(path) || path.startsWith('\\\\');
+  const candidate = windowsPath ? win32.basename(path) : basename(path);
+
+  return (
+    candidate
+      // eslint-disable-next-line no-control-regex -- a rendered name may not carry control characters
+      .replace(/[\\/\u0000-\u001f\u007f]/gu, '')
+      .slice(0, MAX_NAME_LENGTH)
+  );
+};
 
 /** The `errno` of a rejected filesystem call, when there is one. */
 const errorCode = (error: unknown): string | null => {

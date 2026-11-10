@@ -37,6 +37,7 @@
  * decisions can be tested without a campaign, a signal or a sleep.
  */
 import { Buffer } from 'node:buffer';
+import { execFileSync } from 'node:child_process';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import {
   chmodSync,
@@ -160,6 +161,21 @@ export const processAlive = (pid) => {
  */
 export const ownerIdentity = (pid) => {
   try {
+    if (process.platform === 'win32') {
+      const started = execFileSync(
+        'powershell.exe',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          `(Get-Process -Id ${String(pid)}).StartTime.ToFileTimeUtc()`,
+        ],
+        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+      ).trim();
+      if (!/^\d+$/u.test(started)) return null;
+      return `windows:${String(pid)}:${started}`;
+    }
+
     const stat = readFileSync(`/proc/${String(pid)}/stat`, 'utf8');
     // The second field is the executable name in parentheses and may itself
     // contain spaces and parentheses, so fields are counted from the last ')'.

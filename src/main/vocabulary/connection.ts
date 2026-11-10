@@ -133,6 +133,8 @@ export interface OpenOptions {
   readonly onDiagnostic?: (message: string) => void;
   /** Stage 4 runtime preparation performs migrations asynchronously. */
   readonly migrate?: boolean;
+  /** Test-only boundary injection for deterministic open-failure coverage. */
+  readonly openDatabase?: (filePath: string) => DatabaseSync;
 }
 
 const applyPragmas = (database: DatabaseSync): void => {
@@ -170,11 +172,12 @@ export const openVocabularyDatabase = ({
   onBackup,
   onDiagnostic,
   migrate: shouldMigrate = true,
+  openDatabase = (path) => new DatabaseSync(path, { enableForeignKeyConstraints: true }),
 }: OpenOptions): OpenedDatabase => {
   let database: DatabaseSync;
 
   try {
-    database = new DatabaseSync(filePath, { enableForeignKeyConstraints: true });
+    database = openDatabase(filePath);
   } catch (error) {
     throw new VocabularyOpenError(classifyDatabaseError(error), messageOf(error));
   }

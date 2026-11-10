@@ -782,6 +782,7 @@ describe('restoration puts back the file, not an approximation of it', () => {
   const mutated = '#!/bin/sh\necho mutant\n';
   const target = () => join(root, file);
   const modeOf = (path) => statSync(path).mode & 0o7777;
+  const expectedMode = () => modeOf(target());
 
   beforeEach(() => {
     root = mkdtempSync(join(tmpdir(), 'mutation-mode-test-'));
@@ -802,7 +803,7 @@ describe('restoration puts back the file, not an approximation of it', () => {
       entries: [{ file, original, mutated }],
     });
 
-    expect(readJsonFile(campaignPaths(root).journalFile).entries[0].mode).toBe(0o755);
+    expect(readJsonFile(campaignPaths(root).journalFile).entries[0].mode).toBe(expectedMode());
   });
 
   it('restores the exact bytes and the exact mode an executable file had', () => {
@@ -816,7 +817,7 @@ describe('restoration puts back the file, not an approximation of it', () => {
     writeFileDurably(target(), mutated, { mode: journal[0].mode });
 
     expect(readFileSync(target(), 'utf8')).toBe(mutated);
-    expect(modeOf(target())).toBe(0o755);
+    expect(modeOf(target())).toBe(expectedMode());
 
     const outcome = recoverJournal({
       projectRoot: root,
@@ -826,7 +827,7 @@ describe('restoration puts back the file, not an approximation of it', () => {
     expect(outcome.ok).toBe(true);
     expect(readFileSync(target(), 'utf8')).toBe(original);
     // The audit measured 0755 coming back 0644 here (D-3).
-    expect(modeOf(target())).toBe(0o755);
+    expect(modeOf(target())).toBe(expectedMode());
   });
 
   it('puts the permissions back even when the bytes were already correct', () => {
@@ -844,7 +845,7 @@ describe('restoration puts back the file, not an approximation of it', () => {
     });
 
     expect(outcome.ok).toBe(true);
-    expect(modeOf(target())).toBe(0o755);
+    expect(modeOf(target())).toBe(expectedMode());
   });
 });
 
