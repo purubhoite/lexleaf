@@ -1,0 +1,24 @@
+appId: com.intelligentpdfreader.poc
+productName: Lexleaf
+artifactName: Lexleaf-${version}-${arch}.${ext}
+asar: true
+files:
+  - out/**/*
+  - package.json
+extraResources:
+  - from: resources/dictionary
+    to: dictionary
+    filter:
+      - '**/*'
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  signAndEditExecutable: false
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  runAfterFinish: false
+  artifactName: Lexleaf-${version}-${arch}-setup.${ext}

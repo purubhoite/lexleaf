@@ -1,0 +1,245 @@
+/*
+ * Design tokens (ADR-029).
+ *
+ * This file is the only place in the renderer that may contain a colour
+ * literal, a font-size literal, a radius literal or a motion duration. Every
+ * other stylesheet refers to these names, so that a value can be reviewed,
+ * measured and changed in one place rather than hunted through a thousand
+ * lines of CSS.
+ *
+ * Two parts of the renderer are deliberately outside this system:
+ *
+ * - the document surface — the rendered page, its highlights and the
+ *   PDF.js-derived `.textLayer` rules in styles/reader.css. They render the
+ *   *document*, not the application, and the token layer has no authority
+ *   over them (ADR-029, ADR-030, docs/ARCHITECTURE.md section 6);
+ * - nothing else. If a value is needed twice, it becomes a token here.
+ *
+ * A token exists only when a rule uses it. The motion family is the single
+ * sanctioned exception: ADR-029 fixes the durations now, and ADR-032 decides
+ * what may consume them in Milestone 6.7.
+ */
+
+:root {
+  /* --- Colour: surfaces ------------------------------------------------ */
+  --colour-background: #11141a;
+  --colour-surface: #1a1f28;
+  --colour-surface-raised: #222936;
+  --colour-scroller: #0b0e13;
+
+  /* --- Colour: text ---------------------------------------------------- */
+  --colour-text: #e8ecf2;
+  --colour-text-muted: #9aa5b5;
+
+  /* --- Colour: lines --------------------------------------------------- */
+  /* Separators between regions; decorative, so no contrast floor applies. */
+  --colour-border: #2b323e;
+  /*
+   * The boundary of anything the reader can operate. Held to 3:1 against the
+   * control fill and against both surfaces behind it (WCAG 2.2 section
+   * 1.4.11), which the contrast test enforces.
+   */
+  --colour-border-strong: #6b7686;
+
+  /* --- Colour: controls ------------------------------------------------ */
+  /* A control is a raised surface the reader can operate. */
+  --colour-control: var(--colour-surface-raised);
+  --colour-control-hover: #303a4b;
+  --colour-focus: #6ea8ff;
+
+  /* --- Colour: intent -------------------------------------------------- */
+  --colour-accent: #6ea8ff;
+  /*
+   * Failure text. The previous value (#b3261e, inherited from a light-theme
+   * palette) measured 2.53:1 on the popup surface; this one measures above
+   * 7:1 on every surface it is used on.
+   */
+  --colour-danger: #ff9a93;
+  --colour-problem: #e8b45a;
+
+  /*
+   * Colour: the document surface.
+   *
+   * These four highlights and the selection tint are painted over the page.
+   * They are named here because ADR-029 exempts the document surface from the
+   * token system *except* for its selection and highlight colours, which carry
+   * meaning (a search match, the current match, another occurrence of the
+   * looked-up word, the word under the cursor) and must stay reviewable. Their
+   * values are unchanged from Milestone 5; the outline companions stay with
+   * the rules that draw them, inside the document-surface region.
+   */
+  --colour-highlight-match: rgb(255 214 0 / 35%);
+  --colour-highlight-current: rgb(255 145 0 / 55%);
+  --colour-highlight-occurrence: rgb(126 217 87 / 35%);
+  --colour-highlight-cursor: rgb(110 168 255 / 30%);
+  --colour-selection: rgb(0 90 255 / 25%);
+
+  /* --- Typography ------------------------------------------------------ */
+  --font-ui: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.125rem;
+  --text-lg: 1.375rem;
+  /* The sixth step of the scale ADR-029 fixes; no rule needs it yet. */
+  --text-xl: 1.75rem;
+
+  --line-tight: 1.35;
+  --line-base: 1.5;
+  --line-relaxed: 1.6;
+
+  /* --- Spacing --------------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  /* --- Radius ---------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  /* The third radius ADR-029 fixes; no rule needs it yet. */
+  --radius-lg: 12px;
+
+  /* --- Controls -------------------------------------------------------- */
+  /* 24 x 24 CSS pixels is the minimum target size (WCAG 2.2 section 2.5.8). */
+  --control-min-size: 1.5rem;
+  --border-width: 1px;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  /*
+   * The native checkbox's own box. It is deliberately smaller than the
+   * minimum target: the target is the label around it, which carries
+   * --control-min-size. Sizing the glyph itself to 24px would enlarge a
+   * platform control that the user already recognises at its native size.
+   */
+  --checkbox-size: 1rem;
+  /*
+   * The definition popup's arrow (Milestone 6.3). A square of this side,
+   * rotated a quarter turn, so the triangle the reader sees is about
+   * 10 / sqrt(2) ≈ 7px tall — enough to read as a pointer inside the 8px
+   * gap `placePopup` leaves between the word and the popup, and not so
+   * large that it reaches the word itself. `POPUP_ARROW_INSET` in
+   * `placePopup.ts` keeps it clear of the corners and depends on both this
+   * and `--radius-md`.
+   */
+  --popup-arrow-size: 10px;
+
+  /* --- Elevation ------------------------------------------------------- */
+  --shadow-popup: 0 10px 30px rgb(0 0 0 / 45%);
+
+  /* --- Motion (declared here, consumed from Milestone 6.7; ADR-032) ---- */
+  --motion-fast: 80ms;
+  --motion-base: 100ms;
+  --motion-popup: 120ms;
+  --motion-slow: 140ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /*
+   * The palette above is the dark one, and it is also the fallback: a root
+   * carrying `data-theme='dark'`, a root carrying nothing, and a system that
+   * reports a dark preference all resolve here. Only the two rules below
+   * replace it (ADR-030).
+   */
+  color-scheme: dark;
+}
+
+/* ===================================================================== *
+ * Light appearance (ADR-030)
+ *
+ * The light palette is written twice, deliberately. CSS has no way to apply
+ * one set of declarations both unconditionally for an explicit choice and
+ * conditionally for a system one, and the alternative — a parallel
+ * `--palette-light-*` family that the semantic names point at — would double
+ * the vocabulary and give every colour two names. So the same block appears
+ * under the explicit selector and inside the media query, and
+ * `tests/unit/styles/theme.test.ts` fails if the two ever disagree.
+ *
+ * Nothing below mentions the document surface. The page is white in both
+ * appearances, the highlights are painted on that same white paper in both,
+ * and ADR-030 forbids theming either; their values stay in `:root` above,
+ * where both appearances read them.
+ *
+ * There is no `:root[data-theme='dark']` block: dark is what `:root`
+ * already says, and an explicit dark root simply matches neither rule here.
+ * That is also what makes an explicit choice beat the system one — the media
+ * query can only reach a root that says `system`.
+ * ===================================================================== */
+
+:root[data-theme='light'] {
+  /* --- Colour: surfaces ------------------------------------------------ */
+  --colour-background: #eef1f6;
+  --colour-surface: #ffffff;
+  --colour-surface-raised: #ffffff;
+  /*
+   * Darker than the paper it holds, so a white page reads as a sheet lying
+   * on a surface rather than as part of the window. The page's own hairline
+   * (document surface, reader.css) is what guarantees the edge is visible.
+   */
+  --colour-scroller: #d9dfe8;
+
+  /* --- Colour: text ---------------------------------------------------- */
+  --colour-text: #1b2027;
+  --colour-text-muted: #556071;
+
+  /* --- Colour: lines --------------------------------------------------- */
+  --colour-border: #c7cedb;
+  --colour-border-strong: #5c6677;
+
+  /* --- Colour: controls ------------------------------------------------ */
+  --colour-control-hover: #e6eaf1;
+  --colour-focus: #0b57d0;
+
+  /* --- Colour: intent -------------------------------------------------- */
+  --colour-accent: #0b57d0;
+  --colour-danger: #b3261e;
+  /*
+   * Dark amber. The light counterpart of #e8b45a has to clear 4.5:1 as text
+   * on white *and* stay distinguishable from --colour-border-strong, because
+   * the pressed library toggle is told from an unpressed one by this colour
+   * on its border.
+   */
+  --colour-problem: #653a00;
+
+  /* --- Elevation ------------------------------------------------------- */
+  /* A shadow that reads as depth on a light surface, not as a smudge. */
+  --shadow-popup: 0 10px 30px rgb(0 0 0 / 18%);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme='system'] {
+    /* --- Colour: surfaces ---------------------------------------------- */
+    --colour-background: #eef1f6;
+    --colour-surface: #ffffff;
+    --colour-surface-raised: #ffffff;
+    --colour-scroller: #d9dfe8;
+
+    /* --- Colour: text -------------------------------------------------- */
+    --colour-text: #1b2027;
+    --colour-text-muted: #556071;
+
+    /* --- Colour: lines ------------------------------------------------- */
+    --colour-border: #c7cedb;
+    --colour-border-strong: #5c6677;
+
+    /* --- Colour: controls ---------------------------------------------- */
+    --colour-control-hover: #e6eaf1;
+    --colour-focus: #0b57d0;
+
+    /* --- Colour: intent ------------------------------------------------ */
+    --colour-accent: #0b57d0;
+    --colour-danger: #b3261e;
+    --colour-problem: #653a00;
+
+    /* --- Elevation ----------------------------------------------------- */
+    --shadow-popup: 0 10px 30px rgb(0 0 0 / 18%);
+
+    color-scheme: light;
+  }
+}

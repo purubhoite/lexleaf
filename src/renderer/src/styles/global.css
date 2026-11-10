@@ -1,0 +1,766 @@
+/*
+ * Application shell, shared primitives and the library screen.
+ *
+ * Every colour, font size, radius and space here comes from
+ * styles/tokens.css (ADR-029). Literals of those four kinds are not allowed
+ * in this file; layout lengths (column widths, track sizes) are.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--colour-background);
+  color: var(--colour-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: var(--line-base);
+}
+
+/* ------------------------------------------------------------------ *
+ * Shared presentation primitives (ADR-029)
+ * ------------------------------------------------------------------ */
+
+/*
+ * Text for assistive technology only. Visually removed, never removed from
+ * the accessibility tree: no `display: none`, no `visibility: hidden`, and
+ * `white-space: nowrap` so that a long label is not collapsed into one
+ * column of letters while it is being announced.
+ */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+ * One control, where there were six.
+ *
+ * Anything the reader can press, type into or choose from wears `.control`;
+ * its component keeps only its own layout. The box is never smaller than
+ * 24 x 24 CSS pixels, the boundary is the one colour held to 3:1, and the
+ * focus ring is the application's own rather than the user agent's.
+ */
+.control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: var(--control-min-size);
+  min-width: var(--control-min-size);
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-width) solid var(--colour-border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--colour-control);
+  color: var(--colour-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: var(--line-tight);
+  cursor: pointer;
+}
+
+.control:hover:enabled {
+  background-color: var(--colour-control-hover);
+}
+
+.control:disabled {
+  color: var(--colour-text-muted);
+  cursor: not-allowed;
+}
+
+/* A control that is typed into rather than pressed. */
+.control--field {
+  justify-content: flex-start;
+  cursor: text;
+}
+
+/* A control inside a dense surface: no fill until it is pointed at. */
+.control--quiet {
+  border-color: transparent;
+  background-color: transparent;
+}
+
+.control--quiet:hover:enabled {
+  border-color: var(--colour-border-strong);
+  background-color: var(--colour-control);
+}
+
+/* ------------------------------------------------------------------ *
+ * Focus (Milestone 6.2, A11Y-1)
+ * ------------------------------------------------------------------ */
+
+/*
+ * One focus treatment for the whole application.
+ *
+ * Before 6.2 the ring was written for `.control` and, at M5, for a handful
+ * of component selectors; anything else — the two checkboxes, the three
+ * disclosure summaries, the skip link — fell back to the user agent's own
+ * ring, which on these dark surfaces is nearly invisible and differs from
+ * the rest of the application.
+ *
+ * `:where()` holds the selector at zero specificity, so a component can
+ * still opt out without `!important` (ADR-029 section 5.4). `.control` is
+ * repeated at its own specificity so that a component rule setting its own
+ * outline cannot silently win over the shared ring.
+ *
+ * `:focus-visible`, not `:focus`: a pointer press must not leave a ring
+ * behind, which is the behaviour every control had before this milestone.
+ *
+ * This rule is the authoritative definition of the ring. There is exactly
+ * one documented exception, and it exists because the popup floats over
+ * the white PDF page: `.dictionary-popup:focus-visible` in `reader.css`
+ * re-declares the same width and colour with a negative offset so the ring
+ * is drawn inside the popup's own surface instead of against paper. That
+ * rule is the only other place in the renderer that may set this outline,
+ * and 6.3 removed the two duplicates that used to accompany it (the popup
+ * was listed here as well, where its offset was silently overridden, and
+ * `.reader__scroller:focus-visible` restated what `:where([tabindex])`
+ * already covers). Anything else that wants a ring gets this one.
+ */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible,
+.control:focus-visible {
+  outline: var(--focus-ring-width) solid var(--colour-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* ------------------------------------------------------------------ *
+ * Checkbox and disclosure (Milestone 6.2)
+ * ------------------------------------------------------------------ */
+
+/*
+ * A checkbox is NOT given `.control`.
+ *
+ * `.control` is a pressed or typed-into box with its own fill, border and
+ * centred content; forcing it onto a native checkbox would mean
+ * `appearance: none` and a hand-drawn tick, which the investigation does
+ * not ask for and which would make the platform's own checked glyph — a
+ * shape, not a colour — this application's responsibility to redraw.
+ *
+ * Instead the label becomes the target. `min-height` is the 24 CSS pixel
+ * minimum (A11Y-5); the input keeps its native rendering, native keyboard
+ * behaviour (Space toggles) and native checked semantics.
+ */
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-min-size);
+  padding: var(--space-1) 0;
+  font-size: var(--text-sm);
+  line-height: var(--line-tight);
+  cursor: pointer;
+}
+
+.checkbox__input {
+  inline-size: var(--checkbox-size);
+  block-size: var(--checkbox-size);
+  margin: 0;
+  accent-color: var(--colour-focus);
+  cursor: pointer;
+}
+
+/*
+ * A `<summary>` is not given `.control` either, and keeps its native
+ * `display: list-item`: changing the display box removes the platform's
+ * open/closed marker in Chromium, and that triangle is the non-colour
+ * carrier of the expanded state (A11Y-14). Only the target grows.
+ */
+.disclosure__summary {
+  min-height: var(--control-min-size);
+  padding: var(--space-1) 0;
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ *
+ * Skip link (Milestone 6.2, A11Y-10)
+ * ------------------------------------------------------------------ */
+
+/*
+ * The first focusable element in the application. It is positioned off
+ * screen rather than hidden: `display: none` and `visibility: hidden`
+ * both remove an element from the tab order, and this one exists to be
+ * tabbed to. It becomes visible on focus alone — `:focus`, not
+ * `:focus-visible`, because a skip link that stays invisible while it
+ * holds focus is useless to a sighted keyboard user.
+ */
+.skip-link {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 2;
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--colour-border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--colour-surface-raised);
+  color: var(--colour-text);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.skip-link:not(:focus) {
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ *
+ * Shell
+ * ------------------------------------------------------------------ */
+
+/*
+ * W16, CTL-10. The shell used to spend a quarter of a short window on its
+ * own name: 1rem of padding, a 1.375rem title on its own baseline and a
+ * 1rem gap before the document began. In a desktop window that already
+ * shows the application's name in its title bar, that space belongs to the
+ * PDF. The padding and the gap are one step tighter and the header is a
+ * single centred row that cannot wrap.
+ */
+.shell {
+  /* Positioned so the skip link above anchors to the shell, not the page. */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) clamp(0.75rem, 2vw, 1.5rem);
+  height: 100%;
+  min-height: 0;
+}
+
+.shell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  /* The header never scrolls away and never grows: the document does. */
+  flex: 0 0 auto;
+}
+
+/*
+ * The two chrome controls travel together at the end of the row, so the
+ * title can take whatever width is left and give it back when the window
+ * narrows.
+ */
+.shell__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+}
+
+.shell__title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 600;
+  /* CTL-10: the one flexible item in the row, and it truncates rather
+     than pushing the controls off the end of a narrow window. */
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------------ *
+ * Messages (Milestone 6.5)
+ * ------------------------------------------------------------------ *
+ *
+ * One presentation for every loading, empty, neutral and failure line in
+ * the application (investigation I5, I6). Before this there were three
+ * status idioms and two error colours, and the same rule painted a
+ * neutral "no text layer" notice in the failure colour.
+ *
+ * The kinds that are not failures look alike on purpose: they are all
+ * secondary text, and what distinguishes them is what they say and which
+ * live region they are, not how they are coloured.
+ */
+.message {
+  margin: 0;
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+  /* Document failure messages are two lines in PRODUCT_SPEC § 20. */
+  white-space: pre-line;
+}
+
+/*
+ * A11Y-14 / ST-8: a failure is not told apart by colour alone. The rule
+ * down its leading edge and the indent are there in greyscale, in a
+ * forced-colours palette and for a reader who cannot see the hue at all.
+ */
+.message--problem {
+  color: var(--colour-danger);
+  /* The 6.1 floor, restated on the failure rule itself rather than
+     inherited from `.message` above, so that a failure carries its own
+     minimum size wherever it is composed with a surface's layout class. */
+  font-size: var(--text-sm);
+  border-inline-start: var(--border-width) solid var(--colour-danger);
+  padding-inline-start: var(--space-2);
+}
+
+.details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-5);
+  margin: 0;
+}
+
+.details dt {
+  color: var(--colour-text-muted);
+}
+
+.details dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.shell__about {
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+}
+
+.shell__about[open] {
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-md);
+  background-color: var(--colour-surface);
+}
+
+.shell__library-toggle[aria-pressed='true'] {
+  border-color: var(--colour-problem);
+}
+
+/* The reader is hidden, never unmounted, while the library is open: the
+   open document, its rendered pages and the reader's place in it all
+   survive a glance at the word list. */
+.shell__surface {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.shell__surface[hidden] {
+  display: none;
+}
+
+.shell__notice {
+  margin: 0 0 var(--space-2);
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+}
+
+/*
+  Where the persistence notice sits (M7.2, ADR-034).
+
+  Layout and nothing else. The notice is a `Message` in its `problem`
+  kind, and C6's rule is that a surface places a message without
+  repainting it: the colour, the size floor and the rule marker all stay
+  with `.message--problem`. The notice above this one, `.shell__notice`,
+  is not a `Message` and keeps its own muted colour — which is precisely
+  why this could not simply borrow that class.
+*/
+.shell__persistence {
+  margin: 0 0 var(--space-2);
+}
+
+/* ------------------------------------------------------------------ *
+ * Library
+ *
+ * It replaces the reading surface visually; the reader keeps its document,
+ * so coming back is instant.
+ * ------------------------------------------------------------------ */
+
+.library {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-6);
+}
+
+.library__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.library__title {
+  margin: 0;
+  font-size: var(--text-md);
+}
+
+.library__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.library__control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--colour-text-muted);
+}
+
+/* The failed library needs its message and its retry button in a column. */
+.library__problem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.library__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.library__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-md);
+  background-color: var(--colour-surface);
+}
+
+.library__card-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.library__word {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.library__part {
+  color: var(--colour-text-muted);
+  font-size: var(--text-xs);
+  font-style: italic;
+}
+
+.library__definition {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.library__definition--absent {
+  color: var(--colour-text-muted);
+  font-style: italic;
+}
+
+.library__provenance {
+  margin: 0;
+  color: var(--colour-text-muted);
+  font-size: var(--text-xs);
+}
+
+.library__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.library__more {
+  align-self: flex-start;
+}
+
+.library__undo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-md);
+  background-color: var(--colour-surface);
+  font-size: var(--text-sm);
+}
+
+/* ------------------------------------------------------------------ *
+ * Narrow windows (Milestone 6.4, W6)
+ * ------------------------------------------------------------------ */
+
+/* The saved-word cards are laid out on an `18rem` track, which is wider
+   than a narrow window's content box; below the search breakpoint they
+   become one column rather than one column with a horizontal scrollbar. */
+@media (max-width: 819.98px) {
+  .library__list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Settings (ADR-031, Milestone 6.8)
+ *
+ * The same kind of surface as the library: it replaces the reading view
+ * visually while the reader keeps its document. Everything in it is built
+ * from the existing tokens and the existing control patterns — no new
+ * palette, no new focus treatment, and no redrawn form controls. The radio
+ * inputs are native, themed with `accent-color` exactly as the checkbox
+ * above is, which is also why nothing here sets `appearance`.
+ * ------------------------------------------------------------------ */
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-6);
+}
+
+.settings__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.settings__title {
+  margin: 0;
+  font-size: var(--text-md);
+}
+
+.settings__close {
+  flex: none;
+}
+
+.settings__intro {
+  margin: 0;
+  max-inline-size: 60ch;
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--line-base);
+}
+
+/* A native fieldset: the legend is the group's accessible name, so the
+   border is removed for looks only and the element keeps its semantics. */
+.settings__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-md);
+  background: var(--colour-surface);
+}
+
+.settings__legend {
+  padding: 0 var(--space-2);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.settings__note {
+  margin: 0 0 var(--space-2);
+  max-inline-size: 60ch;
+  color: var(--colour-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-base);
+}
+
+/* The whole row is the target, which is why the input sits inside the
+   label rather than beside it. */
+.settings__choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: var(--control-min-size);
+  padding: var(--space-1) 0;
+  cursor: pointer;
+}
+
+.settings__radio {
+  flex: none;
+  inline-size: var(--checkbox-size);
+  block-size: var(--checkbox-size);
+  margin: 0;
+  margin-block-start: 0.15rem;
+  accent-color: var(--colour-focus);
+  cursor: pointer;
+}
+
+.settings__choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.settings__choice-label {
+  font-size: var(--text-sm);
+  line-height: var(--line-tight);
+}
+
+.settings__choice-description {
+  max-inline-size: 60ch;
+  color: var(--colour-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--line-base);
+}
+
+/* === MOTION — begin ================================================== *
+ *
+ * Motion (ADR-032, Milestone 6.7).
+ *
+ * Every moving thing in the renderer is between this marker and the END
+ * marker below, and a test asserts that no transition, no animation and no
+ * keyframe block exists anywhere else in the three stylesheets. ADR-032
+ * permits four behaviours; these are those four and nothing besides.
+ *
+ * Four properties of the way it is written are load-bearing:
+ *
+ * - only `opacity` and `transform` are animated into place, so no frame of
+ *   an entry costs a layout. The fourth behaviour transitions colours,
+ *   which is paint, not layout;
+ * - every entry has a `from` step and no `to` step, so the resting state is
+ *   the element's own style. Nothing can be left invisible, mispositioned
+ *   or half-faded by an animation that is disabled, interrupted or never
+ *   runs at all;
+ * - the selectors sit inside `:where()`, whose specificity is zero. The
+ *   reduced-motion override at the foot of the section is an ordinary
+ *   descendant selector, so it outranks all of them — without `!important`,
+ *   which this stylesheet does not use, and without depending on the order
+ *   the rules happen to be written in;
+ * - nothing animates on the way out, and nothing animates the document.
+ *   A dismissal is immediate, which is what keeps the interface feeling
+ *   answerable rather than slow.
+ *
+ * All three surfaces below are mounted only while they are shown, so each
+ * animation runs exactly once, on appearance, with no JavaScript involved.
+ */
+
+@keyframes popup-enter-below {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+@keyframes popup-enter-above {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes undo-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes search-enter {
+  from {
+    opacity: 0;
+  }
+}
+
+/*
+ * 1. The dictionary popup rises the 3 px *towards* the word it defines: it
+ * starts below its resting place when it sits under the word and above it
+ * when placement flipped it over, so the movement always reads as coming
+ * from the word rather than from the edge of the screen. Two keyframes
+ * rather than one direction custom property, because that keeps the
+ * direction in the same declaration as the placement it belongs to.
+ */
+:where(.dictionary-popup--below) {
+  animation: popup-enter-below var(--motion-popup) var(--ease-out);
+}
+
+:where(.dictionary-popup--above) {
+  animation: popup-enter-above var(--motion-popup) var(--ease-out);
+}
+
+/* 2. The undo bar rises 4 px, the one place a new strip of chrome appears
+   underneath content the reader was already looking at. */
+:where(.library__undo) {
+  animation: undo-enter var(--motion-slow) var(--ease-out);
+}
+
+/* 3. The search panel only fades: it is part of the toolbar, and moving it
+   would move the toolbar's own layout with it. */
+:where(.search) {
+  animation: search-enter var(--motion-base) linear;
+}
+
+/*
+ * 4. A control answers the pointer and the keyboard in 80 ms.
+ *
+ * The transition is declared on the hovered and focused states, never on
+ * `.control` itself, and this is the difference between a control that
+ * feels responsive and a theme change that visibly smears: an idle element
+ * carries no transition at all, so swapping the palette under it (ADR-030)
+ * repaints instantly. The consequence to know about is that the colour
+ * returns instantly when the pointer leaves, which is the same rule as
+ * "nothing animates on dismissal". `outline` is deliberately absent from
+ * the list: the focus ring must appear the moment focus does.
+ */
+:where(.control:is(:hover, :focus-visible):enabled) {
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
+}
+
+/*
+ * Reduced motion: one switch, no exceptions.
+ *
+ * ADR-032 asks for a disable that is global and property-agnostic rather
+ * than a per-rule opt-out, because the failure mode worth preventing is the
+ * animation someone adds next year and forgets to exempt. It answers two
+ * inputs that mean the same thing: the operating system's own setting, and
+ * `data-motion="reduced"` on the document element, which is how an explicit
+ * in-application preference will reach the cascade (the preference value
+ * itself is ADR-031's, and the surface that writes it is 6.8's).
+ *
+ * `animation: none` and `transition: none` are the whole of it: no
+ * `0.01ms` trick, which still schedules work and still fires events.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root,
+  :root *,
+  :root *::before,
+  :root *::after {
+    animation: none;
+    transition: none;
+  }
+}
+
+:root[data-motion='reduced'],
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation: none;
+  transition: none;
+}
+
+/* === MOTION — end ==================================================== */

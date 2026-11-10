@@ -1,0 +1,35 @@
+{
+  "dataset": "Open English WordNet",
+  "release": "2024",
+  "transformVersion": "1.0.0",
+  "homepage": "https://en-word.net/",
+  "archive": {
+    "fileName": "english-wordnet-2024.zip",
+    "url": "https://en-word.net/downloads/english-wordnet-2024.zip",
+    "sha256": "12ce54dd051b9420353f6c4ea74b34c736e23c8233d6d0bbd75407526f1fc732",
+    "bytes": 11457906,
+    "databaseDirectory": "oewn2024"
+  },
+  "licences": [
+    {
+      "name": "Creative Commons Attribution 4.0 International",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    {
+      "name": "WordNet License (Princeton University)",
+      "url": "https://wordnet.princeton.edu/license-and-commercial-use"
+    }
+  ],
+  "credits": [
+    "Open English WordNet 2024 \u2014 the Open English WordNet team, licensed under CC BY 4.0.",
+    "Based on WordNet, Copyright Princeton University. All rights reserved."
+  ],
+  "modificationStatement": "Modified: the Open English WordNet 2024 release was filtered and reformatted for offline lookup. At most four senses are kept per headword, at most one example and five synonyms per sense, and the data was converted into a JSONL payload with a binary index. Semantic relations, sense keys, verb frames and sense counts were discarded. No definition text was altered.",
+  "limits": {
+    "sensesPerHeadword": 4,
+    "examplesPerSense": 1,
+    "synonymsPerSense": 5
+  },
+  "tag": "2024-edition",
+  "commit": "3c511bb"
+}

@@ -1,0 +1,778 @@
+/*
+ * Reading surface.
+ *
+ * Application chrome here consumes styles/tokens.css (ADR-029); controls wear
+ * the shared `.control` primitive declared in styles/global.css, so this file
+ * only describes where they sit, never how a button is drawn.
+ *
+ * The document surface is different. Between the DOCUMENT SURFACE markers
+ * below, the rules render the PDF itself: the page, its highlights, the
+ * overlay that reports a page failure and the `.textLayer` rules adapted from
+ * pdfjs-dist/web/pdf_viewer.css (Apache-2.0). That region is an architectural
+ * boundary (ADR-029): the token layer must not recolour it, and the text-layer
+ * rules must stay in step with the version of pdfjs-dist in package.json. The
+ * text layer is reproduced here, rather than importing the whole viewer
+ * stylesheet, because only the text layer is used: the positions come from
+ * PDF.js through custom properties.
+ */
+
+.reader {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  gap: var(--space-3);
+}
+
+.reader__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--colour-surface);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-md);
+}
+
+.reader__bar label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/*
+ * CTL-5. The document's name is the one piece of the toolbar whose length
+ * the application does not control. It takes the room that is left and
+ * gives it all back when there is none, so a long file name can never push
+ * a control off the end of the bar; the full name stays available through
+ * the `title` the component sets.
+ */
+.reader__name {
+  font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.reader__body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+
+.reader__scroller {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-4);
+  background-color: var(--colour-scroller);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-md);
+}
+
+/*
+ * The scroller has `tabindex="0"`, so the shared rule in `global.css`
+ * already rings it with exactly these declarations. 6.3 removed the
+ * duplicate that used to live here (6.2 audit, C-1).
+ */
+
+/* The scrolling content: pages are positioned inside it by the layout. */
+.reader__pages {
+  position: relative;
+  margin: 0 auto;
+}
+
+.search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--colour-surface);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-md);
+}
+
+.search__input {
+  min-width: 16rem;
+}
+
+.search__status {
+  color: var(--colour-text-muted);
+  margin-left: auto;
+}
+
+.start {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.recents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 24rem;
+}
+
+.recents__item {
+  display: flex;
+  gap: var(--space-1);
+  align-items: stretch;
+}
+
+.recents__open {
+  flex: 1;
+  justify-content: space-between;
+  gap: var(--space-4);
+  text-align: left;
+}
+
+/* Secondary text beside the document's name: where it was left, and when.
+   It is read after the name, so it is quieter than the name. The rule is
+   its own because it once shared a block with `.recents__empty`; when that
+   selector went in 6.5 the closing brace went with it and `.recents__meta`
+   was left attached to the page-input geometry below, which gave the line
+   a 5.5 rem box, right alignment and the full text colour. The 6.5
+   acceptance audit measured it; `ruleIntegrity.test.ts` now fails if any
+   rule is re-parented like that again. */
+.recents__meta {
+  color: var(--colour-text-muted);
+}
+
+/* CTL-4: wide enough for a five-digit page number without scrolling. */
+.reader__page-input {
+  width: 5.5rem;
+  text-align: right;
+}
+
+.reader__page-form {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/*
+ * CTL-1. The four groups were only a DOM fact: on screen fourteen controls
+ * sat in one undifferentiated row. Each group now has a boundary of its
+ * own — the same border the surfaces use, at the same radius — so the
+ * grouping the accessibility tree reports is the grouping the eye sees.
+ */
+.reader__group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-sm);
+}
+
+/* The document group holds the name, so it is the group that stretches. */
+.reader__group--document {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.reader__zoom-readout {
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+}
+
+/*
+ * W7, CTL-9. One disclosure, closed at first paint, holding every piece of
+ * developer instrumentation. It is drawn quietly — muted, small — because
+ * its collapsed summary is the only part of it a reader should ever notice.
+ */
+.diagnostics {
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+}
+
+.diagnostics__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.reader__selfcheck {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.reader__password {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.reader__stats {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+}
+
+.reader__stats dt {
+  color: var(--colour-text-muted);
+}
+
+.reader__stats dd {
+  margin: 0;
+  text-align: right;
+}
+
+.word {
+  padding: var(--space-3);
+  background-color: var(--colour-surface);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-md);
+}
+
+.word__reason {
+  color: var(--colour-problem);
+}
+
+.word__details {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+}
+
+.word__details dt {
+  color: var(--colour-text-muted);
+}
+
+.word__details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.word__headline {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.word__timing {
+  margin: var(--space-2) 0 0;
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* === DOCUMENT SURFACE — begin ======================================== *
+ *
+ * Architectural boundary (ADR-029). Everything until the END marker paints
+ * the document, not the application: the white page, the highlight colours
+ * that carry search and vocabulary meaning, the failure overlay drawn on top
+ * of a page, and the PDF.js-derived text layer. The token layer deliberately
+ * has no authority here, so the literals below are intentional and must not
+ * be replaced by chrome colours.
+ * ===================================================================== */
+
+.page {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  /* ADR-029 Exemption 2: document rendering, not chrome. ADR-030 forbids
+   * theming the page, so this literal is never a token and never follows the
+   * light/dark chrome theme. */
+  background-color: #ffffff;
+  /*
+   * The hairline that makes the sheet's edge visible. It was
+   * `var(--colour-border)` until 6.6; a chrome token cannot be used here any
+   * more, because in the light appearance that token becomes pale and the
+   * white page would dissolve into the surface behind it. The value is the
+   * dark border colour as it was measured for the pre-theme baseline
+   * (PDF_SPIKE_REPORT §9.7), pinned so that the page's edge looks the same,
+   * and stays visible, in both appearances.
+   */
+  box-shadow: 0 0 0 1px #2b323e;
+  contain: paint;
+}
+
+.page__highlights {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.highlight {
+  position: absolute;
+  border-radius: 1px;
+}
+
+.highlight--match {
+  background-color: var(--colour-highlight-match);
+}
+
+.highlight--current-match {
+  background-color: var(--colour-highlight-current);
+  outline: 1px solid rgb(255 145 0 / 80%);
+}
+
+.highlight--occurrence {
+  background-color: var(--colour-highlight-occurrence);
+  outline: 2px solid rgb(90 170 60 / 80%);
+}
+
+.highlight--cursor {
+  background-color: var(--colour-highlight-cursor);
+  outline: 2px solid rgb(110 168 255 / 85%);
+}
+
+.page__canvas {
+  display: block;
+}
+
+/*
+ * The overlay is drawn on the page itself, over white paper, in both
+ * appearances. Its three colours were chrome tokens until 6.6, which would
+ * have turned the light appearance's dark text onto this deliberately dark
+ * panel — unreadable, and a theme reaching onto the document surface besides.
+ * They are literals now: the same values the panel resolved to for the
+ * pre-theme baseline (PDF_SPIKE_REPORT §9.6), and the same in both themes.
+ */
+.page__overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  margin: 0;
+  padding: 0.5rem;
+  background-color: rgb(17 20 26 / 85%);
+  color: #e8ecf2;
+  white-space: pre-line;
+}
+
+.page__overlay--problem {
+  color: #e8b45a;
+}
+
+/*
+ * Diagnostic instrument: the text layer is invisible by design, so being able
+ * to paint it is what makes misalignment observable (PDF_SPIKE_REPORT 6.3).
+ */
+.page--show-text-layer .textLayer span {
+  color: rgb(220 0 0 / 55%);
+  outline: 1px solid rgb(220 0 0 / 35%);
+}
+
+/* --- Text layer (adapted from PDF.js, Apache-2.0) ----------------------- */
+
+.textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  text-align: initial;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  z-index: 0;
+}
+
+.textLayer :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+
+  --font-height: 0;
+  --scale-x: 1;
+  --rotate: 0deg;
+
+  font-size: calc(var(--total-scale-factor, 1) * var(--font-height));
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x));
+}
+
+.textLayer[data-main-rotation='90'] {
+  transform: rotate(90deg) translateY(-100%);
+}
+
+.textLayer[data-main-rotation='180'] {
+  transform: rotate(180deg) translate(-100%, -100%);
+}
+
+.textLayer[data-main-rotation='270'] {
+  transform: rotate(270deg) translateX(-100%);
+}
+
+.textLayer .markedContent {
+  display: contents;
+}
+
+.textLayer ::selection {
+  background: var(--colour-selection);
+  color: transparent;
+}
+
+/* === DOCUMENT SURFACE — end ========================================== */
+
+/* ------------------------------------------------------------------ *
+ * Definition popup (Milestone 3)
+ *
+ * Positioned in viewport coordinates by src/reader/dictionary/placePopup.ts;
+ * the rules here only describe how it looks. Nothing in this block can move
+ * the document: the element is fixed and scrolls internally.
+ * ------------------------------------------------------------------ */
+
+/*
+ * The popup is two boxes (Milestone 6.3): this one draws the surface and
+ * carries the arrow, and `.dictionary-popup__scroll` inside it holds
+ * everything that can overflow. They were one box until the arrow arrived,
+ * and they cannot be one box again: `overflow-y: auto` clips absolutely
+ * positioned children, so an arrow on this element would be cut off at the
+ * very edge it has to cross.
+ */
+/*
+ * `position: fixed` is set by the component, next to the coordinates it is
+ * computed with, and it is what makes this element the arrow's containing
+ * block.
+ */
+.dictionary-popup {
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-md);
+  background-color: var(--colour-surface);
+  box-shadow: var(--shadow-popup);
+  line-height: var(--line-relaxed);
+}
+
+.dictionary-popup__scroll {
+  display: flex;
+  overflow-y: auto;
+  flex: 1;
+  flex-direction: column;
+  /* So the scroll box may shrink inside the flex column rather than
+     pushing the popup past the height placement allowed it. */
+  min-height: 0;
+  padding: var(--space-3);
+  gap: var(--space-2);
+}
+
+/*
+ * The arrow (D1/W8).
+ *
+ * A square with two of the popup's own borders, rotated a quarter turn, so
+ * the outward half reads as a triangle pointing at the word and the inward
+ * half covers the popup's border line behind it. It is drawn from the same
+ * tokens as the surface it belongs to, so it cannot drift away from it.
+ *
+ * `placePopup` supplies only `left`, and keeps it clear of the rounded
+ * corners. The arrow declares no motion of its own: it is a child of the
+ * popup, so it rides the popup's entry animation, which is written with
+ * every other moving thing in global.css (ADR-032).
+ */
+.dictionary-popup__arrow {
+  position: absolute;
+  width: var(--popup-arrow-size);
+  height: var(--popup-arrow-size);
+  background-color: var(--colour-surface);
+}
+
+.dictionary-popup--below .dictionary-popup__arrow {
+  top: calc(-0.5 * var(--popup-arrow-size));
+  border-top: var(--border-width) solid var(--colour-border);
+  border-left: var(--border-width) solid var(--colour-border);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.dictionary-popup--above .dictionary-popup__arrow {
+  bottom: calc(-0.5 * var(--popup-arrow-size));
+  border-right: var(--border-width) solid var(--colour-border);
+  border-bottom: var(--border-width) solid var(--colour-border);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/*
+ * The one documented exception to the shared focus rule in `global.css`.
+ *
+ * The ring is drawn inside the popup's own surface: the popup floats over the
+ * white page, where an outset ring would be measured against paper rather
+ * than against the colour it was chosen for. Only the offset differs; the
+ * width and the colour are the same tokens, so the exception cannot drift
+ * away from the ring it is an exception to.
+ *
+ * Until 6.3 the popup was *also* listed in the shared selector, where this
+ * rule silently overrode its offset at equal specificity — the structure
+ * worked by accident of source order. It is now declared once, here.
+ */
+.dictionary-popup:focus-visible {
+  outline: var(--focus-ring-width) solid var(--colour-focus);
+  outline-offset: calc(-1 * var(--focus-ring-width));
+}
+
+.dictionary-popup__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.dictionary-popup__word {
+  margin: 0;
+  font-size: var(--text-md);
+}
+
+.dictionary-popup__close {
+  padding: 0 var(--space-1);
+  color: var(--colour-text-muted);
+  font-size: var(--text-base);
+  line-height: 1;
+}
+
+.dictionary-popup__close:hover,
+.dictionary-popup__close:focus-visible {
+  color: var(--colour-text);
+}
+
+.dictionary-popup__status,
+.dictionary-popup__origin {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+/*
+ * The colour is separated from the layout above because `.message` is
+ * composed with this class, and `reader.css` is read after `global.css`:
+ * until the 6.5 closure pass this rule quietly repainted a failure message
+ * in the muted text colour, leaving the leading rule as the only sign that
+ * anything had gone wrong (6.5 acceptance audit, C6). A surface may place
+ * a message; it may not recolour one, which is what `MessageProps.className`
+ * says and what `messages.test.ts` now enforces for every composition.
+ *
+ * The lookup's own status line is not a `Message` — it is the single live
+ * region the popup keeps across every state (A11Y-8) — so it is the one
+ * node here that still takes its colour from this class.
+ */
+.dictionary-popup__status:not(.message),
+.dictionary-popup__origin {
+  color: var(--colour-text-muted);
+}
+
+.dictionary-popup__fallback,
+.dictionary-popup__shadowing {
+  margin: 0;
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+}
+
+.dictionary-popup__pronunciation {
+  display: flex;
+  margin: 0;
+  color: var(--colour-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  gap: var(--space-2);
+}
+
+.dictionary-popup__senses {
+  display: flex;
+  margin: 0;
+  flex-direction: column;
+  padding-left: var(--space-4);
+  gap: var(--space-2);
+}
+
+.dictionary-popup__definition {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.dictionary-popup__part {
+  color: var(--colour-text-muted);
+  font-style: italic;
+}
+
+.dictionary-popup__example {
+  margin: var(--space-1) 0 0;
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+}
+
+.dictionary-popup__synonyms {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-xs);
+}
+
+.dictionary-popup__save {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+/* A button, not a column: it shared the rule above and was stretched by it. */
+.dictionary-popup__more {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+}
+
+.dictionary-popup__save-button,
+.dictionary-popup__saved {
+  align-self: flex-start;
+}
+
+.dictionary-popup__saved {
+  border-color: var(--colour-accent);
+  font-weight: 600;
+}
+
+.dictionary-popup__save-button:disabled,
+.dictionary-popup__saved:disabled {
+  cursor: progress;
+}
+
+.dictionary-popup__save-note {
+  margin: 0;
+  color: var(--colour-text-muted);
+  font-size: var(--text-xs);
+}
+
+.dictionary-popup__save-error {
+  margin: 0;
+  color: var(--colour-danger);
+  font-size: var(--text-sm);
+}
+
+/*
+ * Contextual explanation.
+ *
+ * Visually secondary to the definition: separated by a rule, set slightly
+ * smaller, and never styled to look like the dictionary's own text. The
+ * disclosure sits with the button, in muted type but never hidden.
+ */
+.dictionary-popup__explain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: var(--border-width) solid var(--colour-border);
+}
+
+.dictionary-popup__explanation-heading {
+  margin: 0;
+  color: var(--colour-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dictionary-popup__explanation-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+}
+
+.dictionary-popup__explanation-note,
+.dictionary-popup__explanation-origin,
+.dictionary-popup__explain-disclosure {
+  margin: 0;
+  color: var(--colour-text-muted);
+  font-size: var(--text-xs);
+}
+
+.dictionary-popup__explain-button,
+.dictionary-popup__explain-cancel {
+  align-self: flex-start;
+}
+
+.dictionary-popup__explain-error {
+  margin: 0;
+  color: var(--colour-danger);
+  font-size: var(--text-sm);
+}
+
+.dictionary-popup__attribution {
+  color: var(--colour-text-muted);
+  font-size: var(--text-xs);
+}
+
+.dictionary-popup__attribution ul {
+  margin: var(--space-1) 0;
+  padding-left: var(--space-4);
+}
+
+.dictionary-popup__attribution p {
+  margin: var(--space-1) 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Narrow windows (Milestone 6.4, W6)
+ * ------------------------------------------------------------------ *
+ *
+ * The application's first media queries. Until 6.4 the chrome was written
+ * for one window size: a `20rem` side column, a `16rem` search field and a
+ * `24rem` recents list were all unconditional, with nothing to give them
+ * back at the supported minimum window (900 x 600, window/createMainWindow).
+ *
+ * There are two conditions and they are deliberate, not a sweep of
+ * guessed sizes. Each one matches a constant in `reader/model/chrome.ts`,
+ * because the view has to make the same decision in JavaScript that the
+ * stylesheet makes here; a test pins the pairs together.
+ *
+ * Nothing in here changes the document surface: the page, its canvas and
+ * its text layer are laid out by PDF.js geometry and are the same at every
+ * window size.
+ */
+
+/* SIDE_PANEL_BREAKPOINT, exclusive. Below this the details panel cannot
+   have a column of its own without taking the document's; it drops
+   underneath instead, and the view starts it collapsed. The `.98` is
+   `belowBreakpoint(SIDE_PANEL_BREAKPOINT)`: `max-width: 1100px` would
+   match at 1100, where `sidePanelStartsOpen` says the panel is open, and
+   the panel would be open with no column to be open in (6.4 audit, C1). */
+@media (max-width: 1099.98px) {
+}
+
+/* SEARCH_WRAP_BREAKPOINT, exclusive, written the same way. Below this the
+   toolbar and the search panel wrap rather than overflow: every control
+   stays on screen and reachable, which is what CTL-7 asks for. This band
+   sits below the 900 px minimum window, so it is reached by a smaller
+   embedded viewport rather than by resizing the application; what keeps
+   the minimum window from overflowing is the wrapping above it, which
+   `responsive.test.ts` judges at `MINIMUM_WINDOW_WIDTH` rather than here. */
+@media (max-width: 819.98px) {
+  .search__input {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .recents {
+    min-width: 0;
+  }
+
+  .reader__group--document {
+    flex-basis: 100%;
+  }
+}

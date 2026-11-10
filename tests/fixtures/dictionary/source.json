@@ -1,0 +1,140 @@
+{
+  "comment": [
+    "Synthetic dictionary used by the automated tests.",
+    "",
+    "Every definition here was written for this project. Nothing is copied from",
+    "WordNet or from any other dictionary: the tests need a dictionary whose",
+    "every state is known, not a sample of real data, and the real 29 MB",
+    "dataset must never be downloaded by a test.",
+    "",
+    "The entries are chosen to exercise each state of the lookup pipeline:",
+    "exact hits, case suppression, inflection shadowing, hyphen and dotted",
+    "forms, contraction hosts, morphology, a malformed record and a miss.",
+    "",
+    "Build it with: npm run dictionary:fixture"
+  ],
+  "entries": {
+    "a": {
+      "senses": [{ "p": "n", "d": "A unit of length used in physics.", "w": "A" }]
+    },
+    "at": {
+      "senses": [{ "p": "n", "d": "A chemical element with a very short half-life.", "w": "At" }]
+    },
+    "best": {
+      "senses": [
+        { "p": "a", "d": "Of the highest quality in a group.", "x": ["the best result so far"] },
+        { "p": "n", "d": "A scientist remembered for work on insulin.", "w": "Best" }
+      ]
+    },
+    "book": {
+      "senses": [
+        {
+          "p": "n",
+          "d": "A set of printed pages bound together along one edge.",
+          "x": ["she returned the book unopened"],
+          "y": ["volume"]
+        },
+        { "p": "v", "d": "To reserve something in advance." }
+      ],
+      "pr": [
+        { "v": "US", "i": "bʊk" },
+        { "v": "GB", "i": "bʊk" }
+      ]
+    },
+    "brokenentry": {
+      "senses": [{ "p": "?", "d": "" }]
+    },
+    "carry": {
+      "senses": [{ "p": "v", "d": "To hold something and take it from one place to another." }]
+    },
+    "child": {
+      "senses": [{ "p": "n", "d": "A young human being." }]
+    },
+    "co-operate": {
+      "senses": [{ "p": "v", "d": "To work together towards the same end, written with a hyphen." }]
+    },
+    "cooperate": {
+      "senses": [{ "p": "v", "d": "To work together towards the same end." }]
+    },
+    "do": {
+      "senses": [{ "p": "v", "d": "To carry out an action." }]
+    },
+    "dog": {
+      "senses": [{ "p": "n", "d": "A domesticated animal kept as a companion or a worker." }]
+    },
+    "e.g.": {
+      "senses": [{ "p": "r", "d": "Used before an example of what has just been mentioned." }]
+    },
+    "etc.": {
+      "senses": [{ "p": "r", "d": "Used to show that a list continues in the same way." }]
+    },
+    "good": {
+      "senses": [{ "p": "a", "d": "Of a quality that meets or exceeds what is wanted." }]
+    },
+    "goose": {
+      "senses": [{ "p": "n", "d": "A large water bird with a long neck." }]
+    },
+    "happy": {
+      "senses": [{ "p": "a", "d": "Feeling or showing pleasure." }]
+    },
+    "he": {
+      "senses": [{ "p": "n", "d": "A light gas used to fill balloons.", "w": "He" }]
+    },
+    "lighthouse": {
+      "senses": [{ "p": "n", "d": "A tower showing a light to warn or guide ships." }]
+    },
+    "london": {
+      "senses": [{ "p": "n", "d": "The capital city of the United Kingdom.", "w": "London" }]
+    },
+    "mouse": {
+      "senses": [{ "p": "n", "d": "A small rodent with a long thin tail." }]
+    },
+    "run": {
+      "senses": [
+        { "p": "v", "d": "To move quickly on foot.", "x": ["they ran to the gate"] },
+        { "p": "n", "d": "A spell of running." }
+      ],
+      "pr": [{ "i": "ɹʌn" }]
+    },
+    "running": {
+      "senses": [{ "p": "n", "d": "The sport of moving at speed on foot." }]
+    },
+    "stop": {
+      "senses": [{ "p": "v", "d": "To bring something to an end." }]
+    },
+    "stopped": {
+      "senses": [{ "p": "a", "d": "Blocked so that nothing can pass." }]
+    },
+    "stream": {
+      "senses": [{ "p": "v", "d": "To flow steadily and continuously." }]
+    },
+    "streaming": {
+      "senses": [{ "p": "n", "d": "Delivery of audio or video that plays while it arrives." }]
+    },
+    "us": {
+      "senses": [{ "p": "n", "d": "A country in North America.", "w": "US" }]
+    },
+    "water": {
+      "senses": [{ "p": "n", "d": "The liquid that falls as rain and fills rivers and seas." }]
+    },
+    "will": {
+      "senses": [{ "p": "n", "d": "A document saying who should receive someone's property." }]
+    }
+  },
+  "exceptions": {
+    "noun": {
+      "children": ["child"],
+      "geese": ["goose"],
+      "mice": ["mouse"]
+    },
+    "verb": {
+      "carried": ["carry"],
+      "ran": ["run"]
+    },
+    "adjective": {
+      "best": ["good"],
+      "happiest": ["happy"]
+    },
+    "adverb": {}
+  }
+}

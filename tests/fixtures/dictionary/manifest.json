@@ -1,0 +1,46 @@
+{
+  "formatVersion": 1,
+  "transformVersion": "1.0.0",
+  "source": {
+    "dataset": "Synthetic test dictionary",
+    "release": "fixture-1",
+    "archiveUrl": "file://tests/fixtures/dictionary/source.json",
+    "archiveSha256": "6efb98dc119b4ed4605b1f129d2453212fbae372c46c0aa3107fed9709727a36",
+    "pronunciationUrl": "file://tests/fixtures/dictionary/source.json",
+    "pronunciationSha256": "6efb98dc119b4ed4605b1f129d2453212fbae372c46c0aa3107fed9709727a36"
+  },
+  "licences": [
+    {
+      "name": "Project test fixture (not for redistribution as a dictionary)",
+      "url": "file://AGENTS.md"
+    }
+  ],
+  "modified": true,
+  "modificationStatement": "Modified: this fixture is entirely synthetic and exists only to exercise the lookup pipeline.",
+  "credits": [
+    "Synthetic data written for the Intelligent PDF Reader test suite."
+  ],
+  "counts": {
+    "headwords": 29,
+    "senses": 32,
+    "pronunciations": 2,
+    "morphologicalExceptions": 7
+  },
+  "files": [
+    {
+      "name": "entries.jsonl",
+      "bytes": 2262,
+      "sha256": "641fe63cefcf5de4b24d8e88898bd70d2a5fa7fcd516a1ee206205e2f00c2f93"
+    },
+    {
+      "name": "entries.idx",
+      "bytes": 628,
+      "sha256": "2842bcac81e31c1ebcd90fbb759ce54d4ef49789d954642fad74ee01a88a8bf3"
+    },
+    {
+      "name": "morphology.json",
+      "bytes": 200,
+      "sha256": "5a2e73f324a0641d7ff98231ec2e208c8d54426574387045eb1c27fc76780737"
+    }
+  ]
+}

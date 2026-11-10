@@ -1,0 +1,67 @@
+name: Windows release verification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.21.1
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare and verify production dictionary
+        run: npm run dictionary:prepare:production
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Focused dictionary and packaging tests
+        run: npm test -- --run src/main/dictionary src/renderer/src/reader/dictionary tests/integration/dictionaryArtifact.test.ts
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: Build application
+        run: npm run build
+
+      - name: Build unpacked Windows application
+        run: npx electron-builder --win dir --x64 --config electron-builder.yml
+
+      - name: Verify packaged dictionary
+        run: node scripts/packaging/verify-packaged-output.mjs dist/win-unpacked
+
+      - name: Build NSIS installer
+        run: npx electron-builder --win nsis --x64 --config electron-builder.yml
+
+      - name: Inspect installer and install silently
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem dist\*.exe | Select-Object -First 1
+          if (-not $installer) { throw 'installer missing' }
+          $hash = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash
+          "$($installer.FullName) size=$($installer.Length) sha256=$hash" | Tee-Object -FilePath dist\installer-integrity.txt
+          $install = Join-Path $env:RUNNER_TEMP 'lexleaf-install'
+          Start-Process -FilePath $installer.FullName -ArgumentList '/S', "/D=$install" -Wait -NoNewWindow
+          if (-not (Test-Path $install)) { throw 'install directory missing' }
+          $installed = Get-ChildItem $install -Recurse -Directory | Where-Object { $_.Name -eq 'dictionary' } | Select-Object -First 1
+          if (-not $installed) { throw 'installed dictionary directory missing' }
+          node scripts/packaging/verify-packaged-output.mjs $install
+          Write-Output "Installed dictionary verification completed at $install\resources\dictionary"
+
+
+      # Installer and dictionary artifacts intentionally remain on the ephemeral runner.
+      # After legal approval, add a separately reviewed upload step with explicit
+      # retention and scope controls; do not upload dictionary-containing artifacts before then.

@@ -1,0 +1,5 @@
+Lexleaf
+
+Copyright ownership and licensing of original application materials are governed by the Apache License, Version 2.0 in LICENSE. Apache-2.0 does not apply to third-party libraries, dictionary data, generated resources, fixtures, fonts, icons or other materials unless their individual notices expressly say so.
+
+The production dictionary is generated outside Git from the pinned Open English WordNet 2024 source described in scripts/dictionary/source.json. It is separately licensed and must retain the OEWN, Creative Commons Attribution 4.0 and Princeton WordNet notices generated in resources/dictionary/NOTICE.md. The generated dictionary is not included in this source preview.
