@@ -54,7 +54,7 @@ export interface ReadDocumentOptions {
  * the failure screen.
  */
 export const displayName = (path: string): string =>
-  (win32.isAbsolute(path) || /^[A-Za-z]:[\\/]/u.test(path) ? win32.basename(path) : basename(path))
+  (/^[A-Za-z]:[\\/]/u.test(path) ? win32.basename(path) : basename(path))
     // eslint-disable-next-line no-control-regex -- a rendered name may not carry control characters
     .replace(/[\\/\u0000-\u001f\u007f]/gu, '')
     .slice(0, MAX_NAME_LENGTH);

@@ -68,10 +68,29 @@ describe('dictionary manifest', () => {
 
   it.each([
     ['an unknown format version', { ...valid, formatVersion: 2 }],
-    ['missing pronunciation exclusion policy', { ...valid, source: { ...valid.source, pronunciationExcluded: undefined } }],
-    ['excluded pronunciation with metadata', { ...valid, source: { ...valid.source, pronunciationExcluded: true } }],
-    ['excluded pronunciation with a positive count', { ...valid, source: { ...valid.source, pronunciationExcluded: true }, counts: { pronunciations: 1 } }],
-    ['included pronunciation without metadata', { ...valid, source: { ...valid.source, pronunciationExcluded: false, pronunciationUrl: undefined } }],
+    [
+      'missing pronunciation exclusion policy',
+      { ...valid, source: { ...valid.source, pronunciationExcluded: undefined } },
+    ],
+    [
+      'excluded pronunciation with metadata',
+      { ...valid, source: { ...valid.source, pronunciationExcluded: true } },
+    ],
+    [
+      'excluded pronunciation with a positive count',
+      {
+        ...valid,
+        source: { ...valid.source, pronunciationExcluded: true },
+        counts: { pronunciations: 1 },
+      },
+    ],
+    [
+      'included pronunciation without metadata',
+      {
+        ...valid,
+        source: { ...valid.source, pronunciationExcluded: false, pronunciationUrl: undefined },
+      },
+    ],
     ['a missing source', { ...valid, source: undefined }],
     ['a source without a checksum', { ...valid, source: { ...valid.source, archiveSha256: '' } }],
     ['no licences', { ...valid, licences: [] }],

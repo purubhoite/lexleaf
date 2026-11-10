@@ -143,7 +143,6 @@ export const generateNotice = (manifest, licenceHeader) =>
     '',
   ].join('\n');
 
-
 export const NOTICE_REQUIREMENTS = [
   'Open English WordNet 2024',
   'WordNet 3.1 Copyright 2011 by Princeton University',
@@ -158,8 +157,8 @@ export const NOTICE_REQUIREMENTS = [
 
 export const validateNotice = (text) => {
   const normalized = text.replace(/\s+/gu, ' ');
-  const missing = NOTICE_REQUIREMENTS.filter((requirement) =>
-    !normalized.includes(requirement.replace(/\s+/gu, ' ')),
+  const missing = NOTICE_REQUIREMENTS.filter(
+    (requirement) => !normalized.includes(requirement.replace(/\s+/gu, ' ')),
   );
   return { valid: missing.length === 0, missing };
 };

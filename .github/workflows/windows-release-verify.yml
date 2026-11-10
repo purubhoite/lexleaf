@@ -70,7 +70,6 @@ jobs:
           node scripts/packaging/verify-packaged-output.mjs $install
           Write-Output "Installed dictionary verification completed at $install\resources\dictionary"
 
-
       # Installer and dictionary artifacts intentionally remain on the ephemeral runner.
       # After legal approval, add a separately reviewed upload step with explicit
       # retention and scope controls; do not upload dictionary-containing artifacts before then.
