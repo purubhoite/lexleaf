@@ -96,7 +96,7 @@ export const encodeEntries = (entries) => {
   };
 };
 
-const notice = (manifest, licenceHeader) =>
+export const generateNotice = (manifest, licenceHeader) =>
   [
     '# Dictionary data — third-party notices',
     '',
@@ -134,12 +134,35 @@ const notice = (manifest, licenceHeader) =>
     licenceHeader.replace(/\s+$/u, ''),
     '```',
     '',
+    'This dictionary distribution is not affiliated with, sponsored by, or endorsed by Princeton University.',
+    '',
     '### Legal status',
     '',
     'No legal review of this redistribution has been carried out. Commercial',
     'release requires one; see `docs/DICTIONARY_INVESTIGATION.md`.',
     '',
   ].join('\n');
+
+
+export const NOTICE_REQUIREMENTS = [
+  'Open English WordNet 2024',
+  'WordNet 3.1 Copyright 2011 by Princeton University',
+  'CC BY 4.0',
+  'THIS SOFTWARE AND DATABASE IS PROVIDED \"AS IS\"',
+  'MAKES NO REPRESENTATIONS OR WARRANTIES',
+  'The name of Princeton University or Princeton may not be used in',
+  'Title to copyright in this software, database and any associated documentation shall at all times remain with Princeton University',
+  'not affiliated with, sponsored by, or endorsed by Princeton University.',
+  'Pronunciation data: excluded',
+];
+
+export const validateNotice = (text) => {
+  const normalized = text.replace(/\s+/gu, ' ');
+  const missing = NOTICE_REQUIREMENTS.filter((requirement) =>
+    !normalized.includes(requirement.replace(/\s+/gu, ' ')),
+  );
+  return { valid: missing.length === 0, missing };
+};
 
 /**
  * Writes every artifact file and returns the manifest that was written.
@@ -195,7 +218,7 @@ export const writeArtifact = ({ outDir, entries, exceptions, source, licenceHead
   const manifestText = `${JSON.stringify(manifest, null, 2)}\n`;
 
   writeFileSync(join(outDir, 'manifest.json'), manifestText, 'utf8');
-  writeFileSync(join(outDir, 'NOTICE.md'), notice(manifest, licenceHeader), 'utf8');
+  writeFileSync(join(outDir, 'NOTICE.md'), generateNotice(manifest, licenceHeader), 'utf8');
 
   return {
     manifest,

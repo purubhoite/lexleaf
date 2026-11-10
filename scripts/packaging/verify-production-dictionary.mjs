@@ -25,13 +25,19 @@ for (const f of manifest.files) {
   if (h !== f.sha256 || b.length !== f.bytes) throw new Error(`manifest mismatch ${f.name}`);
 }
 const notice = readFileSync(join(dictionary, 'NOTICE.md'), 'utf8');
+const noticeText = notice.replace(/\s+/gu, ' ');
 for (const x of [
   'Open English WordNet 2024',
   'WordNet 3.1 Copyright 2011 by Princeton University',
   'CC BY 4.0',
-  'does not imply Princeton endorsement',
+  'THIS SOFTWARE AND DATABASE IS PROVIDED "AS IS"',
+  'MAKES NO REPRESENTATIONS OR WARRANTIES',
+  'The name of Princeton University or Princeton may not be used in',
+  'Title to copyright in this software, database and any associated documentation shall at all times remain with Princeton University',
+  'not affiliated with, sponsored by, or endorsed by Princeton University.',
 ])
-  if (!notice.includes(x)) throw new Error(`notice missing ${x}`);
+  if (!noticeText.includes(x.replace(/\s+/gu, ' ')))
+    throw new Error(`notice missing substantive requirement: ${x}`);
 const result = {
   kind: 'authentic-oewn-2024-production',
   dictionary,
