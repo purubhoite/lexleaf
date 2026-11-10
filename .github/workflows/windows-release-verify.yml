@@ -77,10 +77,28 @@ jobs:
         shell: pwsh
         run: |
           git diff --check
-          $workflow = Get-Content .github/workflows/windows-release-verify.yml -Raw
-          if ($workflow -notmatch '(?m)^\s*workflow_dispatch:\s*$') { throw 'workflow_dispatch missing' }
-          if ($workflow -notmatch '(?m)^\s*contents:\s*read\s*$') { throw 'read-only contents permission missing' }
-          if ($workflow -match 'actions/upload-artifact|gh release|git tag') { throw 'publishing operation detected' }
+          $workflowPath = '.github/workflows/windows-release-verify.yml'
+          $workflowLines = Get-Content $workflowPath
+          if (-not ($workflowLines -match '^\s*workflow_dispatch:\s*$')) { throw 'workflow_dispatch missing' }
+          if (-not ($workflowLines -match '^\s*contents:\s*read\s*$')) { throw 'read-only contents permission missing' }
+
+          # Inspect executable workflow fields, not comments, descriptions, or this scanner's source.
+          $violations = @()
+          for ($i = 0; $i -lt $workflowLines.Count; $i++) {
+              $line = $workflowLines[$i]
+              $trimmed = $line.Trim()
+              if ($trimmed.StartsWith('#')) { continue }
+              if ($trimmed -match '^uses:\s*actions/upload-artifact(?:@|\s|$)') {
+                  $violations += "${workflowPath}:$($i + 1): actions/upload-artifact"
+              }
+              if ($trimmed -match '^(?:gh\s+release(?:\s+create|\s+upload-)|git\s+tag(?:\s|$)|git\s+push\s+.*--tags(?:\s|$))') {
+                  $violations += "${workflowPath}:$($i + 1): $trimmed"
+              }
+          }
+          if ($violations.Count -gt 0) {
+              $violations | ForEach-Object { Write-Error $_ }
+              throw 'publishing operation detected'
+          }
 
       - name: Unit tests
         run: npm test
