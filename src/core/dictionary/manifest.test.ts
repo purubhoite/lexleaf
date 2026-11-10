@@ -52,13 +52,17 @@ describe('dictionary manifest', () => {
   });
 
   it('accepts an excluded pronunciation source without pronunciation metadata', () => {
+    const malformedSource: Record<string, unknown> = {
+      ...valid.source,
+      pronunciationExcluded: true,
+    };
+    delete malformedSource['pronunciationUrl'];
+    delete malformedSource['pronunciationSha256'];
     const candidate = {
       ...valid,
-      source: { ...valid.source, pronunciationExcluded: true },
+      source: malformedSource,
       counts: { headwords: 10, senses: 20, pronunciations: 0 },
     };
-    delete candidate.source.pronunciationUrl;
-    delete candidate.source.pronunciationSha256;
     expect(parse(candidate)).not.toBeNull();
   });
 
