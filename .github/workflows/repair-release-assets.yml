@@ -125,6 +125,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $releaseArgs = @('release', 'upload', $env:EXPECTED_TAG, $env:INSTALLER_PATH, $env:CHECKSUM_PATH, '--repo', '${{ github.repository }}', '--clobber')
-          & gh @releaseArgs
-          if ($LASTEXITCODE -ne 0) { throw 'Release asset upload failed.' }
+          $releaseUploadArgs = @(
+            'release'
+            'upload'
+            $env:EXPECTED_TAG
+            $env:INSTALLER_PATH
+            $env:CHECKSUM_PATH
+            '--repo'
+            '${{ github.repository }}'
+            '--clobber'
+          )
+          Write-Host "Uploading $($releaseUploadArgs.Count) release arguments."
+          for ($i = 0; $i -lt $releaseUploadArgs.Count; $i++) { Write-Host "arg[$i]=$($releaseUploadArgs[$i])" }
+          & gh @releaseUploadArgs
+          if ($LASTEXITCODE -ne 0) { throw "GitHub release asset upload failed with exit code $LASTEXITCODE." }
