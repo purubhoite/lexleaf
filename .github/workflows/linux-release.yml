@@ -91,7 +91,12 @@ jobs:
 
       - name: Package AppImage and Debian package
         working-directory: release-source
-        run: npx electron-builder --linux AppImage deb --x64 --config ../workflow-source/linux-builder.yml --publish never
+        run: |
+          set -euo pipefail
+          config_path="$GITHUB_WORKSPACE/workflow-source/linux-builder.yml"
+          test -f "$config_path" || { echo "Linux builder configuration not found: $config_path" >&2; exit 1; }
+          echo "Using Linux builder configuration: $config_path"
+          npx electron-builder --linux AppImage deb --x64 --config "$config_path" --publish never
 
       - name: Verify Linux packages and checksum
         working-directory: release-source
