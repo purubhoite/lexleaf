@@ -56,6 +56,42 @@ AI explanation code is present for future evaluation and is disabled by default 
 
 The published installer is self-contained; end users do not need Node.js or npm.
 
+## Install on Linux
+
+Lexleaf's Linux release targets **x86_64 / amd64** and is distributed as an AppImage and a Debian package. These packages are built from the same v0.1.0 source release as the Windows installer.
+
+- [Download the AppImage](https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/Lexleaf-0.1.0-x86_64.AppImage)
+- [Download the Debian package](https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/Lexleaf-0.1.0-amd64.deb)
+- [Download SHA256SUMS.txt](https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/SHA256SUMS.txt)
+- [Open the v0.1.0 release page](https://github.com/purubhoite/lexleaf/releases/tag/v0.1.0)
+
+### AppImage
+
+Download the AppImage, make it executable, and launch it:
+
+```bash
+chmod +x Lexleaf-0.1.0-x86_64.AppImage
+./Lexleaf-0.1.0-x86_64.AppImage
+```
+
+### Debian and Ubuntu
+
+Install the `.deb` package with `apt`:
+
+```bash
+sudo apt install ./Lexleaf-0.1.0-amd64.deb
+```
+
+Launch **Lexleaf** from your desktop application menu, or run `lexleaf` from a terminal. Remove it with:
+
+```bash
+sudo apt remove lexleaf
+```
+
+The packages target amd64/x86_64 Linux. They are not claims of support for every Linux distribution. The AppImage is intended for common x86_64 desktop environments; the Debian package is intended for Debian, Ubuntu, Linux Mint, and compatible distributions. A desktop session and the system libraries required by Electron are still required.
+
+Lexleaf stores its local profile under Electron's per-user data directory (normally `~/.config/Lexleaf` on Linux), including the local vocabulary database and preferences. Do not store user data in the application installation directory.
+
 ## How to use it
 
 1. Choose **Open PDF…** and select a PDF.
