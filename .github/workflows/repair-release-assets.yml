@@ -3,8 +3,8 @@ name: Repair Lexleaf release assets
 on:
   workflow_dispatch:
     inputs:
-      source_sha:
-        description: Exact verified source commit SHA
+      release_source_sha:
+        description: Original release source commit SHA referenced by v0.1.0
         required: true
         type: string
       release_confirmation:
@@ -29,7 +29,7 @@ jobs:
       contents: write
       actions: read
     env:
-      EXPECTED_SHA: ${{ inputs.source_sha }}
+      RELEASE_SOURCE_SHA: ${{ inputs.release_source_sha }}
       EXPECTED_VERSION: '0.1.0'
       EXPECTED_TAG: 'v0.1.0'
     steps:
@@ -45,39 +45,49 @@ jobs:
           node-version: 22.21.1
           cache: npm
 
+      - name: Check out original release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_source_sha }}
+          path: release-source
+          fetch-depth: 0
+
       - name: Validate release and source
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          if ($env:EXPECTED_SHA -notmatch '^[0-9a-f]{40}$') { throw 'source_sha must be a full SHA.' }
-          if ((git rev-parse HEAD) -cne $env:EXPECTED_SHA) { throw 'Checked out source does not match expected SHA.' }
+          if ($env:RELEASE_SOURCE_SHA -notmatch '^[0-9a-f]{40}$') { throw 'release_source_sha must be a full SHA.' }
+          if ((git -C release-source rev-parse HEAD) -cne $env:RELEASE_SOURCE_SHA) { throw 'Release source checkout does not match expected SHA.' }
           $tag = gh api "repos/${{ github.repository }}/git/ref/tags/$env:EXPECTED_TAG" 2> "$env:RUNNER_TEMP\tag-error.txt"
           if ($LASTEXITCODE -ne 0) { throw "Tag lookup failed: $(Get-Content "$env:RUNNER_TEMP\tag-error.txt" -Raw)" }
           $tagObject = $tag | ConvertFrom-Json
           $tagCommit = gh api "repos/${{ github.repository }}/git/commits/$($tagObject.object.sha)" 2> "$env:RUNNER_TEMP\commit-error.txt"
           if ($LASTEXITCODE -ne 0) { throw "Tag commit lookup failed: $(Get-Content "$env:RUNNER_TEMP\commit-error.txt" -Raw)" }
-          if (($tagCommit | ConvertFrom-Json).sha -cne $env:EXPECTED_SHA) { throw 'Existing tag does not point to expected source.' }
+          if (($tagCommit | ConvertFrom-Json).sha -cne $env:RELEASE_SOURCE_SHA) { throw 'Existing tag does not point to release source.' }
           $release = gh api "repos/${{ github.repository }}/releases/tags/$env:EXPECTED_TAG" 2> "$env:RUNNER_TEMP\release-error.txt"
           if ($LASTEXITCODE -ne 0) { throw "Release lookup failed: $(Get-Content "$env:RUNNER_TEMP\release-error.txt" -Raw)" }
           if (($release | ConvertFrom-Json).tag_name -cne $env:EXPECTED_TAG) { throw 'Existing release tag mismatch.' }
-          $package = Get-Content package.json -Raw | ConvertFrom-Json
+          $package = Get-Content release-source/package.json -Raw | ConvertFrom-Json
           if ([string]$package.version -cne $env:EXPECTED_VERSION) { throw 'package.json version mismatch.' }
           if ('${{ inputs.release_confirmation }}' -cne 'REPAIR LEXLEAF 0.1.0') { throw 'Repair confirmation mismatch.' }
           if ('${{ inputs.license_compliance_confirmation }}' -cne 'REVIEWED OEWN AND PRINCETON LICENSES') { throw 'License confirmation mismatch.' }
           "LEXLEAF_VERSION=$([string]$package.version)" | Out-File $env:GITHUB_ENV -Encoding utf8
 
       - name: Install locked dependencies
+        working-directory: release-source
         run: npm ci
 
       - name: Prepare and verify production dictionary
+        working-directory: release-source
         run: |
           npm run dictionary:prepare:production
           npm run dictionary:verify:production
           npm run verify:license-compliance
 
       - name: Build Windows NSIS installer
+        working-directory: release-source
         run: npx electron-builder --win nsis --x64 --config electron-builder.yml --publish never
 
       - name: Verify installer and checksum
@@ -85,7 +95,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $expectedName = "Lexleaf-$env:LEXLEAF_VERSION-x64-setup.exe"
-          $installerPath = Join-Path (Resolve-Path dist) $expectedName
+          $installerPath = Join-Path (Resolve-Path release-source/dist) $expectedName
           if (-not (Test-Path -LiteralPath $installerPath -PathType Leaf)) { throw "Expected installer missing: $expectedName" }
           $installer = Get-Item -LiteralPath $installerPath
           if ($installer.Length -le 0) { throw 'Installer is empty.' }
