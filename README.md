@@ -15,6 +15,10 @@
   <p>
     <a href="https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/Lexleaf-0.1.0-x64-setup.exe"><strong>Download for Windows</strong></a>
     ·
+    <a href="https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/Lexleaf-0.1.0-x86_64.AppImage"><strong>Download for Linux (AppImage)</strong></a>
+    ·
+    <a href="https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/Lexleaf-0.1.0-amd64.deb"><strong>Download for Debian/Ubuntu</strong></a>
+    ·
     <a href="https://github.com/purubhoite/lexleaf/releases/tag/v0.1.0">View release notes and checksums</a>
   </p>
 </div>
