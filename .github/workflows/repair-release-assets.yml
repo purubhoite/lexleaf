@@ -103,4 +103,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          gh release upload $env:EXPECTED_TAG $env:INSTALLER_PATH $env:CHECKSUM_PATH --repo '${{ github.repository }}' --clobber
+          $releaseArgs = @('release', 'upload', $env:EXPECTED_TAG, $env:INSTALLER_PATH, $env:CHECKSUM_PATH, '--repo', '${{ github.repository }}', '--clobber')
+          & gh @releaseArgs
+          if ($LASTEXITCODE -ne 0) { throw 'Release asset upload failed.' }
