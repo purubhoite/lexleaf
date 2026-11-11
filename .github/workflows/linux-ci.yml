@@ -1,0 +1,37 @@
+name: Linux build verification
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.21.1
+          cache: npm
+      - run: npm ci
+      - run: |
+          npm run dictionary:prepare:production
+          npm run dictionary:verify:production
+          npm run verify:license-compliance
+          npm run typecheck
+          npm run lint
+          npm run build
+      - run: npx electron-builder --linux AppImage deb --x64 --config linux-builder.yml --publish never
+      - name: Verify packages and run smoke test
+        run: |
+          set -euo pipefail
+          test -s dist/Lexleaf-0.1.0-x86_64.AppImage
+          test -s dist/Lexleaf-0.1.0-amd64.deb
+          ar t dist/Lexleaf-0.1.0-amd64.deb | grep -q '^debian-binary$'
+          sha256sum dist/Lexleaf-0.1.0-x86_64.AppImage dist/Lexleaf-0.1.0-amd64.deb > dist/SHA256SUMS.txt
+          timeout 20s xvfb-run -a ./dist/linux-unpacked/lexleaf --no-sandbox --disable-gpu >/tmp/lexleaf-linux.log 2>&1 || status=$?
+          if [[ "${status:-0}" -ne 0 && "${status:-0}" -ne 124 ]]; then cat /tmp/lexleaf-linux.log; exit "$status"; fi
