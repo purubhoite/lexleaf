@@ -23,13 +23,13 @@ the sentence would go before they press it.
 
 ## What is here
 
-| File | Responsibility |
-| ---- | -------------- |
-| `limits.ts` | Every bound in one place: 6 senses, 200 characters a definition, 240 a passage, 4,000 a prompt, 2,000 an explanation, 32,768 response bytes, 20,000 ms, a 32-entry cache. |
-| `types.ts` | The port: `ContextExplainer`, the allowlisted request, the explanation, and the closed set of failures. |
-| `prompt.ts` | Builds the request from allowlisted fields only, and assembles the two prompt messages around a nonce fence. |
-| `parseResponse.ts` | Turns provider content into an explanation or a typed failure: strict JSON, no repair, no partial trust. |
-| `identity.ts` | What makes two explanations the same question: the seven dimensions, and the key they join into. |
+| File               | Responsibility                                                                                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limits.ts`        | Every bound in one place: 6 senses, 200 characters a definition, 240 a passage, 4,000 a prompt, 2,000 an explanation, 32,768 response bytes, 20,000 ms, a 32-entry cache. |
+| `types.ts`         | The port: `ContextExplainer`, the allowlisted request, the explanation, and the closed set of failures.                                                                   |
+| `prompt.ts`        | Builds the request from allowlisted fields only, and assembles the two prompt messages around a nonce fence.                                                              |
+| `parseResponse.ts` | Turns provider content into an explanation or a typed failure: strict JSON, no repair, no partial trust.                                                                  |
+| `identity.ts`      | What makes two explanations the same question: the seven dimensions, and the key they join into.                                                                          |
 
 Nothing here imports `node:*`, performs I/O, or knows what HTTP is. A test in
 `src/main/ai/aiNetworkPolicy.test.ts` enforces that: the core of this feature
@@ -64,7 +64,7 @@ index at all.
 context hash, prompt version, provider id, model id. Anchors and page offsets
 are excluded on purpose: they move when a document is re-rendered, and an
 explanation is about words, not coordinates. There is no partial hit — a row
-for the same word on the same page from a different passage is a *previous*
+for the same word on the same page from a different passage is a _previous_
 explanation, labelled as such, never an answer.
 
 ## Where the rest of it lives

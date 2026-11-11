@@ -20,16 +20,16 @@ byte-identical files.
 
 Three external inputs are involved in generation:
 
-| Input                          | Role                                                            | Licence                                                                  |
-| ------------------------------ | --------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `pdf-lib` + `@pdf-lib/fontkit` | build the documents (dev dependency)                             | MIT                                                                       |
-| DejaVu Serif (system font)     | embedded, subset, in `g`, `h`, `k`, `l` for non-ASCII glyphs     | Bitstream Vera licence — free to use, embed, modify and redistribute      |
-| `qpdf` (system tool)           | applies AES-256 encryption to `o-encrypted.pdf`                  | Apache-2.0 (tool only; nothing from qpdf is redistributed)                |
+| Input                          | Role                                                         | Licence                                                              |
+| ------------------------------ | ------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `pdf-lib` + `@pdf-lib/fontkit` | build the documents (dev dependency)                         | MIT                                                                  |
+| DejaVu Serif (system font)     | embedded, subset, in `g`, `h`, `k`, `l` for non-ASCII glyphs | Bitstream Vera licence — free to use, embed, modify and redistribute |
+| `qpdf` (system tool)           | applies AES-256 encryption to `o-encrypted.pdf`              | Apache-2.0 (tool only; nothing from qpdf is redistributed)           |
 
 The DejaVu subset embedded in four fixtures is the only third-party content in
 the committed files. The Bitstream Vera licence explicitly permits embedding
 and redistribution. The other fixtures use the PDF standard 14 fonts, which are
-font *references*, not embedded data.
+font _references_, not embedded data.
 
 Regenerating requires a Linux host with `fonts-dejavu-core` and `qpdf`
 installed. On a machine without them the generator fails loudly rather than
@@ -39,25 +39,25 @@ silently producing a different corpus.
 
 Sizes and hashes recorded on 2026-10-02 (sha256, first 16 hex characters).
 
-| Fixture                   | Category                        | Pages | Bytes     | sha256:16          | What it exercises                                                                     |
-| ------------------------- | ------------------------------- | ----- | --------- | ------------------ | ------------------------------------------------------------------------------------- |
-| `a-standard-prose.pdf`    | A standard prose                | 1     | 1,944     | `5d609783566cc9c3` | Baseline: Times, 12 pt, one paragraph, ragged right                                     |
-| `b-multi-column.pdf`      | B multi-column                  | 1     | 6,325     | `5ebeed5838c197ca` | Two columns; words must not bleed between columns                                       |
-| `c-justified.pdf`         | C justified text                | 1     | 9,530     | `c8566e02a44bb9fa` | Justified lines with stretched inter-word spacing                                       |
-| `d-font-sizes.pdf`        | D font sizes                    | 1     | 1,592     | `84ba5e6bb58778ba` | 7, 9, 12, 18, 28 and 40 pt lines on one page                                            |
-| `e-punctuation.pdf`       | E punctuation                   | 1     | 1,874     | `d0c0a481382dc4c8` | `word,` `"word"` `word;` `word!` `(word)` — boundary and normalisation                  |
-| `f-hyphenation.pdf`       | F hyphenation                   | 1     | 1,787     | `7558da37c36ad462` | Line-end hyphenation, real compounds, en/em dashes                                      |
-| `g-apostrophes.pdf`       | G apostrophes                   | 1     | 1,631     | `0695db5e5266370a` | `don't`, `author's`, `users'`, `o'clock`, straight and curly                            |
-| `h-ligatures-unicode.pdf` | H ligatures / Unicode           | 1     | 10,241    | `712f2afc3a62161e` | ﬁ ﬂ ligatures, accents, curly quotes, ellipsis                                          |
-| `i-headers-footers.pdf`   | I headers and footers           | 3     | 4,638     | `e427a4afa844d4c3` | Running header and footer per page; page numbering                                      |
-| `j-footnotes.pdf`         | J footnotes                     | 1     | 2,235     | `95b9504dcc8c8587` | Superscript markers, rule, 8 pt footnote block                                          |
-| `k-rotated.pdf`           | K rotated pages                 | 4     | 4,736     | `6a24df0a0b405265` | `/Rotate` 90, 180, 270 and an unrotated page with a 45° run                             |
-| `l-unusual-encoding.pdf`  | L unusual encoding              | 1     | 16,660    | `8a4d9aa1116d86a1` | Greek, Cyrillic, Vietnamese, `ß`, superscript `²`                                       |
-| `m-large.pdf`             | M large document                | 400   | 4,391,425 | `536c5e3cd5a16994` | Load time, navigation, memory, page-numbered text                                       |
-| `n-scanned-no-text.pdf`   | N scanned, no text layer        | 1     | 24,314    | `b776a18e1af85041` | Page image only: the app must say so, not guess                                         |
-| `o-encrypted.pdf`         | O password protected            | 1     | 3,045     | `bd3a1ce747ac20c4` | AES-256, user password `reader`, owner password `ownerpass`                             |
-| `p-corrupt.pdf`           | (failure) corrupt file          | —     | 142       | `79d347d81693e51f` | Valid header, truncated body: controlled failure                                        |
-| `q-empty-page.pdf`        | (failure) page with no content  | 1     | 947       | `6a707cb1e6101ecd` | Renders, but there is no text anywhere                                                  |
+| Fixture                   | Category                       | Pages | Bytes     | sha256:16          | What it exercises                                                      |
+| ------------------------- | ------------------------------ | ----- | --------- | ------------------ | ---------------------------------------------------------------------- |
+| `a-standard-prose.pdf`    | A standard prose               | 1     | 1,944     | `5d609783566cc9c3` | Baseline: Times, 12 pt, one paragraph, ragged right                    |
+| `b-multi-column.pdf`      | B multi-column                 | 1     | 6,325     | `5ebeed5838c197ca` | Two columns; words must not bleed between columns                      |
+| `c-justified.pdf`         | C justified text               | 1     | 9,530     | `c8566e02a44bb9fa` | Justified lines with stretched inter-word spacing                      |
+| `d-font-sizes.pdf`        | D font sizes                   | 1     | 1,592     | `84ba5e6bb58778ba` | 7, 9, 12, 18, 28 and 40 pt lines on one page                           |
+| `e-punctuation.pdf`       | E punctuation                  | 1     | 1,874     | `d0c0a481382dc4c8` | `word,` `"word"` `word;` `word!` `(word)` — boundary and normalisation |
+| `f-hyphenation.pdf`       | F hyphenation                  | 1     | 1,787     | `7558da37c36ad462` | Line-end hyphenation, real compounds, en/em dashes                     |
+| `g-apostrophes.pdf`       | G apostrophes                  | 1     | 1,631     | `0695db5e5266370a` | `don't`, `author's`, `users'`, `o'clock`, straight and curly           |
+| `h-ligatures-unicode.pdf` | H ligatures / Unicode          | 1     | 10,241    | `712f2afc3a62161e` | ﬁ ﬂ ligatures, accents, curly quotes, ellipsis                         |
+| `i-headers-footers.pdf`   | I headers and footers          | 3     | 4,638     | `e427a4afa844d4c3` | Running header and footer per page; page numbering                     |
+| `j-footnotes.pdf`         | J footnotes                    | 1     | 2,235     | `95b9504dcc8c8587` | Superscript markers, rule, 8 pt footnote block                         |
+| `k-rotated.pdf`           | K rotated pages                | 4     | 4,736     | `6a24df0a0b405265` | `/Rotate` 90, 180, 270 and an unrotated page with a 45° run            |
+| `l-unusual-encoding.pdf`  | L unusual encoding             | 1     | 16,660    | `8a4d9aa1116d86a1` | Greek, Cyrillic, Vietnamese, `ß`, superscript `²`                      |
+| `m-large.pdf`             | M large document               | 400   | 4,391,425 | `536c5e3cd5a16994` | Load time, navigation, memory, page-numbered text                      |
+| `n-scanned-no-text.pdf`   | N scanned, no text layer       | 1     | 24,314    | `b776a18e1af85041` | Page image only: the app must say so, not guess                        |
+| `o-encrypted.pdf`         | O password protected           | 1     | 3,045     | `bd3a1ce747ac20c4` | AES-256, user password `reader`, owner password `ownerpass`            |
+| `p-corrupt.pdf`           | (failure) corrupt file         | —     | 142       | `79d347d81693e51f` | Valid header, truncated body: controlled failure                       |
+| `q-empty-page.pdf`        | (failure) page with no content | 1     | 947       | `6a707cb1e6101ecd` | Renders, but there is no text anywhere                                 |
 
 `o-encrypted.pdf` password: **`reader`** (user), `ownerpass` (owner). It is a
 test fixture; the password is intentionally public.
@@ -179,17 +179,16 @@ for the Electron verification slice. The reversed sequences are recorded as
 observed behavior requiring further application-level assessment, not as a
 confirmed product defect.
 
-
 qpdf is an external tool and is not a project dependency. The generator
 requires exactly qpdf `12.4.2`; it rejects missing or incompatible versions
 before creating the output directory or writing fixtures.
 
-| Fixture | Category and purpose | Bytes | SHA-256 | Expected behavior |
-| --- | --- | ---: | --- | --- |
-| `r-cjk-mixed.pdf` | Horizontal Japanese, Chinese and mixed Latin/CJK | 58,248 | `8499268692e4683ae92ec4849a1d03522d96225195b3c79a17f3e38887fc9b9f` | PDF.js extracts `日本語の文章 中文测试 Mixed Latin and CJK.` without replacement characters |
-| `s-unicode-representative.pdf` | Combining mark, Hebrew, Arabic and astral-plane character | 8,704 | `f76f4fd80cdc311c1c6a1197e3596d9abfe0e4f4d655c60bb75a1657b8854f` | PDF.js preserves the tested code-point sequences; logical RTL order is recorded by the test |
-| `t-owner-password-only.pdf` | Empty user password, non-empty owner password, AES-256, restricted permissions | 2,459 | `350bb538c72f9eb1b9458ca15b42b7bfae7f56d78bc5279dfe066265f7368457` | Opens without a password; PDF.js `getPermissions()` returns `Set(1) { 512 }` |
-| `u-invalid-xref-recovery.pdf` | Existing valid fixture with deterministic invalid `startxref` offset | 1,934 | `c4372e2b2b176438a5c78fe89c66140d2a722fe86b10294af0cc68a8d00622cc` | PDF.js and the production adapter recover one page with stable text |
+| Fixture                        | Category and purpose                                                           |  Bytes | SHA-256                                                            | Expected behavior                                                                           |
+| ------------------------------ | ------------------------------------------------------------------------------ | -----: | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `r-cjk-mixed.pdf`              | Horizontal Japanese, Chinese and mixed Latin/CJK                               | 58,248 | `8499268692e4683ae92ec4849a1d03522d96225195b3c79a17f3e38887fc9b9f` | PDF.js extracts `日本語の文章 中文测试 Mixed Latin and CJK.` without replacement characters |
+| `s-unicode-representative.pdf` | Combining mark, Hebrew, Arabic and astral-plane character                      |  8,704 | `f76f4fd80cdc311c1c6a1197e3596d9abfe0e4f4d655c60bb75a1657b8854f`   | PDF.js preserves the tested code-point sequences; logical RTL order is recorded by the test |
+| `t-owner-password-only.pdf`    | Empty user password, non-empty owner password, AES-256, restricted permissions |  2,459 | `350bb538c72f9eb1b9458ca15b42b7bfae7f56d78bc5279dfe066265f7368457` | Opens without a password; PDF.js `getPermissions()` returns `Set(1) { 512 }`                |
+| `u-invalid-xref-recovery.pdf`  | Existing valid fixture with deterministic invalid `startxref` offset           |  1,934 | `c4372e2b2b176438a5c78fe89c66140d2a722fe86b10294af0cc68a8d00622cc` | PDF.js and the production adapter recover one page with stable text                         |
 
 The qpdf-encrypted fixture is not expected to be byte-identical across
 regenerations because AES encryption uses randomized file keys. Its encryption

@@ -1,10 +1,19 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { describe, it } from 'vitest';
-import { generateNotice, validateNotice, NOTICE_REQUIREMENTS } from '../../scripts/dictionary/lib/artifact.mjs';
+import { it } from 'vitest';
+import {
+  generateNotice,
+  validateNotice,
+  NOTICE_REQUIREMENTS,
+} from '../../scripts/dictionary/lib/artifact.mjs';
 
 const manifest = {
-  source: { dataset: 'Open English WordNet', release: '2024', archiveUrl: 'https://en-word.net/downloads/english-wordnet-2024.zip', archiveSha256: 'pinned', },
+  source: {
+    dataset: 'Open English WordNet',
+    release: '2024',
+    archiveUrl: 'https://en-word.net/downloads/english-wordnet-2024.zip',
+    archiveSha256: 'pinned',
+  },
   credits: ['Open English WordNet 2024'],
   licences: [{ name: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/' }],
   modificationStatement: 'Modified for the application.',
@@ -20,12 +29,15 @@ it('generates and validates the complete notice independently of dictionary payl
   assert.match(notice, /not affiliated with, sponsored by, or endorsed by Princeton University/);
 });
 
-it.each(NOTICE_REQUIREMENTS)('rejects a notice missing substantive requirement: %s', (requirement) => {
-  const notice = generateNotice(manifest, upstream);
-  const result = validateNotice(notice.replaceAll(requirement, ''));
-  assert.equal(result.valid, false);
-  assert.ok(result.missing.length > 0);
-});
+it.each(NOTICE_REQUIREMENTS)(
+  'rejects a notice missing substantive requirement: %s',
+  (requirement) => {
+    const notice = generateNotice(manifest, upstream);
+    const result = validateNotice(notice.replaceAll(requirement, ''));
+    assert.equal(result.valid, false);
+    assert.ok(result.missing.length > 0);
+  },
+);
 
 it('accepts upstream wording across line wrapping and whitespace', () => {
   const wrapped = generateNotice(manifest, upstream.replaceAll(' ', '  \n'));

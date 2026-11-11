@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
@@ -44,7 +44,7 @@ const files = readdirSync(join(root, 'src/core/ai'), { withFileTypes: true, recu
 
 describe('the AI core does not reach the network', () => {
   it('scans every file in the subsystem', () => {
-    expect(files.map((file) => relative(root, file)).sort()).toEqual([
+    expect(files.map((file) => relative(root, file).split(sep).join('/')).sort()).toEqual([
       'src/core/ai/identity.ts',
       'src/core/ai/limits.ts',
       'src/core/ai/parseResponse.ts',
@@ -62,7 +62,7 @@ describe('the AI core does not reach the network', () => {
       return pattern.test(code);
     });
 
-    expect(offenders.map((file) => relative(root, file))).toEqual([]);
+    expect(offenders.map((file) => relative(root, file).split(sep).join('/'))).toEqual([]);
   });
 
   it('imports nothing but application types', () => {
@@ -70,7 +70,7 @@ describe('the AI core does not reach the network', () => {
 
     const imports = files.flatMap((file) =>
       [...readFileSync(file, 'utf8').matchAll(/from\s+['"]([^'"]+)['"]/gu)].map((match) => ({
-        file: relative(root, file),
+        file: relative(root, file).split(sep).join('/'),
         specifier: match[1] ?? '',
       })),
     );

@@ -14,14 +14,14 @@ npm run dictionary:fixture   # rebuild the committed synthetic test fixture
 
 ## The stages
 
-| Stage | File | What it guarantees |
-| ----- | ---- | ------------------ |
-| Pin | `source.json` | The release URL, its byte count and its SHA-256, plus the transform version. Changing the data means editing this file and re-recording the digest. |
-| Fetch | `fetch-source.mjs` | Downloads into a cache **outside** the repository, verifies the digest and **fails closed** on a mismatch. A cached file is re-verified, never trusted. |
-| Read | `lib/unzip.mjs`, `lib/wndb.mjs`, `lib/pronunciations.mjs` | Decompresses the archive and parses the WNDB data files and the LMF XML with no third-party parser. |
-| Transform | `build.mjs` | Selects headwords and senses, trims to the documented limits, and extracts the licence header verbatim from the release's own `data.noun`. Definition wording is never altered. |
-| Write | `lib/artifact.mjs` | Writes `entries.jsonl`, `entries.idx`, `morphology.json`, `manifest.json` and `NOTICE.md`. Keys sorted by UTF-8 byte order, fixed field order, no clock, no locale, no absolute path. |
-| Verify | `verify-reproducible.mjs` | Builds into two temporary directories and compares digests. |
+| Stage     | File                                                      | What it guarantees                                                                                                                                                                    |
+| --------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pin       | `source.json`                                             | The release URL, its byte count and its SHA-256, plus the transform version. Changing the data means editing this file and re-recording the digest.                                   |
+| Fetch     | `fetch-source.mjs`                                        | Downloads into a cache **outside** the repository, verifies the digest and **fails closed** on a mismatch. A cached file is re-verified, never trusted.                               |
+| Read      | `lib/unzip.mjs`, `lib/wndb.mjs`, `lib/pronunciations.mjs` | Decompresses the archive and parses the WNDB data files and the LMF XML with no third-party parser.                                                                                   |
+| Transform | `build.mjs`                                               | Selects headwords and senses, trims to the documented limits, and extracts the licence header verbatim from the release's own `data.noun`. Definition wording is never altered.       |
+| Write     | `lib/artifact.mjs`                                        | Writes `entries.jsonl`, `entries.idx`, `morphology.json`, `manifest.json` and `NOTICE.md`. Keys sorted by UTF-8 byte order, fixed field order, no clock, no locale, no absolute path. |
+| Verify    | `verify-reproducible.mjs`                                 | Builds into two temporary directories and compares digests.                                                                                                                           |
 
 ## Determinism
 

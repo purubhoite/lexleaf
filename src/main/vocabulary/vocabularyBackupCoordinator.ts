@@ -100,7 +100,10 @@ const sha256 = async (path: string): Promise<string> =>
     .digest('hex');
 
 const flushFile = async (path: string): Promise<void> => {
-  const handle = await openFile(path, 'r');
+  // These files are created or modified by this transaction. Open read/write
+  // so sync() is a real durability barrier on Windows rather than a read-only
+  // handle whose flush semantics vary by runtime/filesystem.
+  const handle = await openFile(path, 'r+');
   try {
     await handle.sync();
   } finally {
@@ -116,9 +119,20 @@ const flushDirectory = async (path: string): Promise<void> => {
     } finally {
       await handle.close();
     }
-  } catch {
-    // Directory fsync is unsupported on some platforms; publication remains
-    // same-filesystem and validation has already completed.
+  } catch (error: unknown) {
+    // Some platforms do not permit opening directories for fsync. Only those
+    // documented unsupported-operation errors are non-fatal; permission,
+    // I/O and descriptor failures must abort publication.
+    const code = (error as NodeJS.ErrnoException).code;
+    const unsupportedDirectorySync =
+      code === 'ENOTSUP' || code === 'EOPNOTSUPP' || code === 'EINVAL' || code === 'EISDIR';
+    // Windows does not support fsync on directory handles. This exception is
+    // deliberately scoped to this directory-only durability barrier: regular
+    // file sync failures remain fatal, and POSIX directory-sync failures still
+    // propagate so their stronger durability contract is preserved.
+    if (!(process.platform === 'win32' && code === 'EPERM') && !unsupportedDirectorySync) {
+      throw error;
+    }
   }
 };
 

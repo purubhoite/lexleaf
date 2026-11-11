@@ -24,8 +24,6 @@ import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
-import { createGunzip } from 'node:zlib';
-
 import { readZip } from './lib/unzip.mjs';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));

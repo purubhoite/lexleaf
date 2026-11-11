@@ -11,12 +11,15 @@ extraResources:
     filter:
       - '**/*'
 win:
+  icon: resources/icons/lexleaf.ico
   target:
     - target: nsis
       arch:
         - x64
   signAndEditExecutable: false
 nsis:
+  installerIcon: resources/icons/lexleaf.ico
+  uninstallerIcon: resources/icons/lexleaf.ico
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true

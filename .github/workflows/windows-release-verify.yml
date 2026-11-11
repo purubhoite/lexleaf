@@ -19,6 +19,10 @@ jobs:
           node-version: 22.21.1
           cache: npm
 
+      - name: Fetch verification base for scoped checks
+        shell: pwsh
+        run: git fetch --no-tags origin release/windows-verification --depth=1
+
       - name: Install dependencies
         run: npm ci
 
@@ -27,6 +31,82 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check for changed public files
+        run: node scripts/check-format-changed.mjs FETCH_HEAD HEAD
+
+      - name: Install pinned actionlint
+        shell: pwsh
+        run: |
+          $version = '1.7.12'
+          $archive = Join-Path $env:RUNNER_TEMP "actionlint_$version.zip"
+          $url = "https://github.com/rhysd/actionlint/releases/download/v$version/actionlint_${version}_windows_amd64.zip"
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $expected = '6e7241b51e6817ea6a047693d8e6fed13b31819c9a0dd6c5a726e1592d22f6e9'
+          $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "actionlint archive checksum mismatch: $actual" }
+          $bin = Join-Path $env:RUNNER_TEMP 'actionlint'
+          Expand-Archive -Path $archive -DestinationPath $bin -Force
+          "ACTIONLINT_BIN=$bin\actionlint.exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+
+      - name: Validate GitHub Actions workflows
+        shell: pwsh
+        run: |
+          $workflowFiles = @(
+              Get-ChildItem -LiteralPath '.github/workflows' -File |
+              Where-Object { $_.Extension -in @('.yml', '.yaml') } |
+              ForEach-Object { $_.FullName }
+          )
+
+          if ($workflowFiles.Count -eq 0) {
+              throw 'No GitHub Actions workflow files found.'
+          }
+
+          Write-Host "Validating $($workflowFiles.Count) workflow files with actionlint..."
+
+          & $env:ACTIONLINT_BIN -color @workflowFiles
+
+          if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+          }
+
+      - name: Verify workflow safety invariants
+        shell: pwsh
+        run: |
+          git diff --check
+          $workflowFiles = @(Get-ChildItem -LiteralPath '.github/workflows' -File | Where-Object { $_.Extension -in @('.yml', '.yaml') })
+          $violations = @()
+          foreach ($file in $workflowFiles) {
+              $lines = Get-Content $file.FullName
+              $releaseWorkflow = $file.Name -eq 'release-windows.yml'
+              for ($i = 0; $i -lt $lines.Count; $i++) {
+                  $trimmed = $lines[$i].Trim()
+                  if ($trimmed.StartsWith('#')) { continue }
+                  if ($trimmed -match '^uses:\s*actions/upload-artifact(?:@|\s|$)') {
+                      $violations += "$($file.FullName):$($i + 1): actions/upload-artifact"
+                  }
+                  if ($trimmed -match '^(?:gh\s+release\s+upload|git\s+tag(?:\s|$)|git\s+push\s+.*--tags(?:\s|$))') {
+                      $violations += "$($file.FullName):$($i + 1): $trimmed"
+                  }
+                  if (-not $releaseWorkflow -and $trimmed -match '^gh\s+release\s+create(?:\s|$)') {
+                      $violations += "$($file.FullName):$($i + 1): unauthorized gh release create"
+                  }
+              }
+          }
+          if ($violations.Count -gt 0) {
+              $violations | ForEach-Object { Write-Error $_ }
+              throw 'publishing operation detected'
+          }
+          $releaseText = Get-Content '.github/workflows/release-windows.yml' -Raw
+          foreach ($required in @('workflow_dispatch:', "github.ref == 'refs/heads/main'", 'license_compliance_confirmation', 'gh release create', 'contents: write', 'environment: lexleaf-public-release')) {
+              if ($releaseText -notmatch [regex]::Escape($required)) { throw "release workflow safety gate missing: $required" }
+          }
+
+      - name: Unit tests
+        run: npm test
 
       - name: Focused dictionary and packaging tests
         run: npm test -- --run src/main/dictionary src/renderer/src/reader/dictionary tests/integration/dictionaryArtifact.test.ts
@@ -44,7 +124,7 @@ jobs:
         run: node scripts/packaging/verify-packaged-output.mjs dist/win-unpacked
 
       - name: Build NSIS installer
-        run: npx electron-builder --win nsis --x64 --config electron-builder.yml
+        run: npx electron-builder --win nsis --x64 --config electron-builder.yml --publish never
 
       - name: Inspect installer and install silently
         shell: pwsh
@@ -60,7 +140,6 @@ jobs:
           if (-not $installed) { throw 'installed dictionary directory missing' }
           node scripts/packaging/verify-packaged-output.mjs $install
           Write-Output "Installed dictionary verification completed at $install\resources\dictionary"
-
 
       # Installer and dictionary artifacts intentionally remain on the ephemeral runner.
       # After legal approval, add a separately reviewed upload step with explicit

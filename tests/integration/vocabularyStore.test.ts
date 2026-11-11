@@ -248,7 +248,10 @@ describe('when the vocabulary database cannot be used', () => {
   it('reports an unwritable profile directory without throwing', () => {
     const userData = profile();
 
-    chmodSync(userData, 0o500);
+    // A regular file at the profile path deterministically blocks SQLite
+    // creation on both POSIX and Windows; chmod is not portable ACL coverage.
+    rmSync(userData, { recursive: true, force: true });
+    writeFileSync(userData, 'profile path is a file');
 
     const service = serviceFor(userData);
     const saved = service.save(saving(12));

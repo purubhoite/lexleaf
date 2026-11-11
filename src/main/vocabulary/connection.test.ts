@@ -1,4 +1,4 @@
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -31,12 +31,6 @@ const workspace = (): string => {
 
 afterEach(() => {
   for (const directory of directories) {
-    try {
-      chmodSync(directory, 0o700);
-    } catch {
-      // Only the read-only test changes permissions.
-    }
-
     rmSync(directory, { recursive: true, force: true });
   }
 
@@ -133,16 +127,22 @@ describe('opening a database', () => {
     inspection.close();
   });
 
-  it('reports a directory it cannot write to', () => {
+  it('reports a deterministic database-open write failure', () => {
     const directory = workspace();
-    chmodSync(directory, 0o500);
+    const filePath = join(directory, 'vocabulary.db');
+    const openDatabase = (): DatabaseSync => {
+      const error = new Error('unable to open database') as Error & { errcode: number };
+      error.errcode = 14;
+      throw error;
+    };
 
     try {
-      openVocabularyDatabase({ filePath: join(directory, 'vocabulary.db') });
-      expect.unreachable('opening in a read-only directory should fail');
+      openVocabularyDatabase({ filePath, openDatabase });
+      expect.unreachable('the injected open failure should be translated');
     } catch (error) {
       expect(error).toBeInstanceOf(VocabularyOpenError);
       expect((error as VocabularyOpenError).reason).toBe('not-writable');
+      expect((error as VocabularyOpenError).message).not.toContain(directory);
     }
   });
 

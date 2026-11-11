@@ -176,16 +176,14 @@ describe('the reader state store on a real filesystem', () => {
     expect(await readdir(directory)).toEqual(['reader-state.json']);
   });
 
-  it('survives a genuinely read-only directory without losing in-memory state', async () => {
-    const directory = await mkdtemp(join(workspace, 'locked-'));
-    const filePath = join(directory, 'reader-state.json');
+  it('preserves in-memory state when the state parent is blocked by a file', async () => {
+    const directory = await mkdtemp(join(workspace, 'blocked-'));
+    const blocker = join(directory, 'state-parent');
+    const filePath = join(blocker, 'reader-state.json');
 
-    await writeFile(
-      filePath,
-      serializeReaderState(openDocument(emptyReaderState(), 'good')),
-      'utf8',
-    );
-    await chmod(directory, 0o500);
+    // A regular file where the parent directory must be is a deterministic
+    // failure on both POSIX and Windows, unlike chmod-based read-only tests.
+    await writeFile(blocker, 'not a directory', 'utf8');
 
     const store = createReaderStateStore({
       filePath,
@@ -198,12 +196,7 @@ describe('the reader state store on a real filesystem', () => {
     await store.flush();
 
     expect(store.writeHealth()).toBe('failing');
-    // The reader keeps what they did; only the disk refused.
     expect(store.current().documents.map((entry) => entry.name)).toContain('unwritable.pdf');
-
-    await chmod(directory, 0o755);
-
-    expect(names(await readFile(filePath, 'utf8'))).toEqual(['good.pdf']);
   });
 
   it('flushes the real state on quit, awaiting the write', async () => {

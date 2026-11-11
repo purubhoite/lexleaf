@@ -244,9 +244,7 @@ describe('displayName', () => {
   it('removes a separator that survived basename, wherever it came from', () => {
     // Legal in a POSIX file name, and a directory separator on Windows.
     expect(displayName('/books/odd\\name.pdf')).toBe('oddname.pdf');
-    // The drive letter is not a separator and is left alone; what matters
-    // is that nothing resembling a directory structure survives.
-    expect(displayName('C:\\Users\\reader\\book.pdf')).toBe('C:Usersreaderbook.pdf');
+    expect(displayName('C:\\Users\\reader\\book.pdf')).toBe('book.pdf');
   });
 
   it('removes control characters, which have no business being rendered', () => {

@@ -26,8 +26,9 @@ export interface DictionaryManifestSource {
   readonly release: string;
   readonly archiveUrl: string;
   readonly archiveSha256: string;
-  readonly pronunciationUrl: string;
-  readonly pronunciationSha256: string;
+  readonly pronunciationExcluded: boolean;
+  readonly pronunciationUrl?: string;
+  readonly pronunciationSha256?: string;
 }
 
 export interface DictionaryManifest {
@@ -84,6 +85,7 @@ const parseSource = (value: unknown): DictionaryManifestSource | null => {
   const release = text(value['release']);
   const archiveUrl = text(value['archiveUrl']);
   const archiveSha256 = text(value['archiveSha256']);
+  const pronunciationExcluded = value['pronunciationExcluded'];
   const pronunciationUrl = text(value['pronunciationUrl']);
   const pronunciationSha256 = text(value['pronunciationSha256']);
 
@@ -92,9 +94,14 @@ const parseSource = (value: unknown): DictionaryManifestSource | null => {
     release === null ||
     archiveUrl === null ||
     archiveSha256 === null ||
-    pronunciationUrl === null ||
-    pronunciationSha256 === null
+    typeof pronunciationExcluded !== 'boolean'
   ) {
+    return null;
+  }
+
+  if (pronunciationExcluded) {
+    if (pronunciationUrl !== null || pronunciationSha256 !== null) return null;
+  } else if (pronunciationUrl === null || pronunciationSha256 === null) {
     return null;
   }
 
@@ -103,8 +110,9 @@ const parseSource = (value: unknown): DictionaryManifestSource | null => {
     release,
     archiveUrl,
     archiveSha256,
-    pronunciationUrl,
-    pronunciationSha256,
+    pronunciationExcluded,
+    ...(pronunciationUrl === null ? {} : { pronunciationUrl }),
+    ...(pronunciationSha256 === null ? {} : { pronunciationSha256 }),
   };
 };
 
@@ -172,6 +180,9 @@ export const parseDictionaryManifest = (contents: string): DictionaryManifest | 
   const credits = Array.isArray(parsed['credits'])
     ? parsed['credits'].filter((credit): credit is string => typeof credit === 'string')
     : null;
+  const counts = parseCounts(parsed['counts']);
+  const pronunciationCount = counts['pronunciations'];
+  const pronunciationExcluded = source?.pronunciationExcluded === true;
 
   if (
     parsed['formatVersion'] !== MANIFEST_FORMAT_VERSION ||
@@ -182,7 +193,9 @@ export const parseDictionaryManifest = (contents: string): DictionaryManifest | 
     credits.length === 0 ||
     transformVersion === null ||
     modificationStatement === null ||
-    parsed['modified'] !== true
+    parsed['modified'] !== true ||
+    (pronunciationExcluded && pronunciationCount !== undefined && pronunciationCount !== 0) ||
+    (!pronunciationExcluded && pronunciationCount === 0)
   ) {
     return null;
   }
@@ -195,7 +208,7 @@ export const parseDictionaryManifest = (contents: string): DictionaryManifest | 
     modified: true,
     modificationStatement,
     credits,
-    counts: parseCounts(parsed['counts']),
+    counts,
     files,
   };
 };

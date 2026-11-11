@@ -19,8 +19,7 @@ Modified: this fixture is entirely synthetic and exists only to exercise the loo
 
 - Archive: file://tests/fixtures/dictionary/source.json
 - Archive SHA-256: `6efb98dc119b4ed4605b1f129d2453212fbae372c46c0aa3107fed9709727a36`
-- Pronunciation release: file://tests/fixtures/dictionary/source.json
-- Pronunciation SHA-256: `6efb98dc119b4ed4605b1f129d2453212fbae372c46c0aa3107fed9709727a36`
+- Pronunciation data: excluded from the V1 production artifact.
 - Transform version: 1.0.0
 
 ### Generated files
@@ -34,6 +33,8 @@ Modified: this fixture is entirely synthetic and exists only to exercise the loo
 ```text
 Synthetic test data. Written for this project; not derived from WordNet or any other dictionary.
 ```
+
+This dictionary distribution is not affiliated with, sponsored by, or endorsed by Princeton University.
 
 ### Legal status
 

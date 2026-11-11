@@ -25,17 +25,17 @@ measured and the rules it had to invent.
 
 ## What is here
 
-| File | Responsibility |
-| ---- | -------------- |
-| `types.ts` | The port: query, result, sense, pronunciation, attribution, stored record shapes. |
-| `candidates.ts` | Turns one query into the ordered candidate keys: exact → case → typographic → morphology. Nothing else decides lookup order. |
-| `morphology.ts` | Morphy: the exception tables shipped with the release plus explicit suffix rules. No stemmer, no statistics. |
-| `closedClass.ts` | **Application-authored** definitions for grammar words. Not WordNet material; every sense is tagged `source: 'application'`. |
-| `senseSelection.ts` | Deterministic case suppression, so `he` is not helium and `best` is not a surname. |
-| `lookupPipeline.ts` | Runs the candidates against a store, applies suppression, part-of-speech preference and inflection shadowing, and builds the result. |
-| `manifest.ts` | Parses and validates the artifact manifest; derives the attribution shown in the popup. |
-| `wordnet/binaryIndex.ts` | The `IPRD` v1 index reader: validation, bounds checks, binary search. Refuses a file it cannot trust. |
-| `wordnet/wordNetFileProvider.ts` | Opens an artifact, parses records on demand behind a small LRU, and turns every failure into `unavailable`. |
+| File                             | Responsibility                                                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `types.ts`                       | The port: query, result, sense, pronunciation, attribution, stored record shapes.                                                    |
+| `candidates.ts`                  | Turns one query into the ordered candidate keys: exact → case → typographic → morphology. Nothing else decides lookup order.         |
+| `morphology.ts`                  | Morphy: the exception tables shipped with the release plus explicit suffix rules. No stemmer, no statistics.                         |
+| `closedClass.ts`                 | **Application-authored** definitions for grammar words. Not WordNet material; every sense is tagged `source: 'application'`.         |
+| `senseSelection.ts`              | Deterministic case suppression, so `he` is not helium and `best` is not a surname.                                                   |
+| `lookupPipeline.ts`              | Runs the candidates against a store, applies suppression, part-of-speech preference and inflection shadowing, and builds the result. |
+| `manifest.ts`                    | Parses and validates the artifact manifest; derives the attribution shown in the popup.                                              |
+| `wordnet/binaryIndex.ts`         | The `IPRD` v1 index reader: validation, bounds checks, binary search. Refuses a file it cannot trust.                                |
+| `wordnet/wordNetFileProvider.ts` | Opens an artifact, parses records on demand behind a small LRU, and turns every failure into `unavailable`.                          |
 
 Two rules in here exist because the data alone answers badly, and both are
 stated rather than learned: grammar words come from the closed-class layer
@@ -44,6 +44,6 @@ morphological rule shows the senses of the part of speech that rule assumed
 first — the rule that turns `watched` into `watch` is a verb rule, so the
 verb senses lead. ADR-020 records both.
 
-The *writer* of the artifact lives in `scripts/dictionary/`, not here: this
+The _writer_ of the artifact lives in `scripts/dictionary/`, not here: this
 folder only reads. Nothing here imports `node:*`, so the same code is
 typechecked by both the Node and the web project.

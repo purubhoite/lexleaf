@@ -1,0 +1,18 @@
+
+* text=auto eol=lf
+
+# Keep binary fixtures and release inputs byte-identical.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.db binary
+*.exe binary
+
+.github/workflows/*.yml text eol=lf
+.github/workflows/*.yaml text eol=lf
+eslint.config.js text eol=lf

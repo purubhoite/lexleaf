@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -13,7 +15,7 @@ import {
 describe('where the database lives', () => {
   it('is a fixed name inside the profile directory', () => {
     expect(vocabularyDatabasePath('/home/someone/.config/app')).toBe(
-      `/home/someone/.config/app/${VOCABULARY_FILE_NAME}`,
+      join('/home/someone/.config/app', VOCABULARY_FILE_NAME),
     );
   });
 });
