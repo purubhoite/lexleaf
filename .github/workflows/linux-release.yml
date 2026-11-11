@@ -108,9 +108,17 @@ jobs:
           test -s "$deb"
           file "$appimage" "$deb"
           ar t "$deb" | grep -q '^debian-binary$'
-          sha256sum "$appimage" "$deb" > dist/SHA256SUMS.txt
-          grep -F "Lexleaf-${EXPECTED_VERSION}-x86_64.AppImage" dist/SHA256SUMS.txt
-          grep -F "Lexleaf-${EXPECTED_VERSION}-amd64.deb" dist/SHA256SUMS.txt
+          sha256sum "$appimage" "$deb" > dist/linux-SHA256SUMS.txt
+          grep -F "Lexleaf-${EXPECTED_VERSION}-x86_64.AppImage" dist/linux-SHA256SUMS.txt
+          grep -F "Lexleaf-${EXPECTED_VERSION}-amd64.deb" dist/linux-SHA256SUMS.txt
+          : > dist/SHA256SUMS.txt
+          if [[ "${{ inputs.publish }}" == "true" ]]; then
+            export GH_TOKEN='${{ github.token }}'
+            gh release download "$EXPECTED_TAG" --repo '${{ github.repository }}' --pattern SHA256SUMS.txt --dir "$RUNNER_TEMP/lexleaf-release-checksum"
+            grep -F "Lexleaf-${EXPECTED_VERSION}-x64-setup.exe" "$RUNNER_TEMP/lexleaf-release-checksum/SHA256SUMS.txt" >> dist/SHA256SUMS.txt || { echo 'Existing Windows checksum is missing' >&2; exit 1; }
+          fi
+          cat dist/linux-SHA256SUMS.txt >> dist/SHA256SUMS.txt
+          test "$(wc -l < dist/SHA256SUMS.txt)" -eq 3
 
       - name: Smoke test packaged application under Xvfb
         working-directory: release-source
@@ -128,4 +136,7 @@ jobs:
         run: |
           set -euo pipefail
           release_args=(release upload "$EXPECTED_TAG" "dist/Lexleaf-${EXPECTED_VERSION}-x86_64.AppImage" "dist/Lexleaf-${EXPECTED_VERSION}-amd64.deb" dist/SHA256SUMS.txt --repo '${{ github.repository }}')
-          gh "${release_args[@]}"
+          upload_args=(release upload "$EXPECTED_TAG" "dist/Lexleaf-${EXPECTED_VERSION}-x86_64.AppImage" "dist/Lexleaf-${EXPECTED_VERSION}-amd64.deb" --repo '${{ github.repository }}')
+          gh "${upload_args[@]}"
+          checksum_args=(release upload "$EXPECTED_TAG" dist/SHA256SUMS.txt --repo '${{ github.repository }}' --clobber)
+          gh "${checksum_args[@]}"
