@@ -1,5 +1,10 @@
 appId: com.intelligentpdfreader.poc
 productName: Lexleaf
+extraMetadata:
+  homepage: https://github.com/purubhoite/lexleaf
+  author:
+    name: Lexleaf
+    email: 216851203+purubhoite@users.noreply.github.com
 artifactName: Lexleaf-${version}-${arch}.${ext}
 asar: true
 files:
@@ -15,6 +20,7 @@ linux:
     - AppImage
     - deb
   category: Office
+  maintainer: Lexleaf <216851203+purubhoite@users.noreply.github.com>
   synopsis: Read PDFs and build vocabulary
   description: A local-first desktop PDF reader with offline dictionary lookup.
   icon: resources/icons/lexleaf-logo.png
