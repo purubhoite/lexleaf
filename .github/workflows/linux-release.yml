@@ -100,6 +100,8 @@ jobs:
 
       - name: Verify Linux packages and checksum
         working-directory: release-source
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           appimage="dist/Lexleaf-${EXPECTED_VERSION}-x86_64.AppImage"
@@ -112,13 +114,11 @@ jobs:
           grep -F "Lexleaf-${EXPECTED_VERSION}-x86_64.AppImage" dist/linux-SHA256SUMS.txt
           grep -F "Lexleaf-${EXPECTED_VERSION}-amd64.deb" dist/linux-SHA256SUMS.txt
           : > dist/SHA256SUMS.txt
-          if [[ "${{ inputs.publish }}" == "true" ]]; then
-            export GH_TOKEN='${{ github.token }}'
-            gh release download "$EXPECTED_TAG" --repo '${{ github.repository }}' --pattern SHA256SUMS.txt --dir "$RUNNER_TEMP/lexleaf-release-checksum"
-            grep -F "Lexleaf-${EXPECTED_VERSION}-x64-setup.exe" "$RUNNER_TEMP/lexleaf-release-checksum/SHA256SUMS.txt" >> dist/SHA256SUMS.txt || { echo 'Existing Windows checksum is missing' >&2; exit 1; }
-          fi
+          mkdir -p "$RUNNER_TEMP/lexleaf-release-checksum"
+          gh release download "$EXPECTED_TAG" --repo '${{ github.repository }}' --pattern SHA256SUMS.txt --dir "$RUNNER_TEMP/lexleaf-release-checksum"
+          grep -F "Lexleaf-${EXPECTED_VERSION}-x64-setup.exe" "$RUNNER_TEMP/lexleaf-release-checksum/SHA256SUMS.txt" >> dist/SHA256SUMS.txt || { echo 'Existing Windows checksum is missing' >&2; exit 1; }
           cat dist/linux-SHA256SUMS.txt >> dist/SHA256SUMS.txt
-          test "$(wc -l < dist/SHA256SUMS.txt)" -eq 3
+          test "$(grep -c '[^[:space:]]' dist/SHA256SUMS.txt)" -eq 3
 
       - name: Smoke test packaged application under Xvfb
         working-directory: release-source
