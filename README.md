@@ -9,8 +9,6 @@
     <a href="https://github.com/purubhoite/lexleaf/releases/latest"><img src="https://img.shields.io/github/v/release/purubhoite/lexleaf?style=flat&label=latest%20release" alt="Latest release" /></a>
     <a href="https://github.com/purubhoite/lexleaf/releases"><img src="https://img.shields.io/github/downloads/purubhoite/lexleaf/total?style=flat&label=downloads" alt="Total GitHub release asset downloads" /></a>
     <a href="https://github.com/purubhoite/lexleaf/blob/main/LICENSE"><img src="https://img.shields.io/github/license/purubhoite/lexleaf?style=flat" alt="Apache-2.0 license" /></a>
-    <a href="https://github.com/purubhoite/lexleaf/actions/workflows/windows-release-verify.yml"><img src="https://github.com/purubhoite/lexleaf/actions/workflows/windows-release-verify.yml/badge.svg?branch=main" alt="Windows verification status" /></a>
-    <img src="https://img.shields.io/badge/platform-Windows%20x64-2f6f4e?style=flat" alt="Windows x64" />
   </p>
 
   <p>
