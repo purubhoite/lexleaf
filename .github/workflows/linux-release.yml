@@ -91,7 +91,7 @@ jobs:
 
       - name: Package AppImage and Debian package
         working-directory: release-source
-        run: npx electron-builder --linux AppImage deb --x64 --config ../linux-builder.yml --publish never
+        run: npx electron-builder --linux AppImage deb --x64 --config ../workflow-source/linux-builder.yml --publish never
 
       - name: Verify Linux packages and checksum
         working-directory: release-source
