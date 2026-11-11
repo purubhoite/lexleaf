@@ -115,9 +115,9 @@ jobs:
           $hash = (Get-FileHash -LiteralPath $installerPath -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  $expectedName" | Out-File -LiteralPath $checksumPath -Encoding ascii
           if ((Get-Content $checksumPath -Raw).Trim() -cne "$hash  $expectedName") { throw 'Checksum file verification failed.' }
-          "INSTALLER_PATH=$installerPath" | Out-File $env:GITHUB_ENV -Encoding utf8
-          "CHECKSUM_PATH=$checksumPath" | Out-File $env:GITHUB_ENV -Encoding utf8
-          "INSTALLER_SHA256=$hash" | Out-File $env:GITHUB_ENV -Encoding utf8
+          "INSTALLER_PATH=$installerPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CHECKSUM_PATH=$checksumPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "INSTALLER_SHA256=$hash" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Upload assets to existing release
         shell: pwsh
@@ -125,6 +125,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:INSTALLER_PATH)) { throw 'INSTALLER_PATH is empty.' }
+          if ([string]::IsNullOrWhiteSpace($env:CHECKSUM_PATH)) { throw 'CHECKSUM_PATH is empty.' }
+          if (-not (Test-Path -LiteralPath $env:INSTALLER_PATH -PathType Leaf)) { throw "Installer path does not exist: $env:INSTALLER_PATH" }
+          if (-not (Test-Path -LiteralPath $env:CHECKSUM_PATH -PathType Leaf)) { throw "Checksum path does not exist: $env:CHECKSUM_PATH" }
+          Write-Host "Resolved installer: $env:INSTALLER_PATH"
+          Write-Host "Resolved checksum: $env:CHECKSUM_PATH"
           $releaseUploadArgs = @(
             'release'
             'upload'
