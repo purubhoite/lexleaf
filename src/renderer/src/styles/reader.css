@@ -351,6 +351,12 @@
   min-width: 0;
 }
 
+/* The name gives way; the buttons beside it keep their full labels. */
+.reader__group--document > .control {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 /*
  * W7, CTL-9. One disclosure, closed at first paint, holding every piece of
  * developer instrumentation. It is drawn quietly — muted, small — because
