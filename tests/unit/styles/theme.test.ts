@@ -285,10 +285,20 @@ describe('the document surface is not themed', () => {
   });
 
   it('never blends or blurs the document, and never filters the chrome', () => {
-    for (const property of ['backdrop-filter', 'mix-blend-mode', 'invert']) {
+    for (const property of ['backdrop-filter', 'invert']) {
       expect(withoutComments(sources.reader)).not.toContain(`${property}:`);
       expect(withoutComments(sources.global)).not.toContain(`${property}:`);
     }
+
+    // One blend, since 0.2.5: the highlight layer is multiplied into the
+    // page so a marker colour never greys the words under it. Nothing else
+    // in either stylesheet may blend.
+    const blended = [
+      ...withoutComments(sources.reader).matchAll(/([^{}]+)\{[^}]*mix-blend-mode:\s*([^;]+);/gu),
+    ].map((match) => [(match[1] ?? '').trim(), (match[2] ?? '').trim()]);
+
+    expect(blended).toStrictEqual([['.page__highlights', 'multiply']]);
+    expect(withoutComments(sources.global)).not.toContain('mix-blend-mode:');
 
     expect(withoutComments(sources.global)).not.toContain('filter:');
   });
