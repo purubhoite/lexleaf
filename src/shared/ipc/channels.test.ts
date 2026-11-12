@@ -6,6 +6,7 @@ describe('IPC channels', () => {
   it('exposes only the channels approved for the current milestone', () => {
     expect(Object.values(IpcChannel)).toEqual([
       'app:get-info',
+      'app:report-problem',
       'pdf:open-dialog',
       'pdf:initial-document',
       'pdf:open-recent',

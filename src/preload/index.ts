@@ -229,6 +229,13 @@ const updates: UpdateBridge = {
 
 const desktopBridge: DesktopBridge = {
   getAppInfo,
+  reportProblem: async (): Promise<boolean> => {
+    try {
+      return (await ipcRenderer.invoke(IpcChannel.ReportProblem)) === true;
+    } catch {
+      return false;
+    }
+  },
   openDocumentDialog: async () => requestDocument(IpcChannel.OpenDocumentDialog),
   getInitialDocument: async () => requestDocument(IpcChannel.GetInitialDocument),
   openRecentDocument: async (documentId: string) =>

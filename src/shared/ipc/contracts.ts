@@ -350,6 +350,12 @@ export interface DesktopBridge {
   readonly recovery?: RecoveryBridge;
   /** Checking for a newer release. Absent in builds and tests without it. */
   readonly updates?: UpdateBridge;
+  /**
+   * Opens a prefilled problem report in the reader's browser. It takes
+   * nothing and sends nothing; `false` means the page could not be opened.
+   * Absent in a build that has nowhere to report to.
+   */
+  readonly reportProblem?: () => Promise<boolean>;
 }
 
 const isNonEmptyString = (value: unknown): value is string =>

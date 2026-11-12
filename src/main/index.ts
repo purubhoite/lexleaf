@@ -8,6 +8,7 @@ import {
   unlink,
   writeFile,
 } from 'node:fs/promises';
+import { release as osRelease, version as osVersion } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
@@ -76,7 +77,12 @@ import {
   createElectronUpdaterInstaller,
   type AutoUpdaterLike,
 } from './update/updateInstaller';
-import { decideAcceleration } from './lifecycle/graphicsAcceleration';
+import {
+  decideAcceleration,
+  displayDrivers,
+  type DisplayDriverProbe,
+} from './lifecycle/graphicsAcceleration';
+import { detectPackaging, parseOsReleaseName, problemReportAddress } from './support/problemReport';
 import {
   ORPHANED_ZYGOTE_SWEEP_INTERVAL_MS,
   parseProcessStat,
@@ -750,6 +756,40 @@ const bootstrap = async (): Promise<void> => {
       electronVersion: process.versions.electron,
       chromeVersion: process.versions.chrome,
     }),
+    reportProblem: () => {
+      // "Ubuntu 24.04.4 LTS" from the distribution's own file; elsewhere
+      // the system's name for itself ("Windows 11 Home").
+      const readSystemName = (): string | null => {
+        if (process.platform !== 'linux') {
+          return osVersion();
+        }
+
+        try {
+          return parseOsReleaseName(readFileSync('/etc/os-release', 'utf8'));
+        } catch {
+          return null;
+        }
+      };
+
+      openExternalUrl(
+        problemReportAddress({
+          version: packageMetadata.version,
+          platform: process.platform,
+          arch: process.arch,
+          systemName: readSystemName(),
+          systemRelease: osRelease(),
+          packaging: detectPackaging({
+            platform: process.platform,
+            packaged: app.isPackaged,
+            env: process.env,
+          }),
+          electronVersion: process.versions.electron,
+          chromeVersion: process.versions.chrome,
+          displayDrivers: process.platform === 'linux' ? displayDrivers(displayDriverProbe) : [],
+          hardwareAcceleration: acceleration.accelerate,
+        }),
+      );
+    },
     devServerOrigin,
   });
 
@@ -916,19 +956,21 @@ app.on('window-all-closed', () => {
  * process has started, the driver is already loaded. See
  * `graphicsAcceleration.ts` for which machines this applies to and why.
  */
+const displayDriverProbe: DisplayDriverProbe = {
+  listCards: () => readdirSync('/sys/class/drm'),
+  driverLink: (card) => {
+    try {
+      return readlinkSync(`/sys/class/drm/${card}/device/driver`);
+    } catch {
+      return null;
+    }
+  },
+};
+
 const acceleration = decideAcceleration({
   platform: process.platform,
   override: process.env['LEXLEAF_GPU'],
-  probe: {
-    listCards: () => readdirSync('/sys/class/drm'),
-    driverLink: (card) => {
-      try {
-        return readlinkSync(`/sys/class/drm/${card}/device/driver`);
-      } catch {
-        return null;
-      }
-    },
-  },
+  probe: displayDriverProbe,
 });
 
 if (!acceleration.accelerate) {

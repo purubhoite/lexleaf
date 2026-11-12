@@ -7,6 +7,11 @@ export type { IpcHandlerRegistrar, IpcInvokeEvent, IpcInvokeListener } from './s
 
 export interface AppIpcOptions {
   readonly appInfo: AppInfo;
+  /**
+   * Opens the prefilled problem report in the reader's browser. The
+   * renderer supplies nothing: where it leads is decided here.
+   */
+  readonly reportProblem: () => void;
   /** Origin of the Vite dev server, or `null` in production. */
   readonly devServerOrigin: string | null;
 }
@@ -19,12 +24,25 @@ export interface AppIpcOptions {
  */
 export const registerAppIpcHandlers = (
   ipc: IpcHandlerRegistrar,
-  { appInfo, devServerOrigin }: AppIpcOptions,
+  { appInfo, reportProblem, devServerOrigin }: AppIpcOptions,
 ): void => {
   const guard = createSenderGuard(devServerOrigin);
 
   ipc.handle(
     IpcChannel.GetAppInfo,
     guard(IpcChannel.GetAppInfo, () => appInfo),
+  );
+
+  ipc.handle(
+    IpcChannel.ReportProblem,
+    guard(IpcChannel.ReportProblem, (): boolean => {
+      try {
+        reportProblem();
+
+        return true;
+      } catch {
+        return false;
+      }
+    }),
   );
 };

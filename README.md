@@ -220,6 +220,7 @@ Privacy policy: this program will not transfer any information to other networke
 
 ## Contributing and support
 
+- In the app: **Settings › Report a problem** opens a new issue in your browser with your Lexleaf version, operating system and (on Linux) graphics driver already filled in. Lexleaf sends nothing itself; you read the report and choose whether to submit it.
 - [Report a bug](https://github.com/purubhoite/lexleaf/issues/new?labels=bug)
 - [Request a feature](https://github.com/purubhoite/lexleaf/issues/new?labels=enhancement)
 - [Browse existing issues](https://github.com/purubhoite/lexleaf/issues)
