@@ -16,7 +16,13 @@ const alias = {
  */
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    /*
+     * `electron-updater` is compiled into the main bundle rather than left
+     * as a runtime `require`: the packaged application ships `out/` and
+     * `package.json` only, so nothing may depend on a `node_modules`
+     * directory being present next to it.
+     */
+    plugins: [externalizeDepsPlugin({ exclude: ['electron-updater'] })],
     resolve: { alias },
     build: {
       minify: 'esbuild',

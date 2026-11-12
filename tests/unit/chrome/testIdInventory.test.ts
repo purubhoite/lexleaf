@@ -95,6 +95,12 @@ const ADDED_AFTER_MILESTONE_5 = [
   'error-boundary',
   'vocabulary-recovery',
   'recovery-empty',
+  // The update notice: the one in the shell, and in the settings screen
+  // its group, its button and the line that reports a check.
+  'update-notice',
+  'setting-updates',
+  'update-check-now',
+  'update-status',
 ] as const;
 
 /**

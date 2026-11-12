@@ -23,6 +23,7 @@ import {
   type Preferences,
 } from '@core/persistence/preferences';
 import type { ReadingPosition, ZoomMode, ZoomState } from '@core/persistence/types';
+import type { UpdateBridge } from './updateContracts';
 import type { SavedOccurrence, SavedWord, SavedWordState } from '@core/vocabulary/types';
 import type {
   AiIpcResult,
@@ -340,6 +341,8 @@ export interface DesktopBridge {
   /** Contextual explanation of one word in one short passage. */
   readonly ai: AiBridge;
   readonly recovery?: RecoveryBridge;
+  /** Checking for a newer release. Absent in builds and tests without it. */
+  readonly updates?: UpdateBridge;
 }
 
 const isNonEmptyString = (value: unknown): value is string =>

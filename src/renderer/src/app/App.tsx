@@ -7,6 +7,9 @@ import { LibraryView } from '../library/LibraryView';
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { usePreferences } from '../settings/usePreferences';
 import { Message } from '../ui/Message';
+import { UpdateMessage } from '../update/UpdateMessage';
+import { UpdateSettings } from '../update/UpdateSettings';
+import { useUpdateCheck } from '../update/useUpdateCheck';
 import { useVocabularyLibrary } from '../library/useVocabularyLibrary';
 import { DOCUMENT_SCROLLER_ID, ReaderView } from '../reader/ReaderView';
 import type {
@@ -119,6 +122,12 @@ export const App = ({ bridge }: AppProps): ReactElement => {
    * shell is where a fact about the session belongs.
    */
   const recovery = useSessionRecovery(bridge);
+  /*
+   * The third session-level notice: a newer release exists, is being
+   * downloaded, or is ready to install. Like the two above it is the
+   * shared `Message`, said once, and the reader closes it.
+   */
+  const updates = useUpdateCheck(bridge);
   /*
    * The one copy of the four preferences (ADR-031). It lives here because
    * two different places need it — the settings panel that changes it and
@@ -306,6 +315,15 @@ export const App = ({ bridge }: AppProps): ReactElement => {
         </Message>
       )}
 
+      {updates.noticeVisible && (
+        <UpdateMessage
+          updates={updates}
+          testId="update-notice"
+          className="shell__persistence"
+          dismissible
+        />
+      )}
+
       <div
         className="shell__surface"
         hidden={showLibrary || showSettings}
@@ -327,7 +345,9 @@ export const App = ({ bridge }: AppProps): ReactElement => {
           onClose={(): void => {
             setShowSettings(false);
           }}
-        />
+        >
+          <UpdateSettings updates={updates} />
+        </SettingsPanel>
       )}
 
       {showLibrary && (

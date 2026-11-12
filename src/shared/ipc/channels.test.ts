@@ -27,6 +27,11 @@ describe('IPC channels', () => {
       'ai:explanation-for',
       'ai:explain',
       'ai:cancel',
+      'update:check',
+      'update:set-automatic',
+      'update:download',
+      'update:install',
+      'update:open-download',
     ]);
   });
 

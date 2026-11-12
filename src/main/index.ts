@@ -47,6 +47,7 @@ import { registerDictionaryIpcHandlers } from './ipc/registerDictionaryIpcHandle
 import { registerDocumentIpcHandlers } from './ipc/registerDocumentIpcHandlers';
 import { registerStateIpcHandlers } from './ipc/registerStateIpcHandlers';
 import { registerVocabularyIpcHandlers } from './ipc/registerVocabularyIpcHandlers';
+import { registerUpdateIpcHandlers } from './ipc/registerUpdateIpcHandlers';
 import { registerVocabularyRecoveryIpcHandlers } from './ipc/registerVocabularyRecoveryIpcHandlers';
 import { createReaderStateStore } from './persistence/readerStateStore';
 import { applyWebContentsSecurityPolicies } from './security/navigationPolicy';
@@ -69,6 +70,13 @@ import { createExplanationStore } from './vocabulary/explanationStore';
 import { createSqliteVocabularyRepository } from './vocabulary/sqliteVocabularyRepository';
 import { createVocabularyService } from './vocabulary/vocabularyService';
 import type { WindowThemeController } from './theme/windowTheme';
+import {
+  canInstallUpdates,
+  createElectronUpdaterInstaller,
+  type AutoUpdaterLike,
+} from './update/updateInstaller';
+import { createUpdateService } from './update/updateService';
+import { UPDATE_SETTINGS_FILE, createUpdateSettingsStore } from './update/updateSettings';
 import { createMainWindow } from './window/createMainWindow';
 import { createRendererRecovery } from './window/rendererRecovery';
 
@@ -76,6 +84,9 @@ const LOG_PREFIX = '[main]';
 
 const PRELOAD_PATH = join(__dirname, '../preload/index.js');
 const RENDERER_ENTRY_PATH = join(__dirname, '../renderer/index.html');
+
+/** How long the update check waits for an answer before giving up. */
+const UPDATE_CHECK_TIMEOUT_MS = 10_000;
 
 /** Name of the reading-state document inside the per-user data directory. */
 const READER_STATE_FILE = 'reader-state.json';
@@ -573,6 +584,83 @@ const bootstrap = async (): Promise<void> => {
     onRestoreStart: async () => {},
     onRestoreComplete: async () => {},
     onRejected: (message) => console.warn(`${LOG_PREFIX} ${message}`),
+    devServerOrigin,
+  });
+
+  /*
+   * Updates. The application tells the reader a newer release exists;
+   * downloading it and installing it each wait for the reader to ask.
+   * The check is the only request the application makes without being asked,
+   * the reader can turn it off, and it carries nothing about them: no
+   * body, no identifier, no stored credentials.
+   */
+  const updates = createUpdateService({
+    currentVersion: app.getVersion(),
+    settings: createUpdateSettingsStore({
+      filePath: join(app.getPath('userData'), UPDATE_SETTINGS_FILE),
+      files: {
+        readFile: async (path) => readFile(path, 'utf8'),
+        writeFile: async (path, contents) => writeFile(path, contents, 'utf8'),
+      },
+      onDiagnostic: (message) => {
+        console.warn(`${LOG_PREFIX} ${message}`);
+      },
+    }),
+    fetchLatestRelease: async (address) => {
+      const response = await net.fetch(address, {
+        headers: { Accept: 'application/vnd.github+json' },
+        credentials: 'omit',
+        cache: 'no-store',
+        redirect: 'error',
+        signal: AbortSignal.timeout(UPDATE_CHECK_TIMEOUT_MS),
+      });
+
+      if (!response.ok) {
+        throw new Error(`update check answered ${String(response.status)}`);
+      }
+
+      return (await response.json()) as unknown;
+    },
+    openExternal: openExternalUrl,
+    now: () => new Date(),
+    // A development build is not something a reader installed: it stays
+    // quiet unless the check is asked for by hand.
+    automaticChecksAllowed: app.isPackaged,
+    /*
+     * Only a Windows installation and a Linux AppImage can replace
+     * themselves. Everything else — a Debian package, a development
+     * build — gets the notice and the download page instead.
+     */
+    installer: canInstallUpdates({
+      packaged: app.isPackaged,
+      platform: process.platform,
+      env: process.env,
+    })
+      ? createElectronUpdaterInstaller({
+          currentVersion: app.getVersion(),
+          // Loaded on first use, so a build in which the library fails to
+          // load still starts and still offers the download page.
+          load: async () => (await import('electron-updater')).autoUpdater as AutoUpdaterLike,
+          onDiagnostic: (message) => {
+            console.info(`${LOG_PREFIX} ${message}`);
+          },
+        })
+      : null,
+    // The reader's place is written out before the application is closed
+    // to install: the installer does not wait for a debounced write.
+    beforeInstall: async () => {
+      await readerState.flush();
+    },
+    onDiagnostic: (message) => {
+      console.info(`${LOG_PREFIX} ${message}`);
+    },
+  });
+
+  registerUpdateIpcHandlers(ipcMain, {
+    service: updates,
+    onRejected: (message) => {
+      console.warn(`${LOG_PREFIX} ${message}`);
+    },
     devServerOrigin,
   });
 

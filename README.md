@@ -39,6 +39,7 @@ The current release is **v0.1.1 for Windows x64 and Linux x86_64**. The installe
 - Zoom controls: `Ctrl/Cmd++`, `Ctrl/Cmd+-`, and `Ctrl/Cmd+0` for fit width.
 - In-document search with `Ctrl/Cmd+F`.
 - Light, dark, and system appearance preferences, plus reduced-motion support.
+- Updates on request: Lexleaf tells you when a newer version has been released and, when you ask, downloads and installs it. The check can be turned off in Settings.
 - Offline dictionary data packaged separately from the Apache-2.0 application code.
 
 AI explanation code is present for future evaluation and is disabled by default in v0.1.1; it is not required for PDF reading, dictionary lookup, or saved vocabulary.
@@ -58,6 +59,8 @@ AI explanation code is present for future evaluation and is disabled by default 
 4. Open Lexleaf and choose **Open PDF…** to begin reading.
 
 The published installer is self-contained; end users do not need Node.js or npm.
+
+To uninstall, open **Settings → Apps → Installed apps**, find **Lexleaf**, and choose **Uninstall**. Your saved vocabulary and preferences are kept in your user profile (`%APPDATA%\Lexleaf`) and are not removed with the application; delete that folder if you want them gone too.
 
 ## Install on Linux
 
@@ -118,6 +121,17 @@ Lexleaf stores its local profile under Electron's per-user data directory (norma
 
 PDF rendering, dictionary lookup, saved vocabulary, reading position, recent documents, and preferences are implemented locally. The dictionary is read from packaged files, and saved vocabulary is stored in a local SQLite database. Lexleaf does not require an account, subscription, telemetry service, cloud document upload, or cloud vocabulary sync for the core workflow.
 
+### Update check
+
+Lexleaf checks whether a newer version has been released so that fixes reach you. When it starts, and at most once a day, it requests the public record of the latest Lexleaf release from GitHub (`api.github.com`) and compares the version number with its own. If a newer version exists it shows a notice.
+
+- Nothing is downloaded or installed until you ask. Updating takes two steps, and each waits for you: **Download update** fetches the new version from the Lexleaf release on GitHub while you keep reading, and **Restart and install** closes Lexleaf, installs it, and opens Lexleaf again. You can leave either step for later.
+- Updating from inside Lexleaf works for the Windows installer and the Linux AppImage. The Debian package, and any other build, gets a button that opens the release page in your browser instead.
+- The download is checked against the SHA-512 published in the release before it is installed. Release binaries are unsigned, so this confirms that the file is the one published on the Lexleaf release page; it is not a publisher signature.
+- The requests contain no account, identifier, document, or vocabulary data. As with any web request, GitHub can see the IP address they come from and the application's user-agent string.
+- You can turn the automatic check off under **Settings → Updates**. With it off, Lexleaf contacts nothing unless you press **Check for updates now**.
+- Versions 0.1.0 and 0.1.1 do not have this check and must be updated by hand from the [releases page](https://github.com/purubhoite/lexleaf/releases/latest).
+
 Optional AI explanation functionality is disabled by default and has separate configuration and network-policy code. Do not interpret the local-first design as a claim that every optional feature or dependency can never make a network request; review and configure optional providers deliberately.
 
 ## Development
@@ -164,6 +178,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and fixture expectations
 ## Dictionary attribution and licensing
 
 Lexleaf application code is licensed under [Apache License 2.0](LICENSE), with project notices in [NOTICE](NOTICE). The bundled dictionary is separate third-party data and is **not** Apache-2.0 application code. It is derived from [Open English WordNet 2024](https://en-word.net/), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), and incorporates material governed by the Princeton WordNet license. See [`resources/dictionary/NOTICE.md`](resources/dictionary/NOTICE.md) for the generated attribution, source information, modification statement, and disclaimers. Lexleaf is not affiliated with, sponsored by, or endorsed by Princeton University or the Open English WordNet team.
+
+## Code signing policy
+
+Lexleaf release binaries are **currently unsigned**. Every release publishes `SHA256SUMS.txt` so that a download can be verified against it.
+
+Releases are built from this repository by GitHub Actions on GitHub-hosted runners, from a commit on `main` that has passed the verification workflow. Nothing is built or uploaded from a developer machine.
+
+Team roles:
+
+- Authors and reviewers: [@purubhoite](https://github.com/purubhoite), the repository owner. Changes from anyone else arrive as pull requests and are reviewed by the owner before merging.
+- Approvers: [@purubhoite](https://github.com/purubhoite). Every release is started and approved manually by the owner.
+
+Privacy policy: this program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it, with one exception: the [update check](#update-check), which asks GitHub for the latest release version, sends nothing about the user, and can be turned off in Settings. See [Local-first architecture and privacy](#local-first-architecture-and-privacy).
 
 ## Contributing and support
 

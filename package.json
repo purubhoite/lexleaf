@@ -1,7 +1,7 @@
 {
   "name": "intelligent-pdf-reader",
   "productName": "Lexleaf",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "description": "Local-first desktop PDF reader that lets users understand unfamiliar words without leaving the document.",
   "license": "Apache-2.0",
@@ -34,6 +34,7 @@
     "dictionary:prepare:production": "node scripts/packaging/prepare-production.mjs"
   },
   "dependencies": {
+    "electron-updater": "^6.8.11",
     "pdfjs-dist": "^6.3.289",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       release_source_sha:
-        description: Original release source commit SHA referenced by v0.1.1
+        description: Original release source commit SHA referenced by v0.2.0
         required: true
         type: string
       release_confirmation:
-        description: Type REPAIR LEXLEAF 0.1.1
+        description: Type REPAIR LEXLEAF 0.2.0
         required: true
         type: string
       license_compliance_confirmation:
@@ -30,8 +30,8 @@ jobs:
       actions: read
     env:
       RELEASE_SOURCE_SHA: ${{ inputs.release_source_sha }}
-      EXPECTED_VERSION: '0.1.1'
-      EXPECTED_TAG: 'v0.1.1'
+      EXPECTED_VERSION: '0.2.0'
+      EXPECTED_TAG: 'v0.2.0'
     steps:
       - name: Check out verified source
         uses: actions/checkout@v4
@@ -71,7 +71,7 @@ jobs:
           if (($release | ConvertFrom-Json).tag_name -cne $env:EXPECTED_TAG) { throw 'Existing release tag mismatch.' }
           $package = Get-Content release-source/package.json -Raw | ConvertFrom-Json
           if ([string]$package.version -cne $env:EXPECTED_VERSION) { throw 'package.json version mismatch.' }
-          if ('${{ inputs.release_confirmation }}' -cne 'REPAIR LEXLEAF 0.1.1') { throw 'Repair confirmation mismatch.' }
+          if ('${{ inputs.release_confirmation }}' -cne 'REPAIR LEXLEAF 0.2.0') { throw 'Repair confirmation mismatch.' }
           if ('${{ inputs.license_compliance_confirmation }}' -cne 'REVIEWED OEWN AND PRINCETON LICENSES') { throw 'License confirmation mismatch.' }
           "LEXLEAF_VERSION=$([string]$package.version)" | Out-File $env:GITHUB_ENV -Encoding utf8
 
@@ -118,6 +118,17 @@ jobs:
           "INSTALLER_PATH=$installerPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "CHECKSUM_PATH=$checksumPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "INSTALLER_SHA256=$hash" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          # A rebuilt installer has a new hash. The update metadata built with
+          # it must replace the published one, or installed copies would
+          # refuse the download.
+          $updateInfoPath = Join-Path $installer.DirectoryName 'latest.yml'
+          $blockmapPath = "$installerPath.blockmap"
+          foreach ($required in @($updateInfoPath, $blockmapPath)) {
+            if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Update file missing: $required" }
+          }
+          if (-not (Get-Content -LiteralPath $updateInfoPath -Raw).Contains($expectedName)) { throw 'latest.yml does not name this installer.' }
+          "UPDATE_INFO_PATH=$updateInfoPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "BLOCKMAP_PATH=$blockmapPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Upload assets to existing release
         shell: pwsh
@@ -127,6 +138,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           if ([string]::IsNullOrWhiteSpace($env:INSTALLER_PATH)) { throw 'INSTALLER_PATH is empty.' }
           if ([string]::IsNullOrWhiteSpace($env:CHECKSUM_PATH)) { throw 'CHECKSUM_PATH is empty.' }
+          if ([string]::IsNullOrWhiteSpace($env:UPDATE_INFO_PATH)) { throw 'UPDATE_INFO_PATH is empty.' }
+          if ([string]::IsNullOrWhiteSpace($env:BLOCKMAP_PATH)) { throw 'BLOCKMAP_PATH is empty.' }
           if (-not (Test-Path -LiteralPath $env:INSTALLER_PATH -PathType Leaf)) { throw "Installer path does not exist: $env:INSTALLER_PATH" }
           if (-not (Test-Path -LiteralPath $env:CHECKSUM_PATH -PathType Leaf)) { throw "Checksum path does not exist: $env:CHECKSUM_PATH" }
           Write-Host "Resolved installer: $env:INSTALLER_PATH"
@@ -137,6 +150,8 @@ jobs:
             $env:EXPECTED_TAG
             $env:INSTALLER_PATH
             $env:CHECKSUM_PATH
+            $env:UPDATE_INFO_PATH
+            $env:BLOCKMAP_PATH
             '--repo'
             '${{ github.repository }}'
             '--clobber'
