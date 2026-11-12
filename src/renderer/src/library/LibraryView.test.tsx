@@ -1,8 +1,9 @@
 /** @vitest-environment jsdom */
 import type { SavedWord } from '@core/vocabulary/types';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { ExportLibrary } from './LibraryExport';
 import { LibraryView } from './LibraryView';
 import { aSavedWord, anOccurrence } from './libraryFixtures';
 import type { LibraryControls, LibraryState } from './useVocabularyLibrary';
@@ -222,5 +223,75 @@ describe('the library screen', () => {
       'oldest',
       'alphabetical',
     ]);
+  });
+});
+
+describe('exporting from the library', () => {
+  const showWithExport = (onExport: ExportLibrary): void => {
+    render(
+      <LibraryView
+        library={controls({ items: [aSavedWord()] })}
+        onOpenOrigin={vi.fn()}
+        onClose={vi.fn()}
+        onExport={onExport}
+      />,
+    );
+  };
+
+  it('offers no export where there is nothing to export with', () => {
+    show(controls({ items: [aSavedWord()] }));
+
+    expect(screen.queryByTestId('library-export-csv')).toBeNull();
+    expect(screen.queryByTestId('library-export-anki')).toBeNull();
+  });
+
+  it('asks for the format the reader pressed and says how many words were written', async () => {
+    const onExport = vi.fn<ExportLibrary>(() => Promise.resolve({ status: 'exported', count: 12 }));
+    showWithExport(onExport);
+
+    fireEvent.click(screen.getByTestId('library-export-anki'));
+
+    expect(onExport).toHaveBeenCalledExactlyOnceWith('anki');
+    expect((await screen.findByTestId('library-export-status')).textContent).toBe(
+      'Exported 12 saved words.',
+    );
+
+    fireEvent.click(screen.getByTestId('library-export-csv'));
+
+    expect(onExport).toHaveBeenLastCalledWith('csv');
+  });
+
+  it('does not start a second export while one is under way', () => {
+    const onExport = vi.fn<ExportLibrary>(() => new Promise(() => undefined));
+    showWithExport(onExport);
+
+    fireEvent.click(screen.getByTestId('library-export-csv'));
+    fireEvent.click(screen.getByTestId('library-export-anki'));
+
+    expect(onExport).toHaveBeenCalledOnce();
+    expect(screen.getByTestId<HTMLButtonElement>('library-export-anki').disabled).toBe(true);
+  });
+
+  it('says nothing when the reader cancels, and re-enables the buttons', async () => {
+    const onExport = vi.fn<ExportLibrary>(() => Promise.resolve({ status: 'cancelled' }));
+    showWithExport(onExport);
+
+    fireEvent.click(screen.getByTestId('library-export-csv'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId<HTMLButtonElement>('library-export-csv').disabled).toBe(false);
+    });
+    expect(screen.queryByTestId('library-export-status')).toBeNull();
+  });
+
+  it('says so when the export fails, including when the bridge throws', async () => {
+    const onExport = vi.fn<ExportLibrary>(() => Promise.reject(new Error('gone')));
+    showWithExport(onExport);
+
+    fireEvent.click(screen.getByTestId('library-export-csv'));
+
+    expect((await screen.findByTestId('library-export-status')).textContent).toContain(
+      'could not be exported',
+    );
   });
 });

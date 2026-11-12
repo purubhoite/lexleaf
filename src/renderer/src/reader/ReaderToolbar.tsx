@@ -20,6 +20,10 @@ export interface ReaderToolbarProps {
   readonly zoom: ZoomState;
   readonly scale: number;
   readonly searchOpen: boolean;
+  /** Whether the document has a table of contents to show. */
+  readonly hasOutline: boolean;
+  readonly outlineOpen: boolean;
+  readonly onToggleOutline: () => void;
   readonly onOpen: () => void;
   readonly onClose: () => void;
   readonly onGoToPage: (pageNumber: number) => void;
@@ -39,6 +43,9 @@ export const ReaderToolbar = ({
   zoom,
   scale,
   searchOpen,
+  hasOutline,
+  outlineOpen,
+  onToggleOutline,
   onOpen,
   onClose,
   onGoToPage,
@@ -103,6 +110,23 @@ export const ReaderToolbar = ({
       </div>
 
       <div className="reader__group" role="group" aria-label="Page navigation">
+        {/*
+          The contents button lives with page navigation because that is
+          what it is. A document without an outline keeps the button, off,
+          with the reason in its tooltip: a control that comes and goes
+          between books is harder to find than one that says "not here".
+        */}
+        <button
+          type="button"
+          className="control"
+          data-testid="outline-toggle"
+          aria-expanded={hasOutline && outlineOpen}
+          disabled={!hasOutline}
+          title={hasOutline ? 'Table of contents' : 'This document has no table of contents'}
+          onClick={onToggleOutline}
+        >
+          Contents
+        </button>
         <button
           type="button"
           className="control"

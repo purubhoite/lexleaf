@@ -422,6 +422,19 @@ body {
   color: var(--colour-text-muted);
 }
 
+.library__export {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.library__export-label {
+  font-size: var(--text-xs);
+  color: var(--colour-text-muted);
+}
+
 /* The failed library needs its message and its retry button in a column. */
 .library__problem {
   display: flex;

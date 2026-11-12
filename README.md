@@ -27,10 +27,13 @@ Lexleaf is released for **Windows x64 and Linux x86_64**. The [latest release](h
 ## Features
 
 - PDF reading with local rendering powered by PDF.js.
+- Open a PDF the way you open any file: double-click it or use **Open with** once Lexleaf is installed, or drag it onto the Lexleaf window.
+- Table of contents: for a book that has one, **Contents** opens its chapters beside the pages and shows where you are.
 - Vocabulary-first lookup: double-click a word to open its definition.
 - Word navigation with `Alt+Left` and `Alt+Right`, then `Enter` to look up the focused word.
 - Save a definition to the local vocabulary library and revisit saved words.
 - Search and sort saved vocabulary, with document-aware library context.
+- Export saved words as a spreadsheet (CSV) or as an Anki import file.
 - Reading-position and recent-document persistence.
 - Zoom controls: `Ctrl/Cmd++`, `Ctrl/Cmd+-`, and `Ctrl/Cmd+0` for fit width.
 - In-document search with `Ctrl/Cmd+F`.
@@ -93,6 +96,8 @@ Launch **Lexleaf** from your desktop application menu, or run `lexleaf` from a t
 sudo apt remove lexleaf
 ```
 
+Versions up to 0.2.1 were packaged under the name `intelligent-pdf-reader`; remove those with `sudo apt remove intelligent-pdf-reader`. Installing a newer package replaces the old one by itself.
+
 The packages target amd64/x86_64 Linux. They are not claims of support for every Linux distribution. The AppImage is intended for common x86_64 desktop environments; the Debian package is intended for Debian, Ubuntu, Linux Mint, and compatible distributions. A desktop session and the system libraries required by Electron are still required.
 
 Lexleaf stores its local profile under Electron's per-user data directory (normally `~/.config/Lexleaf` on Linux), including the local vocabulary database and preferences. Do not store user data in the application installation directory.
@@ -116,10 +121,11 @@ Later versions stop such a process themselves, and the Debian package tells Ubun
 
 ## How to use it
 
-1. Choose **Open PDF…** and select a PDF.
+1. Choose **Open PDF…** and select a PDF, drag a PDF onto the window, or right-click a PDF in your file manager and choose **Open with › Lexleaf**. In a long book, **Contents** lists the chapters.
 2. Double-click an unfamiliar word in the document. Lexleaf shows the available dictionary definition in a popup.
 3. Choose **Save word** to add it to your vocabulary.
 4. Open the vocabulary/library view to search, sort, and revisit saved words. Saved entries remain associated with their source document when that context is available.
+5. To take your words elsewhere, use **Export all** in the library: **Spreadsheet (CSV)** opens in Excel, LibreOffice or Google Sheets; **Anki flashcards** writes a text file you bring in with **File › Import** in Anki (word on the front; definition, the sentence you met it in, and the source on the back fields).
 
 ### Keyboard shortcuts
 
@@ -184,7 +190,7 @@ npm run verify:license-compliance
 The Windows packaging script is:
 
 ```bash
-npm run package:win:poc
+npm run package:win
 ```
 
 It prepares the production dictionary, builds the application, creates an unpacked Windows build, verifies its packaged output, and creates an NSIS installer. Windows packaging requires a Windows build environment. The generated dictionary is build output and is intentionally not committed to the source repository.

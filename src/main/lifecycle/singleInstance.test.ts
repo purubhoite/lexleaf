@@ -21,7 +21,10 @@ const createApp = (
    * some other event would otherwise look identical to registering it
    * correctly, and that is exactly a defect worth catching.
    */
-  const registered: { event: string; handler: (event: unknown, argv: string[]) => void }[] = [];
+  const registered: {
+    event: string;
+    handler: (event: unknown, argv: string[], workingDirectory: string) => void;
+  }[] = [];
   const quits: number[] = [];
 
   return {
@@ -39,7 +42,7 @@ const createApp = (
     fire: (argv): void => {
       for (const entry of registered) {
         if (entry.event === 'second-instance') {
-          entry.handler({}, argv);
+          entry.handler({}, argv, '/home/reader');
         }
       }
     },

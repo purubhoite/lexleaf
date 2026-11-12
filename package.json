@@ -1,5 +1,5 @@
 {
-  "name": "intelligent-pdf-reader",
+  "name": "lexleaf",
   "productName": "Lexleaf",
   "version": "0.2.1",
   "private": true,
@@ -27,8 +27,8 @@
     "dictionary:fixture": "node scripts/dictionary/build-fixture.mjs",
     "dictionary:verify": "node scripts/dictionary/verify-reproducible.mjs",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run test:integration && npm run build",
-    "package:win:poc": "npm run dictionary:prepare:production && npm run build && electron-builder --win dir --x64 --config electron-builder.yml && node scripts/packaging/verify-packaged-output.mjs dist/win-unpacked && electron-builder --win nsis --x64 --config electron-builder.yml",
-    "package:verify:poc": "node scripts/packaging/verify-poc.mjs",
+    "package:win": "npm run dictionary:prepare:production && npm run build && electron-builder --win dir --x64 --config electron-builder.yml && node scripts/packaging/verify-packaged-output.mjs dist/win-unpacked && electron-builder --win nsis --x64 --config electron-builder.yml",
+    "package:verify:assets": "node scripts/packaging/verify-poc.mjs",
     "dictionary:verify:production": "node scripts/packaging/verify-production-dictionary.mjs",
     "verify:license-compliance": "node scripts/packaging/verify-license-compliance.mjs",
     "dictionary:prepare:production": "node scripts/packaging/prepare-production.mjs"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseDocumentArgument } from './initialDocument';
+import { parseDocumentArgument, parseDroppedDocumentPath } from './initialDocument';
 
 describe('parseDocumentArgument', () => {
   it('reads the path from the switch', () => {
@@ -15,10 +15,49 @@ describe('parseDocumentArgument', () => {
     );
   });
 
-  it('ignores positional arguments', () => {
+  it('accepts a PDF named as a positional argument, as a file manager passes it', () => {
+    expect(parseDocumentArgument(['/opt/Lexleaf/lexleaf', '/books/harbour.pdf'])).toBe(
+      '/books/harbour.pdf',
+    );
+    expect(
+      parseDocumentArgument(['C:\\Programs\\Lexleaf\\Lexleaf.exe', 'C:\\Books\\Harbour.PDF']),
+    ).toBe('C:\\Books\\Harbour.PDF');
+  });
+
+  it('accepts a file address, decoded', () => {
+    expect(parseDocumentArgument(['/opt/Lexleaf/lexleaf', 'file:///books/the%20harbour.pdf'])).toBe(
+      '/books/the harbour.pdf',
+    );
+  });
+
+  it('resolves a relative name against the directory it was typed in', () => {
+    expect(parseDocumentArgument(['lexleaf', 'harbour.pdf'], '/books')).toBe('/books/harbour.pdf');
+    expect(parseDocumentArgument(['lexleaf', 'harbour.pdf'])).toBeNull();
+  });
+
+  it('ignores every other positional argument', () => {
     // Electron and Chromium add their own; a stray argument must never cause
     // the application to read a file.
-    expect(parseDocumentArgument(['electron', '.', '/books/harbour.pdf'])).toBeNull();
+    for (const stray of [
+      '.',
+      '/books/harbour.txt',
+      '/books/harbour.pdf.exe',
+      'https://example.com/harbour.pdf',
+      'file:///books/harbour.txt',
+      'file://%zz/harbour.pdf',
+      ' /books/harbour.pdf',
+      '--some-switch=/books/harbour.pdf',
+    ]) {
+      expect(parseDocumentArgument(['electron', stray], '/books')).toBeNull();
+    }
+  });
+
+  it('never takes the executable itself for a document', () => {
+    expect(parseDocumentArgument(['/opt/odd/reader.pdf'])).toBeNull();
+  });
+
+  it('prefers the switch to a positional argument', () => {
+    expect(parseDocumentArgument(['lexleaf', '/a.pdf', '--open-document=/b.pdf'])).toBe('/b.pdf');
   });
 
   it('ignores an empty value', () => {
@@ -31,5 +70,30 @@ describe('parseDocumentArgument', () => {
 
   it('uses the first occurrence', () => {
     expect(parseDocumentArgument(['--open-document=a.pdf', '--open-document=b.pdf'])).toBe('a.pdf');
+  });
+});
+
+describe('parseDroppedDocumentPath', () => {
+  it('accepts an absolute path to a PDF', () => {
+    expect(parseDroppedDocumentPath('/books/harbour.pdf')).toBe('/books/harbour.pdf');
+    expect(parseDroppedDocumentPath('C:\\Books\\Harbour.PDF')).toBe('C:\\Books\\Harbour.PDF');
+  });
+
+  it('refuses everything else', () => {
+    for (const raw of [
+      null,
+      undefined,
+      42,
+      {},
+      '',
+      'harbour.pdf',
+      '../harbour.pdf',
+      '/books/harbour.txt',
+      '/etc/passwd',
+      '/books/harbour.pdf\0.txt',
+      `/${'a'.repeat(5000)}.pdf`,
+    ]) {
+      expect(parseDroppedDocumentPath(raw)).toBeNull();
+    }
   });
 });

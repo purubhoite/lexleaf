@@ -68,6 +68,7 @@ import { inspectVocabularyRecovery } from './vocabulary/vocabularyRecovery';
 import { vocabularyDatabasePath } from './vocabulary/databaseFile';
 import { createExplanationStore } from './vocabulary/explanationStore';
 import { createSqliteVocabularyRepository } from './vocabulary/sqliteVocabularyRepository';
+import { VOCABULARY_EXPORT_FILTERS, exportVocabulary } from './vocabulary/vocabularyExport';
 import { createVocabularyService } from './vocabulary/vocabularyService';
 import type { WindowThemeController } from './theme/windowTheme';
 import {
@@ -486,7 +487,7 @@ const bootstrap = async (): Promise<void> => {
    * the same question it asks at startup and gets the new answer. No
    * second loading mechanism, no new channel, no extra window.
    */
-  let requestedDocumentPath = parseDocumentArgument(process.argv);
+  let requestedDocumentPath = parseDocumentArgument(process.argv, process.cwd());
 
   /*
    * Forwarded documents are delivered one at a time (C-1). The completion
@@ -544,6 +545,11 @@ const bootstrap = async (): Promise<void> => {
       }
     },
     openRecentDocument: async (documentId) => readerState.openRecent(documentId),
+    openDroppedDocument: (path) => {
+      // The same queue a second launch's document goes through (C-1).
+      console.info(`${LOG_PREFIX} a document was dropped onto the window; opening ${path}`);
+      forwardedDocuments.enqueue(path);
+    },
     devServerOrigin,
   });
 
@@ -610,6 +616,28 @@ const bootstrap = async (): Promise<void> => {
     onRejected: (message) => {
       console.warn(`${LOG_PREFIX} ${message}`);
     },
+    exportLibrary: (format) =>
+      exportVocabulary(format, {
+        service: vocabulary,
+        chooseDestination: async (suggestedName, chosenFormat) => {
+          const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+          const options = {
+            title: 'Export saved words',
+            defaultPath: join(app.getPath('documents'), suggestedName),
+            filters: [VOCABULARY_EXPORT_FILTERS[chosenFormat]],
+          };
+          const selection = await (window === undefined
+            ? dialog.showSaveDialog(options)
+            : dialog.showSaveDialog(window, options));
+
+          return selection.canceled || selection.filePath === '' ? null : selection.filePath;
+        },
+        write: (path, contents) => writeFile(path, contents, 'utf8'),
+        now: () => new Date(),
+        onDiagnostic: (message) => {
+          console.info(`${LOG_PREFIX} ${message}`);
+        },
+      }),
     devServerOrigin,
     ensureReady: () => databaseRuntime.ensureReady(),
     enterOperation: vocabularyGate.enter,

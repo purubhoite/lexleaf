@@ -6,7 +6,7 @@ import type { AppInfo } from '@shared/ipc/contracts';
 import { registerAppIpcHandlers, type IpcHandlerRegistrar } from './registerAppIpcHandlers';
 
 const appInfo: AppInfo = {
-  name: 'Intelligent PDF Reader',
+  name: 'Lexleaf',
   version: '0.1.0',
   electronVersion: '41.10.7',
   chromeVersion: '142.0.0.0',

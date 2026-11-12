@@ -65,6 +65,7 @@ const fakeDocument = (): OpenedPdf => ({
   getPageText: (pageNumber: number) =>
     Promise.resolve({ pageNumber, segments: [], hasTextLayer: false }),
   getPageSize: () => Promise.resolve({ width: 600, height: 800, rotation: 0 }),
+  getOutline: () => Promise.resolve([]),
   getNativePage: (): Promise<object> =>
     engine.outcome.nativePageError === null
       ? Promise.resolve({})

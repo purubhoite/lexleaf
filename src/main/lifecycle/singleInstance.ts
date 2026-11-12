@@ -18,8 +18,8 @@ import { parseDocumentArgument } from '../documents/initialDocument';
  *
  * The loser does not open a window and does not write state. It hands its
  * command line to the owner through `second-instance` and exits, so an
- * explicit `--open-document=` from a file manager or a terminal still
- * reaches a reader — the running one.
+ * document named by a file manager or a terminal still reaches a
+ * reader — the running one.
  *
  * Everything the function touches is injected, so the whole protocol is
  * unit tested without a second process.
@@ -28,7 +28,10 @@ import { parseDocumentArgument } from '../documents/initialDocument';
 export interface SingleInstanceApp {
   /** Electron's own lock. `true` for the first process, `false` after. */
   requestSingleInstanceLock(): boolean;
-  on(event: 'second-instance', handler: (event: unknown, argv: string[]) => void): void;
+  on(
+    event: 'second-instance',
+    handler: (event: unknown, argv: string[], workingDirectory: string) => void,
+  ): void;
   quit(): void;
 }
 
@@ -71,8 +74,8 @@ export const claimSingleInstance = ({
     return { isOwner: false };
   }
 
-  app.on('second-instance', (_event, argv) => {
-    const requested = parseDocumentArgument(argv);
+  app.on('second-instance', (_event, argv, workingDirectory) => {
+    const requested = parseDocumentArgument(argv, workingDirectory);
 
     if (requested === null) {
       onDiagnostic('a second copy was started without a document; focusing the existing window');

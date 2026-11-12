@@ -15,6 +15,13 @@ export const IpcChannel = {
   GetInitialDocument: 'pdf:initial-document',
   /** Reopens a previously read document, identified by id rather than path. */
   OpenRecentDocument: 'pdf:open-recent',
+  /**
+   * Opens a PDF the reader dropped onto the window.
+   *
+   * Sent by the preload script itself from a real drop, never by the page:
+   * no function that takes a path is exposed to the renderer.
+   */
+  OpenDroppedDocument: 'pdf:open-dropped',
   /** Returns the recent documents and which one was open last. */
   GetReaderState: 'state:get',
   /** Remembers where the reader is in a document. */
@@ -51,6 +58,11 @@ export const IpcChannel = {
   VocabularySearch: 'vocabulary:search',
   /** Where a saved word was met, for returning to it. */
   VocabularyOccurrences: 'vocabulary:occurrences',
+  /**
+   * Writes the saved words to a file the reader chooses in the system's
+   * save window. Takes a format name; no path crosses in either direction.
+   */
+  VocabularyExport: 'vocabulary:export',
   /** Lists independently validated vocabulary backups eligible for explicit restore. */
   VocabularyRecoveryBackups: 'vocabulary:recovery-backups',
   /** Explicitly restores one selected vocabulary backup after confirmation. */

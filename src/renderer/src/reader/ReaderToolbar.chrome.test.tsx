@@ -29,6 +29,9 @@ const show = (overrides: Partial<Parameters<typeof ReaderToolbar>[0]> = {}): voi
       zoom={DEFAULT_ZOOM}
       scale={1}
       searchOpen={false}
+      hasOutline={false}
+      outlineOpen={false}
+      onToggleOutline={(): void => {}}
       onOpen={(): void => {}}
       onClose={(): void => {}}
       onGoToPage={(): void => {}}
@@ -159,5 +162,31 @@ describe('the page field keeps its Milestone 2 behaviour (CTL-4)', () => {
     fireEvent.blur(field);
 
     expect(onGoToPage).toHaveBeenCalledWith(10);
+  });
+});
+
+describe('the contents button', () => {
+  it('is off, with the reason, for a document that has no table of contents', () => {
+    show();
+
+    const button = screen.getByTestId<HTMLButtonElement>('outline-toggle');
+
+    expect(button.disabled).toBe(true);
+    expect(button.title).toBe('This document has no table of contents');
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('opens and closes the contents and says which it is', () => {
+    const onToggleOutline = vi.fn();
+    show({ hasOutline: true, outlineOpen: true, onToggleOutline });
+
+    const button = screen.getByTestId<HTMLButtonElement>('outline-toggle');
+
+    expect(button.disabled).toBe(false);
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.click(button);
+
+    expect(onToggleOutline).toHaveBeenCalledOnce();
   });
 });

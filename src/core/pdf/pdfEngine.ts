@@ -1,4 +1,5 @@
 import type { Result } from '../result';
+import type { PdfOutlineEntry } from './outline';
 import type { PdfOpenFailure, PdfPageSize, PdfPageText } from './types';
 
 /** How far a document has loaded, as reported by the engine. */
@@ -37,6 +38,11 @@ export interface OpenedPdf {
   readonly label: string;
   getPageText(pageNumber: number): Promise<PdfPageText>;
   getPageSize(pageNumber: number): Promise<PdfPageSize>;
+  /**
+   * The document's table of contents, flattened into reading order. Empty
+   * when the document has none or it cannot be read; never rejects.
+   */
+  getOutline(): Promise<readonly PdfOutlineEntry[]>;
   getNativePage(pageNumber: number): Promise<unknown>;
   close(): Promise<void>;
 }

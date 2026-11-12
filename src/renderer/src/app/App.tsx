@@ -357,6 +357,9 @@ export const App = ({ bridge }: AppProps): ReactElement => {
           onClose={(): void => {
             setShowLibrary(false);
           }}
+          {...(bridge === null
+            ? {}
+            : { onExport: (format) => bridge.vocabulary.exportLibrary(format) })}
         />
       )}
     </div>

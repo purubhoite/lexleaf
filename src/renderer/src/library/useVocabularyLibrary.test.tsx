@@ -75,6 +75,7 @@ const fake = (
     stateForWord: vi.fn(),
     save: vi.fn(),
     occurrences: vi.fn(),
+    exportLibrary: vi.fn(),
     list: async (query): Promise<VocabularyIpcResult<LibraryIpcPage>> => {
       calls.list.push(query);
 

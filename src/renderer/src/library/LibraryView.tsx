@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 
 import type { LibrarySort, SavedWord, VocabularyFailure } from '@core/vocabulary/types';
 
+import { LibraryExport, type ExportLibrary } from './LibraryExport';
 import type { LibraryControls } from './useVocabularyLibrary';
 import { Message } from '../ui/Message';
 
@@ -24,6 +25,8 @@ export interface LibraryViewProps {
   /** Opens the place a word was met. Absent while no bridge exists. */
   readonly onOpenOrigin: (item: SavedWord) => void;
   readonly onClose: () => void;
+  /** Writes every saved word to a file. Absent while no bridge exists. */
+  readonly onExport?: ExportLibrary;
 }
 
 const SORT_LABELS: readonly { readonly value: LibrarySort; readonly label: string }[] = [
@@ -133,7 +136,12 @@ const Card = ({
   );
 };
 
-export const LibraryView = ({ library, onOpenOrigin, onClose }: LibraryViewProps): ReactElement => {
+export const LibraryView = ({
+  library,
+  onOpenOrigin,
+  onClose,
+  onExport,
+}: LibraryViewProps): ReactElement => {
   const { state } = library;
 
   return (
@@ -197,6 +205,8 @@ export const LibraryView = ({ library, onOpenOrigin, onClose }: LibraryViewProps
           </select>
         </label>
       </div>
+
+      {onExport !== undefined && <LibraryExport onExport={onExport} />}
 
       {state.status === 'loading' && (
         <Message kind="busy" testId="library-loading">

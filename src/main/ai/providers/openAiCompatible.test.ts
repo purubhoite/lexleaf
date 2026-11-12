@@ -25,9 +25,9 @@ const configurationFor = (
 ): AiConfiguration => {
   const configuration = loadAiConfiguration({
     env: {
-      INTELLIGENT_PDF_READER_AI_ENDPOINT: endpoint,
-      INTELLIGENT_PDF_READER_AI_MODEL: 'small-model',
-      ...(key === null ? {} : { INTELLIGENT_PDF_READER_AI_KEY: key }),
+      LEXLEAF_AI_ENDPOINT: endpoint,
+      LEXLEAF_AI_MODEL: 'small-model',
+      ...(key === null ? {} : { LEXLEAF_AI_KEY: key }),
     },
     readConfigurationFile: () => null,
   });

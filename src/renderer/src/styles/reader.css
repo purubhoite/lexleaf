@@ -63,6 +63,92 @@
   flex: 1;
 }
 
+/*
+ * The table of contents. A fixed column beside the pages that scrolls on
+ * its own; on a narrow window it gives way before the document does.
+ */
+.outline {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 clamp(12rem, 24vw, 20rem);
+  min-height: 0;
+  margin-inline-end: var(--space-3);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-md);
+  background-color: var(--colour-surface);
+}
+
+.outline__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--border-width) solid var(--colour-border);
+}
+
+.outline__title {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.outline__list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-2);
+  overflow: auto;
+  list-style: none;
+}
+
+.outline__entry {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: start;
+  cursor: pointer;
+}
+
+.outline__entry:hover,
+.outline__entry--active {
+  background-color: var(--colour-scroller);
+}
+
+.outline__entry--active {
+  font-weight: 600;
+}
+
+.outline__entry--nowhere {
+  color: var(--colour-text-muted);
+  cursor: default;
+}
+
+.outline__entry--nowhere:hover {
+  background: none;
+}
+
+.outline__text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.outline__page {
+  color: var(--colour-text-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
 .reader__scroller {
   position: relative;
   flex: 1 1 auto;

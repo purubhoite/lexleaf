@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { parseAppInfo } from './contracts';
 
 const validAppInfo = {
-  name: 'Intelligent PDF Reader',
+  name: 'Lexleaf',
   version: '0.1.0',
   electronVersion: '41.10.7',
   chromeVersion: '142.0.0.0',
@@ -23,7 +23,7 @@ describe('parseAppInfo', () => {
 
   it.each([
     ['null', null],
-    ['a string', 'Intelligent PDF Reader'],
+    ['a string', 'Lexleaf'],
     ['an array', []],
     ['an empty object', {}],
   ])('rejects %s', (_label, value) => {

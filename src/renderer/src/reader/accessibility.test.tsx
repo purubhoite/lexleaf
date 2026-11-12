@@ -57,6 +57,9 @@ const showToolbar = (zoom: ZoomState = DEFAULT_ZOOM, scale = 1): void => {
       zoom={zoom}
       scale={scale}
       searchOpen={false}
+      hasOutline={false}
+      outlineOpen={false}
+      onToggleOutline={(): void => {}}
       onOpen={(): void => {}}
       onClose={(): void => {}}
       onGoToPage={(): void => {}}

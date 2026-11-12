@@ -1,4 +1,4 @@
-appId: com.intelligentpdfreader.poc
+appId: io.github.purubhoite.lexleaf
 productName: Lexleaf
 artifactName: Lexleaf-${version}-${arch}.${ext}
 # Where an installed copy looks for a newer release when the reader asks
@@ -20,6 +20,15 @@ extraResources:
     to: dictionary
     filter:
       - '**/*'
+# Lets a reader open a PDF from the file manager: Lexleaf is offered under
+# "Open with" for .pdf files. The path arrives as a command-line argument
+# (src/main/documents/initialDocument.ts).
+fileAssociations:
+  - ext: pdf
+    name: PDF document
+    description: PDF document
+    mimeType: application/pdf
+    role: Viewer
 win:
   icon: resources/icons/lexleaf.ico
   target:
@@ -31,6 +40,11 @@ win:
   # taskbar and the window) the Lexleaf icon and name instead of Electron's.
   signExecutable: false
 nsis:
+  # The identity Windows knows an installation by. It was derived from the
+  # original application id (com.intelligentpdfreader.poc) and is pinned
+  # here so that renaming the id did not turn every upgrade into a second,
+  # separate installation. Do not change it.
+  guid: 0d4ad4f5-4282-5079-9f15-20bd97f482fb
   installerIcon: resources/icons/lexleaf.ico
   uninstallerIcon: resources/icons/lexleaf.ico
   oneClick: false

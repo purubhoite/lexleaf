@@ -245,7 +245,7 @@ describe('two launches against one user-data directory', () => {
    */
   const createLock = (): { makeApp: () => SingleInstanceApp & { fire(argv: string[]): void } } => {
     let taken = false;
-    const handlers: ((event: unknown, argv: string[]) => void)[] = [];
+    const handlers: ((event: unknown, argv: string[], workingDirectory: string) => void)[] = [];
 
     return {
       makeApp: (): SingleInstanceApp & { fire(argv: string[]): void } => {
@@ -261,14 +261,14 @@ describe('two launches against one user-data directory', () => {
           },
           on: (
             _event: 'second-instance',
-            handler: (event: unknown, argv: string[]) => void,
+            handler: (event: unknown, argv: string[], workingDirectory: string) => void,
           ): void => {
             handlers.push(handler);
           },
           quit: (): void => undefined,
           fire: (argv: string[]): void => {
             for (const handler of handlers) {
-              handler({}, argv);
+              handler({}, argv, '/home/reader');
             }
           },
         };

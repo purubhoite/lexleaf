@@ -101,6 +101,15 @@ const ADDED_AFTER_MILESTONE_5 = [
   'setting-updates',
   'update-check-now',
   'update-status',
+  // Exporting saved words: one button per format and the line that says
+  // what happened.
+  'library-export-csv',
+  'library-export-anki',
+  'library-export-status',
+  // The table of contents: its button, the panel and an entry in it.
+  'outline-toggle',
+  'outline',
+  'outline-entry',
 ] as const;
 
 /**
