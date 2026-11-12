@@ -51,6 +51,8 @@ export const buildApplicationMenu = ({
         command('Open PDF…', 'open-document'),
         command('Close PDF', 'close-document'),
         separator,
+        command('Print…', 'print'),
+        separator,
         {
           label: 'Export Saved Words',
           submenu: [
@@ -71,6 +73,9 @@ export const buildApplicationMenu = ({
         { role: 'selectAll' },
         separator,
         command('Find in Document…', 'find'),
+        separator,
+        command('Bookmark This Page', 'toggle-bookmark'),
+        command('Read Selection Aloud', 'read-aloud'),
       ],
     },
     {
@@ -81,6 +86,13 @@ export const buildApplicationMenu = ({
         command('Fit Width', 'zoom-fit-width'),
         command('Fit Page', 'zoom-fit-page'),
         separator,
+        command('Scrolling', 'view-continuous'),
+        command('One Page', 'view-single'),
+        command('Two Pages', 'view-two'),
+        separator,
+        command('Rotate Right', 'rotate-right'),
+        command('Rotate Left', 'rotate-left'),
+        separator,
         command('Reading Mode', 'toggle-reading-mode'),
         ...(development
           ? [separator, { role: 'reload' } as const, { role: 'toggleDevTools' } as const]
@@ -90,7 +102,12 @@ export const buildApplicationMenu = ({
     {
       label: '&Go',
       submenu: [
+        command('Back', 'go-back'),
+        separator,
         command('Contents', 'toggle-contents'),
+        command('Pages', 'toggle-thumbnails'),
+        command('Bookmarks', 'toggle-bookmarks'),
+        command('Highlights and Notes', 'toggle-notes'),
         command('Go to Page…', 'go-to-page'),
         separator,
         command('Saved Words', 'toggle-saved-words'),

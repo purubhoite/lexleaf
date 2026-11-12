@@ -184,3 +184,58 @@ describe('page layout', () => {
     expect(offsetOfPosition(layout, { page: 1, pageOffsetFraction: 0.5 }, VIEWPORT)).toBe(0);
   });
 });
+
+describe('the two-page and one-page views (0.2.3)', () => {
+  const sizes = [
+    { width: 100, height: 200 },
+    { width: 100, height: 200 },
+    { width: 100, height: 150 },
+    { width: 100, height: 200 },
+    { width: 100, height: 200 },
+  ];
+
+  it('lays pages out in pairs, either side of the centre line', () => {
+    const layout = createPageLayout(sizes, 1, 20, { mode: 'two' });
+
+    expect(layout.pages.map((page) => [page.pageNumber, page.top, page.left])).toStrictEqual([
+      [1, 0, -110],
+      [2, 0, 10],
+      [3, 220, -110],
+      [4, 220, 10],
+      [5, 440, -110],
+    ]);
+    expect(layout.contentWidth).toBe(220);
+    expect(layout.totalHeight).toBe(640);
+  });
+
+  it('names a pair by its first page, wherever in the pair the window is', () => {
+    const layout = createPageLayout(sizes, 1, 20, { mode: 'two' });
+
+    expect(pageAtOffset(layout, 0)).toBe(1);
+    expect(pageAtOffset(layout, 150)).toBe(1);
+    expect(pageAtOffset(layout, 230)).toBe(3);
+    expect(pageAtOffset(layout, 600)).toBe(5);
+    expect(visiblePageRange(layout, 0, 300)).toStrictEqual({ first: 1, last: 4 });
+  });
+
+  it('gives each page a slot as tall as the window when showing one at a time', () => {
+    const layout = createPageLayout(sizes, 1, 20, { mode: 'single', viewportHeight: 400 });
+
+    // 200-tall pages sit in the middle of 400-tall slots.
+    expect(layout.pages.map((page) => page.top)).toStrictEqual([100, 500, 925, 1300, 1700]);
+    expect(layout.totalHeight).toBe(2000);
+    expect(layout.pages.every((page) => page.left === null)).toBe(true);
+  });
+
+  it('never makes a slot shorter than its page', () => {
+    const layout = createPageLayout(sizes, 3, 20, { mode: 'single', viewportHeight: 400 });
+
+    expect(layout.pages[1]?.top).toBe(620 + 10);
+  });
+
+  it('is unchanged for the continuous view', () => {
+    expect(createPageLayout(sizes, 1, 20, { mode: 'continuous' })).toStrictEqual(
+      createPageLayout(sizes, 1, 20),
+    );
+  });
+});

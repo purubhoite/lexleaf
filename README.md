@@ -37,6 +37,12 @@ Lexleaf is released for **Windows x64 and Linux x86_64**. The [latest release](h
 - Reading-position and recent-document persistence.
 - Zoom by pinching on a trackpad or with `Ctrl` + mouse wheel, to any size; or step with `Ctrl/Cmd++`, `Ctrl/Cmd+-`, and `Ctrl/Cmd+0` for fit width.
 - In-document search with `Ctrl/Cmd+F`.
+- Highlights in four colours, each with an optional note: select text and choose a colour. They are listed in the sidebar and can be exported as a Markdown file. They are kept by Lexleaf on your computer; the PDF itself is never changed.
+- Bookmarks (`Ctrl/Cmd+D`), and a Back button that returns to where you were after jumping to a chapter, bookmark, note or page.
+- A sidebar with Contents, page thumbnails, Bookmarks and Notes.
+- Scrolling, one-page and two-page views, and page rotation (remembered per document).
+- Printing, of the whole document, the current page or a page range.
+- Read aloud for a word or a selection, using a voice installed on your computer; nothing is sent over the network. On Linux this needs `speech-dispatcher` and a voice such as `espeak-ng`.
 - Light, dark, and system appearance preferences, plus reduced-motion support.
 - Updates on request: Lexleaf tells you when a newer version has been released and, when you ask, downloads and installs it. The check can be turned off in Settings.
 - Offline dictionary data packaged separately from the Apache-2.0 application code.
@@ -146,6 +152,12 @@ The crash that started it, where it has been traced, was in the Nouveau graphics
 | `Ctrl/Cmd W`                 | Close the document                                             |
 | `Ctrl/Cmd G`                 | Go to page                                                     |
 | `Ctrl/Cmd Shift O`           | Show or hide Contents                                          |
+| `Ctrl/Cmd B`                 | Show or hide Bookmarks                                         |
+| `Ctrl/Cmd D`                 | Bookmark the current page, or remove its bookmark              |
+| `Ctrl/Cmd [`                 | Back to where you were before a jump                           |
+| `Ctrl/Cmd P`                 | Print                                                          |
+| `Ctrl/Cmd Shift R`           | Rotate pages                                                   |
+| `Ctrl/Cmd Shift U`           | Read the selection aloud                                       |
 | `Ctrl/Cmd L`                 | Show or hide Saved words                                       |
 | `Ctrl/Cmd ,`                 | Show or hide Settings                                          |
 | `F11`                        | Reading mode (full screen); `Esc` leaves it                    |

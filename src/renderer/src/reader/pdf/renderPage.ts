@@ -18,6 +18,11 @@ export interface RenderPageRequest {
   readonly scale: number;
   /** Device pixel ratio, so the canvas is sharp on high density displays. */
   readonly pixelRatio: number;
+  /**
+   * Quarter turns the reader has added, in degrees (0, 90, 180, 270). It
+   * is added to whatever rotation the page itself declares.
+   */
+  readonly rotation?: number;
 }
 
 export interface RenderedPage {
@@ -44,8 +49,9 @@ export const renderPage = ({
   textLayerContainer,
   scale,
   pixelRatio,
+  rotation = 0,
 }: RenderPageRequest): PageRender => {
-  const viewport = page.getViewport({ scale });
+  const viewport = page.getViewport({ scale, rotation: (page.rotate + rotation) % 360 });
   const context = canvas.getContext('2d');
 
   if (context === null) {

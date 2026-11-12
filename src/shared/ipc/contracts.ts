@@ -23,6 +23,8 @@ import {
   type Preferences,
 } from '@core/persistence/preferences';
 import type { ReadingPosition, ZoomMode, ZoomState } from '@core/persistence/types';
+import type { AnnotationsExportOutcome, DocumentAnnotations } from '@core/annotations/annotations';
+
 import type { MenuCommand } from './menuCommands';
 import type { UpdateBridge } from './updateContracts';
 import type { VocabularyExportFormat, VocabularyExportOutcome } from '@core/vocabulary/export';
@@ -364,6 +366,23 @@ export interface DesktopBridge {
   readonly onMenuCommand?: (listener: (command: MenuCommand) => void) => () => void;
   /** Puts the window in or out of full screen, for reading mode. */
   readonly setFullScreen?: (on: boolean) => Promise<void>;
+  /**
+   * Highlights, notes and bookmarks, by document. Kept on this computer.
+   * Absent in a build or a test that has nowhere to keep them, in which
+   * case they last for the session.
+   */
+  readonly annotations?: AnnotationsBridge;
+}
+
+export interface AnnotationsBridge {
+  readonly load: (documentId: string) => Promise<DocumentAnnotations>;
+  /** Resolves `false` when the change could not be written to disk. */
+  readonly save: (
+    documentId: string,
+    documentName: string,
+    annotations: DocumentAnnotations,
+  ) => Promise<boolean>;
+  readonly exportDocument: (documentId: string) => Promise<AnnotationsExportOutcome>;
 }
 
 const isNonEmptyString = (value: unknown): value is string =>

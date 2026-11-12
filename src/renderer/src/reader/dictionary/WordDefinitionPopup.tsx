@@ -100,6 +100,8 @@ export interface WordDefinitionPopupProps {
   readonly loading: boolean;
   readonly result: DictionaryResult | null;
   readonly onClose: () => void;
+  /** Says the word with the computer's own voice. Absent where there is none to try. */
+  readonly onListen?: () => void;
   /** Absent when there is nothing to save, as for an unavailable dictionary. */
   readonly save?: SaveControl;
   /**
@@ -245,6 +247,7 @@ export const WordDefinitionPopup = ({
   loading,
   result,
   onClose,
+  onListen,
   save,
   explain,
   viewport,
@@ -486,6 +489,18 @@ export const WordDefinitionPopup = ({
       <div className="dictionary-popup__scroll" ref={content}>
         <header className="dictionary-popup__header">
           <h2 className="dictionary-popup__word">{displayWord}</h2>
+          {onListen !== undefined && (
+            <button
+              type="button"
+              className="control control--quiet dictionary-popup__listen"
+              onClick={onListen}
+              aria-label={`Hear ${displayWord}`}
+              title="Hear this word"
+              data-testid="dictionary-listen"
+            >
+              <Icon name="speaker" />
+            </button>
+          )}
           <button
             type="button"
             className="control control--quiet dictionary-popup__close"

@@ -29,9 +29,16 @@ const show = (overrides: Partial<Parameters<typeof ReaderToolbar>[0]> = {}): voi
       zoom={DEFAULT_ZOOM}
       scale={1}
       searchOpen={false}
-      hasOutline={false}
-      outlineOpen={false}
-      onToggleOutline={(): void => {}}
+      sidebarOpen={false}
+      onToggleSidebar={(): void => {}}
+      canGoBack={false}
+      onGoBack={(): void => {}}
+      bookmarked={false}
+      onToggleBookmark={(): void => {}}
+      viewMode="continuous"
+      onViewModeChange={(): void => {}}
+      onRotate={(): void => {}}
+      onPrint={(): void => {}}
       onOpen={(): void => {}}
       onClose={(): void => {}}
       onGoToPage={(): void => {}}
@@ -63,7 +70,14 @@ describe('the toolbar keeps four named groups (CTL-1)', () => {
     // "File" rather than "Document" since 6.5: the scrolling region that
     // holds the pages is the Document, and two things with one name are
     // two things a screen-reader user cannot tell apart (6.4 audit, C6).
-    expect(names).toStrictEqual(['File', 'Page navigation', 'Zoom', 'Search']);
+    expect(names).toStrictEqual([
+      'File',
+      'Page navigation',
+      'Zoom',
+      'Page view',
+      'Bookmark and print',
+      'Search',
+    ]);
   });
 
   it('leaves no control outside a group', () => {
@@ -166,27 +180,68 @@ describe('the page field keeps its Milestone 2 behaviour (CTL-4)', () => {
 });
 
 describe('the contents button', () => {
-  it('is off, with the reason, for a document that has no table of contents', () => {
+  it('keeps the sidebar button whatever the book has in it', () => {
     show();
 
     const button = screen.getByTestId<HTMLButtonElement>('outline-toggle');
 
-    expect(button.disabled).toBe(true);
-    expect(button.title).toBe('This document has no table of contents');
+    expect(button.disabled).toBe(false);
     expect(button.getAttribute('aria-expanded')).toBe('false');
   });
 
-  it('opens and closes the contents and says which it is', () => {
-    const onToggleOutline = vi.fn();
-    show({ hasOutline: true, outlineOpen: true, onToggleOutline });
+  it('opens and closes the sidebar and says which it is', () => {
+    const onToggleSidebar = vi.fn();
+    show({ sidebarOpen: true, onToggleSidebar });
 
     const button = screen.getByTestId<HTMLButtonElement>('outline-toggle');
 
-    expect(button.disabled).toBe(false);
     expect(button.getAttribute('aria-expanded')).toBe('true');
 
     fireEvent.click(button);
 
-    expect(onToggleOutline).toHaveBeenCalledOnce();
+    expect(onToggleSidebar).toHaveBeenCalledOnce();
+  });
+
+  it('offers "back" only when there is somewhere to go back to', () => {
+    show();
+
+    expect(screen.getByTestId<HTMLButtonElement>('go-back').disabled).toBe(true);
+  });
+
+  it('goes back, bookmarks, rotates and prints from the bar', () => {
+    const onGoBack = vi.fn();
+    const onToggleBookmark = vi.fn();
+    const onRotate = vi.fn();
+    const onPrint = vi.fn();
+    show({ canGoBack: true, bookmarked: true, onGoBack, onToggleBookmark, onRotate, onPrint });
+
+    fireEvent.click(screen.getByTestId('go-back'));
+    fireEvent.click(screen.getByTestId('bookmark-toggle'));
+    fireEvent.click(screen.getByTestId('rotate'));
+    fireEvent.click(screen.getByTestId('print'));
+
+    expect(onGoBack).toHaveBeenCalledOnce();
+    expect(onToggleBookmark).toHaveBeenCalledOnce();
+    expect(onRotate).toHaveBeenCalledOnce();
+    expect(onPrint).toHaveBeenCalledOnce();
+    expect(screen.getByTestId('bookmark-toggle').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('changes how the pages are set out', () => {
+    const onViewModeChange = vi.fn();
+    show({ onViewModeChange });
+
+    fireEvent.change(screen.getByTestId('view-mode'), { target: { value: 'two' } });
+
+    expect(onViewModeChange).toHaveBeenCalledWith('two');
+  });
+
+  it('turns two pages at a time in the two-page view', () => {
+    const onGoToPage = vi.fn();
+    show({ viewMode: 'two', currentPage: 3, onGoToPage });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+
+    expect(onGoToPage).toHaveBeenCalledWith(5);
   });
 });

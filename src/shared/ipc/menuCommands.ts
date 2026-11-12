@@ -23,6 +23,18 @@ export const MENU_COMMANDS = [
   'toggle-settings',
   'toggle-reading-mode',
   'about',
+  'toggle-thumbnails',
+  'toggle-bookmarks',
+  'toggle-notes',
+  'toggle-bookmark',
+  'go-back',
+  'print',
+  'view-continuous',
+  'view-single',
+  'view-two',
+  'rotate-right',
+  'rotate-left',
+  'read-aloud',
 ] as const;
 
 export type MenuCommand = (typeof MENU_COMMANDS)[number];
@@ -49,6 +61,12 @@ export const MENU_COMMAND_KEYS: Readonly<Partial<Record<MenuCommand, string>>> =
   'toggle-saved-words': 'CmdOrCtrl+L',
   'toggle-settings': 'CmdOrCtrl+,',
   'toggle-reading-mode': 'F11',
+  'toggle-bookmark': 'CmdOrCtrl+D',
+  'toggle-bookmarks': 'CmdOrCtrl+B',
+  'go-back': 'CmdOrCtrl+[',
+  print: 'CmdOrCtrl+P',
+  'rotate-right': 'CmdOrCtrl+Shift+R',
+  'read-aloud': 'CmdOrCtrl+Shift+U',
 };
 
 /** The part of a key press that decides which command it is. */
@@ -78,7 +96,16 @@ export const keyboardCommand = (press: KeyPress): MenuCommand | null => {
   const key = press.key.toLowerCase();
 
   if (press.shiftKey) {
-    return key === 'o' ? 'toggle-contents' : null;
+    switch (key) {
+      case 'o':
+        return 'toggle-contents';
+      case 'r':
+        return 'rotate-right';
+      case 'u':
+        return 'read-aloud';
+      default:
+        return null;
+    }
   }
 
   switch (key) {
@@ -92,6 +119,14 @@ export const keyboardCommand = (press: KeyPress): MenuCommand | null => {
       return 'toggle-saved-words';
     case ',':
       return 'toggle-settings';
+    case 'd':
+      return 'toggle-bookmark';
+    case 'b':
+      return 'toggle-bookmarks';
+    case '[':
+      return 'go-back';
+    case 'p':
+      return 'print';
     default:
       return null;
   }
