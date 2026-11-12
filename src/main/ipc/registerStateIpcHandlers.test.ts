@@ -263,6 +263,7 @@ describe('registerStateIpcHandlers', () => {
       reduceMotion: 'always',
       defaultZoomMode: 'fit-page',
       showDeveloperDiagnostics: 'on',
+      pageTint: 'original',
     });
 
     expect(savePreferences).toHaveBeenCalledWith({
@@ -270,6 +271,7 @@ describe('registerStateIpcHandlers', () => {
       reduceMotion: 'always',
       defaultZoomMode: 'fit-page',
       showDeveloperDiagnostics: 'on',
+      pageTint: 'original',
     });
   });
 
@@ -327,6 +329,7 @@ describe('registerStateIpcHandlers', () => {
       reduceMotion: 'always',
       defaultZoomMode: 'fit-width',
       showDeveloperDiagnostics: 'off',
+      pageTint: 'original',
     });
   });
 
@@ -358,6 +361,7 @@ describe('registerStateIpcHandlers', () => {
       'reduceMotion',
       'defaultZoomMode',
       'showDeveloperDiagnostics',
+      'pageTint',
     ]);
     expect(JSON.stringify(stored)).not.toContain('sk-live-should-not-pass');
     expect(JSON.stringify(stored)).not.toContain('provider.invalid');

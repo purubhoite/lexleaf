@@ -34,6 +34,18 @@ export type DefaultZoomMode = 'fit-width' | 'fit-page' | 'last-used';
 /** Whether the existing diagnostics disclosure starts expanded. */
 export type DeveloperDiagnosticsPreference = 'on' | 'off';
 
+/**
+ * How the pages of a document are tinted.
+ *
+ * A PDF page is a picture with its own colours, usually black on bright
+ * white, and the application's dark appearance does not change it. These
+ * are the ways to make that page easier on the eyes: left as the document
+ * has it, warmed, dimmed, or turned light-on-dark.
+ */
+export type PageTint = 'original' | 'sepia' | 'dimmed' | 'dark';
+
+export const PAGE_TINTS: readonly PageTint[] = ['original', 'sepia', 'dimmed', 'dark'];
+
 export interface Preferences {
   /** ADR-030. Resolved to `data-theme` in the renderer and to the window background in main. */
   readonly appearance: Appearance;
@@ -43,6 +55,7 @@ export interface Preferences {
   readonly defaultZoomMode: DefaultZoomMode;
   /** ADR-031. Opens the existing disclosure; adds and removes no information. */
   readonly showDeveloperDiagnostics: DeveloperDiagnosticsPreference;
+  readonly pageTint: PageTint;
 }
 
 export const DEFAULT_ZOOM_MODES: readonly DefaultZoomMode[] = [
@@ -68,6 +81,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   reduceMotion: DEFAULT_REDUCE_MOTION,
   defaultZoomMode: 'fit-width',
   showDeveloperDiagnostics: 'off',
+  pageTint: 'original',
 };
 
 /** The field names, in the order the settings panel shows them. */
@@ -76,6 +90,7 @@ export const PREFERENCE_KEYS = [
   'reduceMotion',
   'defaultZoomMode',
   'showDeveloperDiagnostics',
+  'pageTint',
 ] as const;
 
 export type PreferenceKey = (typeof PREFERENCE_KEYS)[number];
@@ -94,6 +109,7 @@ export const PREFERENCE_VALUES: Readonly<Record<PreferenceKey, readonly string[]
   reduceMotion: ['system', 'always'],
   defaultZoomMode: ['fit-width', 'fit-page', 'last-used'],
   showDeveloperDiagnostics: ['off', 'on'],
+  pageTint: ['original', 'sepia', 'dimmed', 'dark'],
 };
 
 const parseDefaultZoomMode = (value: unknown): DefaultZoomMode =>
@@ -103,6 +119,9 @@ const parseDefaultZoomMode = (value: unknown): DefaultZoomMode =>
 const parseDeveloperDiagnostics = (value: unknown): DeveloperDiagnosticsPreference =>
   DEVELOPER_DIAGNOSTICS_VALUES.find((candidate) => candidate === value) ??
   DEFAULT_PREFERENCES.showDeveloperDiagnostics;
+
+const parsePageTint = (value: unknown): PageTint =>
+  PAGE_TINTS.find((candidate) => candidate === value) ?? DEFAULT_PREFERENCES.pageTint;
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -125,6 +144,7 @@ export const parsePreferences = (value: unknown): Preferences => {
     reduceMotion: parseReduceMotion(source['reduceMotion']),
     defaultZoomMode: parseDefaultZoomMode(source['defaultZoomMode']),
     showDeveloperDiagnostics: parseDeveloperDiagnostics(source['showDeveloperDiagnostics']),
+    pageTint: parsePageTint(source['pageTint']),
   };
 };
 

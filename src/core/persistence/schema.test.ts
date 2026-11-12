@@ -167,6 +167,7 @@ describe('reader state schema', () => {
           reduceMotion: 'always',
           defaultZoomMode: 'last-used',
           showDeveloperDiagnostics: 'on',
+          pageTint: 'original',
         },
       }),
     );
@@ -177,6 +178,7 @@ describe('reader state schema', () => {
       reduceMotion: 'always',
       defaultZoomMode: 'last-used',
       showDeveloperDiagnostics: 'on',
+      pageTint: 'original',
     });
   });
 
@@ -221,6 +223,7 @@ describe('reader state schema', () => {
         reduceMotion: 'always',
         defaultZoomMode: 'fit-page',
         showDeveloperDiagnostics: 'on',
+        pageTint: 'original',
       },
     } as const;
 
@@ -248,6 +251,7 @@ describe('reader state schema', () => {
       'reduceMotion',
       'defaultZoomMode',
       'showDeveloperDiagnostics',
+      'pageTint',
     ]);
   });
 

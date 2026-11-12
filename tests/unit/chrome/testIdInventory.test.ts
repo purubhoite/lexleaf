@@ -69,6 +69,19 @@ const MILESTONE_5_TEST_IDS = [
 
 /** Added since: three in 6.2 and 6.3, one in 6.4, seven in 6.8, one in M7.2. */
 const ADDED_AFTER_MILESTONE_5 = [
+  // 0.2.3's interface work: the side panel, the shared notice area, the
+  // first-book tip, reading mode, the drop target, the page colour, About
+  // in the settings, and the popup's separate "saved" and "remove".
+  'side-panel',
+  'notices',
+  'lookup-hint',
+  'reading-mode-toggle',
+  'exit-reading-mode',
+  'drop-target',
+  'setting-page-tint',
+  'about',
+  'vocabulary-saved',
+  'vocabulary-remove',
   'skip-to-document',
   'dictionary-popup-arrow',
   'dictionary-status',

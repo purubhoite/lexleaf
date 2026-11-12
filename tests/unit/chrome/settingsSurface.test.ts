@@ -145,12 +145,13 @@ describe('what the settings surface can send and store', () => {
    * check it against the module that actually writes the disk.
    */
 
-  it('has an alphabet that is exactly the four ADR-031 fields and their values', () => {
+  it('has an alphabet that is exactly the ADR-031 fields, the page colour, and their values', () => {
     expect(PREFERENCE_VALUES).toStrictEqual({
       appearance: ['system', 'light', 'dark'],
       reduceMotion: ['system', 'always'],
       defaultZoomMode: ['fit-width', 'fit-page', 'last-used'],
       showDeveloperDiagnostics: ['off', 'on'],
+      pageTint: ['original', 'sepia', 'dimmed', 'dark'],
     });
 
     expect(Object.keys(PREFERENCE_VALUES)).toStrictEqual([...PREFERENCE_KEYS]);
@@ -162,6 +163,7 @@ describe('what the settings surface can send and store', () => {
       reduceMotion: 'system',
       defaultZoomMode: 'fit-width',
       showDeveloperDiagnostics: 'off',
+      pageTint: 'original',
     });
 
     for (const key of PREFERENCE_KEYS) {

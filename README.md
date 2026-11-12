@@ -125,9 +125,11 @@ The crash that started it, where it has been traced, was in the Nouveau graphics
 
 1. Choose **Open PDF…** and select a PDF, drag a PDF onto the window, or right-click a PDF in your file manager and choose **Open with › Lexleaf**. In a long book, **Contents** lists the chapters.
 2. Double-click an unfamiliar word in the document. Lexleaf shows the available dictionary definition in a popup.
-3. Choose **Save word** to add it to your vocabulary.
-4. Open the vocabulary/library view to search, sort, and revisit saved words. Saved entries remain associated with their source document when that context is available.
-5. To take your words elsewhere, use **Export all** in the library: **Spreadsheet (CSV)** opens in Excel, LibreOffice or Google Sheets; **Anki flashcards** writes a text file you bring in with **File › Import** in Anki (word on the front; definition, the sentence you met it in, and the source on the back fields).
+3. Choose **Save word** to add it to your saved words. The popup then says the word is saved; **Remove from saved words** is a separate button, so a second click never throws a word away.
+4. Choose **Saved words** to search, sort, and revisit them. The list opens beside the page, so the book stays in view, and **Show in book** takes you to the place a word came from.
+5. To take your words elsewhere, use **Export all** in Saved words (or **File › Export saved words**): **Spreadsheet (CSV)** opens in Excel, LibreOffice or Google Sheets; **Anki flashcards** writes a text file you bring in with **File › Import** in Anki (word on the front; definition, the sentence you met it in, and the source on the back fields).
+
+**Reading comfortably.** **Reading mode** (`F11`) fills the screen with the page and puts everything else away; `Esc` brings it back. Under **Settings › Page colour** the pages themselves can be shown in sepia, dimmed, or as pale text on a dark page for reading at night. Only how the page looks in Lexleaf changes; the file is never altered. The start screen lists your recent books with how far through each you are and how many words you have saved from it.
 
 **Scanned books.** A scanned PDF is a set of pictures of pages, so there are no words for Lexleaf to look up or search; Lexleaf says so when you open one, and you can still read it. To make lookup work, add a text layer to the file with an OCR tool such as [OCRmyPDF](https://ocrmypdf.readthedocs.io/) (`ocrmypdf scanned.pdf readable.pdf`), then open the new file.
 
@@ -139,6 +141,13 @@ The crash that started it, where it has been traced, was in the Nouveau graphics
 | `Ctrl/Cmd -`                 | Zoom out                                                       |
 | `Ctrl/Cmd 0`                 | Fit page to width                                              |
 | `Ctrl/Cmd F`                 | Open document search                                           |
+| `Ctrl/Cmd O`                 | Open a PDF                                                     |
+| `Ctrl/Cmd W`                 | Close the document                                             |
+| `Ctrl/Cmd G`                 | Go to page                                                     |
+| `Ctrl/Cmd Shift O`           | Show or hide Contents                                          |
+| `Ctrl/Cmd L`                 | Show or hide Saved words                                       |
+| `Ctrl/Cmd ,`                 | Show or hide Settings                                          |
+| `F11`                        | Reading mode (full screen); `Esc` leaves it                    |
 | `Alt Left` / `Alt Right`     | Move between words under the pointer/focus                     |
 | `Enter`                      | Look up the focused word                                       |
 | `Esc`                        | Close the definition popup, then close search/word interaction |

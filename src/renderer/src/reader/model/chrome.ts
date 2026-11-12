@@ -35,7 +35,7 @@ export const SEARCH_WRAP_BREAKPOINT = 820;
  * not be mistaken for evidence that the supported layout fits. A test
  * pins this copy to the main process's value.
  */
-export const MINIMUM_WINDOW_WIDTH = 900;
+export const MINIMUM_WINDOW_WIDTH = 560;
 
 /**
  * The `max-width` that means "strictly narrower than `breakpoint`".

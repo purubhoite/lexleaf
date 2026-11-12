@@ -4,6 +4,7 @@ import type { LibrarySort, SavedWord, VocabularyFailure } from '@core/vocabulary
 
 import { LibraryExport, type ExportLibrary } from './LibraryExport';
 import type { LibraryControls } from './useVocabularyLibrary';
+import { Icon } from '../ui/Icon';
 import { Message } from '../ui/Message';
 
 /**
@@ -120,7 +121,7 @@ const Card = ({
             onOpenOrigin(item);
           }}
         >
-          Open origin
+          Show in book
         </button>
         <button
           type="button"
@@ -148,8 +149,14 @@ export const LibraryView = ({
     <section className="library" aria-label="Saved words" data-testid="library">
       <header className="library__header">
         <h2 className="library__title">Saved words</h2>
-        <button type="button" className="control library__close" onClick={onClose}>
-          Back to reading
+        <button
+          type="button"
+          className="control control--quiet library__close"
+          aria-label="Close saved words"
+          title="Close saved words"
+          onClick={onClose}
+        >
+          <Icon name="close" />
         </button>
       </header>
 

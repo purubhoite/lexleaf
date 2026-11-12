@@ -140,7 +140,7 @@ describe('changing a preference', () => {
     expect(document.documentElement.getAttribute('data-motion')).toBe('system');
   });
 
-  it('sends one message per change, and only the four fields', () => {
+  it('sends one message per change, and only the preference fields', () => {
     const { bridge, savePreferences } = bridgeWith();
     const { result } = renderHook(() => usePreferences(bridge));
 
@@ -153,8 +153,8 @@ describe('changing a preference', () => {
 
     expect(savePreferences).toHaveBeenCalledTimes(2);
     expect(savePreferences.mock.calls.map((call) => Object.keys(call[0]))).toStrictEqual([
-      ['appearance', 'reduceMotion', 'defaultZoomMode', 'showDeveloperDiagnostics'],
-      ['appearance', 'reduceMotion', 'defaultZoomMode', 'showDeveloperDiagnostics'],
+      ['appearance', 'reduceMotion', 'defaultZoomMode', 'showDeveloperDiagnostics', 'pageTint'],
+      ['appearance', 'reduceMotion', 'defaultZoomMode', 'showDeveloperDiagnostics', 'pageTint'],
     ]);
   });
 
@@ -173,11 +173,13 @@ describe('changing a preference', () => {
       ...DEFAULT_PREFERENCES,
       appearance: 'dark',
       showDeveloperDiagnostics: 'on',
+      pageTint: 'original',
     });
     expect(savePreferences).toHaveBeenLastCalledWith({
       ...DEFAULT_PREFERENCES,
       appearance: 'dark',
       showDeveloperDiagnostics: 'on',
+      pageTint: 'original',
     });
   });
 

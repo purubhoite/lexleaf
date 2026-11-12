@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
 
+import { Icon } from '../ui/Icon';
 import type { SearchState } from './useDocumentSearch';
 
 /**
@@ -97,7 +98,7 @@ export const SearchPanel = ({
         onClick={onPrevious}
         disabled={state.matches.length === 0}
       >
-        ◀
+        <Icon name="chevron-left" />
       </button>
       <button
         type="button"
@@ -106,7 +107,7 @@ export const SearchPanel = ({
         onClick={onNext}
         disabled={state.matches.length === 0}
       >
-        ▶
+        <Icon name="chevron-right" />
       </button>
 
       <label className="checkbox search__option">

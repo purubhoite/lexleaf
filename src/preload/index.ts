@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 import { IpcChannel } from '@shared/ipc/channels';
+import { parseMenuCommand, type MenuCommand } from '@shared/ipc/menuCommands';
 import type { DictionaryQuery, DictionaryResult } from '@core/dictionary/types';
 import {
   AI_UNCONFIGURED,
@@ -229,6 +230,30 @@ const updates: UpdateBridge = {
 
 const desktopBridge: DesktopBridge = {
   getAppInfo,
+  onMenuCommand: (listener: (command: MenuCommand) => void): (() => void) => {
+    // Only a known command name is passed on; the event object, which
+    // carries the sender, never reaches the page.
+    const handle = (_event: unknown, raw: unknown): void => {
+      const command = parseMenuCommand(raw);
+
+      if (command !== null) {
+        listener(command);
+      }
+    };
+
+    ipcRenderer.on(IpcChannel.MenuCommand, handle);
+
+    return (): void => {
+      ipcRenderer.removeListener(IpcChannel.MenuCommand, handle);
+    };
+  },
+  setFullScreen: async (on: boolean): Promise<void> => {
+    try {
+      await ipcRenderer.invoke(IpcChannel.SetFullScreen, on === true);
+    } catch {
+      // Reading mode still hides the bars if the window cannot go full screen.
+    }
+  },
   reportProblem: async (): Promise<boolean> => {
     try {
       return (await ipcRenderer.invoke(IpcChannel.ReportProblem)) === true;

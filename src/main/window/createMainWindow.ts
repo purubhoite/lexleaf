@@ -12,8 +12,10 @@ import {
 const WINDOW_DEFAULTS = {
   width: 1200,
   height: 820,
-  minWidth: 900,
-  minHeight: 600,
+  // Narrow enough to sit in half of a small laptop screen; the layout
+  // below 820 pixels is the one written for exactly that.
+  minWidth: 560,
+  minHeight: 480,
 } as const;
 
 export interface MainWindowOptions {

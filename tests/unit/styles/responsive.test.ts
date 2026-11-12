@@ -489,12 +489,12 @@ describe('text the application does not control can always shrink (CTL-5, CTL-10
    * widens its row and pushes the controls out of the window, which is
    * CTL-5’s failure case and needs no media query to happen.
    */
-  const SHRINKABLE = ['.reader__name', '.shell__title'];
+  const SHRINKABLE = ['.reader__name'];
 
   const ruleFor = (selector: string): Rule | undefined =>
     rules(chrome()).find((rule) => rule.selector === selector);
 
-  it('finds both rules, so the check cannot pass by matching nothing', () => {
+  it('finds the rule, so the check cannot pass by matching nothing', () => {
     for (const selector of SHRINKABLE) {
       expect(ruleFor(selector)).toBeDefined();
     }

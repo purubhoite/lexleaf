@@ -20,7 +20,7 @@ import type { PreferenceKey, Preferences } from '@core/persistence/preferences';
  *   reading surface is hidden, not unmounted, so the open document, every
  *   rendered page and the reader's place in it survive a trip to settings;
  * - no second window, no modal, no focus trap. The reader can tab out of
- *   it the same way they tab out of anything else, and \"Back to reading\"
+ *   it the same way they tab out of anything else, and \"Close settings\"
  *   is a button, not a dismissal gesture;
  * - native radio groups in native fieldsets. The group's accessible name
  *   is its `<legend>`, arrow keys move within a group and Tab moves
@@ -81,6 +81,22 @@ const DEFAULT_ZOOM_CHOICES: readonly Choice<Preferences['defaultZoomMode']>[] = 
     value: 'last-used',
     label: 'The zoom I used last',
     description: 'Opens at the zoom of the last document you read.',
+  },
+];
+
+/*
+ * The pages of a book are a picture with their own colours, usually black
+ * on bright white, and Lexleaf's dark appearance does not change them.
+ * These soften the page as it is shown here; the file is never altered.
+ */
+const PAGE_TINT_CHOICES: readonly Choice<Preferences['pageTint']>[] = [
+  { value: 'original', label: 'Original', description: 'Pages exactly as the document has them.' },
+  { value: 'sepia', label: 'Sepia', description: 'A warm paper colour, softer than white.' },
+  { value: 'dimmed', label: 'Dimmed', description: 'The same page with less glare.' },
+  {
+    value: 'dark',
+    label: 'Night',
+    description: 'Pale text on a dark page. Pictures in the book are inverted too.',
   },
 ];
 
@@ -159,7 +175,7 @@ export const SettingsPanel = ({
         data-testid="settings-close"
         onClick={onClose}
       >
-        Back to reading
+        Close settings
       </button>
     </div>
 
@@ -171,7 +187,7 @@ export const SettingsPanel = ({
     <ChoiceGroup
       name="appearance"
       legend="Appearance"
-      note="Controls Lexleaf’s colours and contrast. PDF pages are always shown exactly as the document defines them."
+      note="Controls Lexleaf’s colours and contrast. The colour of the book’s own pages is set under Page colour, below."
       testId="setting-appearance"
       choices={APPEARANCE_CHOICES}
       selected={preferences.appearance}
@@ -195,6 +211,16 @@ export const SettingsPanel = ({
       testId="setting-default-zoom"
       choices={DEFAULT_ZOOM_CHOICES}
       selected={preferences.defaultZoomMode}
+      onChange={onChange}
+    />
+
+    <ChoiceGroup
+      name="pageTint"
+      legend="Page colour"
+      note="Makes book pages easier on the eyes, especially at night. Only how the page looks here changes; the file is never altered."
+      testId="setting-page-tint"
+      choices={PAGE_TINT_CHOICES}
+      selected={preferences.pageTint}
       onChange={onChange}
     />
 

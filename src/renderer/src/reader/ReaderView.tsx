@@ -7,6 +7,7 @@ import {
   useState,
   type FormEvent,
   type ReactElement,
+  type ReactNode,
 } from 'react';
 
 import {
@@ -49,11 +50,16 @@ import { Message } from '../ui/Message';
 import { DeveloperDiagnostics } from './DeveloperDiagnostics';
 import { ReaderToolbar } from './ReaderToolbar';
 import { RecentDocuments } from './RecentDocuments';
+import type { CommandSource } from '../app/commandBus';
+import { Icon } from '../ui/Icon';
+
 import { OutlinePanel } from './OutlinePanel';
 import { SearchPanel } from './SearchPanel';
 import { useDocumentOutline } from './useDocumentOutline';
 import { useDocumentSearch } from './useDocumentSearch';
 import { useDocumentTextPresence } from './useDocumentTextPresence';
+import { useLookupHint } from './useLookupHint';
+import { useSavedWordCounts } from './useSavedWordCounts';
 import { usePageMetrics } from './usePageMetrics';
 import { useReaderDocument } from './useReaderDocument';
 import { useReadingPosition } from './useReadingPosition';
@@ -95,6 +101,17 @@ const selfCheckPages = (pageCount: number): number[] => {
   return Array.from({ length: 20 }, (_, index) => Math.min(pageCount, 1 + index * step));
 };
 
+/*
+ * Written out rather than assembled, so that the stylesheet tests can see
+ * that every tint has a rule and every rule a user.
+ */
+const PAGE_TINT_CLASS: Readonly<Record<Preferences['pageTint'], string>> = {
+  original: 'reader__pages',
+  sepia: 'reader__pages reader__pages--sepia',
+  dimmed: 'reader__pages reader__pages--dimmed',
+  dark: 'reader__pages reader__pages--dark',
+};
+
 const megabytes = (bytes: number): string => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
 export interface ReaderViewProps {
@@ -122,6 +139,23 @@ export interface ReaderViewProps {
    * the shell. Optional, so a caller that predates it behaves as before.
    */
   readonly onWriteHealth?: (health: StateWriteHealth) => void;
+  /**
+   * The application's own controls (saved words, settings). They sit at
+   * the end of the one bar the window has, whether or not a document is
+   * open.
+   */
+  readonly trailing?: ReactNode;
+  /**
+   * The application's notices. They are shown in the same place as the
+   * reader's own, directly under the bar, so that everything the reader
+   * is told arrives in one spot.
+   */
+  readonly notices?: ReactNode;
+  /** Commands from the application menu and the keyboard. */
+  readonly commands?: CommandSource;
+  /** Reading mode: the bar and everything beside the pages are put away. */
+  readonly readingMode?: boolean;
+  readonly onExitReadingMode?: () => void;
 }
 
 export const ReaderView = ({
@@ -130,6 +164,11 @@ export const ReaderView = ({
   onOccurrenceOutcome,
   preferences = DEFAULT_PREFERENCES,
   onWriteHealth,
+  trailing,
+  notices,
+  commands,
+  readingMode = false,
+  onExitReadingMode,
 }: ReaderViewProps): ReactElement => {
   const { state, openDialog, openRecent, submitPassword, cancel, close } =
     useReaderDocument(bridge);
@@ -152,6 +191,10 @@ export const ReaderView = ({
   // The reader can put the scan notice away; it stays away for that
   // document and comes back for the next one that needs it.
   const [scanNoticeDismissedFor, setScanNoticeDismissedFor] = useState<unknown>(null);
+  const savedWordCounts = useSavedWordCounts(bridge, state.status === 'empty');
+  const lookupHint = useLookupHint();
+  const dismissLookupHint = lookupHint.dismiss;
+  const pageFieldRef = useRef<HTMLInputElement>(null);
   const pdfDocument = ready?.document ?? null;
   const pageCount = ready?.pageCount ?? 0;
   const documentId = ready?.documentId ?? null;
@@ -493,6 +536,89 @@ export const ReaderView = ({
     setZoom({ mode: 'fixed', scale: previousZoomLevel(scale) });
   }, [scale]);
 
+  // The window's title names the open document, as every reader's does;
+  // the application's own name no longer takes a row of the window to say.
+  const documentName = ready?.name ?? null;
+
+  useEffect(() => {
+    document.title = documentName === null ? 'Lexleaf' : `${documentName} — Lexleaf`;
+  }, [documentName]);
+
+  // The reader has looked a word up: the tip that says they can has done
+  // its work.
+  useEffect(() => {
+    if (dictionaryOpen) {
+      dismissLookupHint();
+    }
+  }, [dictionaryOpen, dismissLookupHint]);
+
+  /*
+   * Commands from the menu and the keyboard. Each does exactly what the
+   * control in the bar does; the ones that act on a document do nothing
+   * when none is open.
+   */
+  const hasDocument = ready !== null;
+  const hasOutline = outline.length > 0;
+
+  useEffect(() => {
+    if (commands === undefined) {
+      return undefined;
+    }
+
+    return commands.subscribe((command) => {
+      switch (command) {
+        case 'open-document':
+          void openDialog();
+          break;
+        case 'close-document':
+          if (hasDocument) {
+            void close();
+          }
+          break;
+        case 'find':
+          if (hasDocument) {
+            closeDictionary();
+            setSearchOpen(true);
+          }
+          break;
+        case 'go-to-page':
+          pageFieldRef.current?.focus();
+          pageFieldRef.current?.select();
+          break;
+        case 'toggle-contents':
+          if (hasOutline) {
+            setOutlineOpen((open) => !open);
+          }
+          break;
+        case 'zoom-in':
+          zoomIn();
+          break;
+        case 'zoom-out':
+          zoomOut();
+          break;
+        case 'zoom-fit-width':
+          setZoom({ mode: 'fit-width', scale });
+          break;
+        case 'zoom-fit-page':
+          setZoom({ mode: 'fit-page', scale });
+          break;
+        default:
+          // The shell's commands: saved words, settings, export, reading mode.
+          break;
+      }
+    });
+  }, [
+    commands,
+    openDialog,
+    close,
+    hasDocument,
+    hasOutline,
+    closeDictionary,
+    zoomIn,
+    zoomOut,
+    scale,
+  ]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       const target = event.target;
@@ -610,15 +736,37 @@ export const ReaderView = ({
 
   return (
     <main className="reader">
-      {ready !== null && (
+      {/*
+        One bar. With a document open it is the toolbar, with the
+        application's own controls at its end; with none, those controls
+        are all there is to show. Reading mode puts it away entirely.
+      */}
+      {ready === null && !readingMode && trailing !== undefined && (
+        <header className="reader__bar reader__bar--idle">{trailing}</header>
+      )}
+
+      {readingMode && (
+        <button
+          type="button"
+          className="control reader__exit-reading"
+          data-testid="exit-reading-mode"
+          onClick={onExitReadingMode}
+        >
+          Exit reading mode
+        </button>
+      )}
+
+      {ready !== null && !readingMode && (
         <ReaderToolbar
+          pageFieldRef={pageFieldRef}
+          trailing={trailing}
           documentName={ready.name}
           currentPage={currentPage}
           pageCount={pageCount}
           zoom={zoom}
           scale={scale}
           searchOpen={searchOpen}
-          hasOutline={outline.length > 0}
+          hasOutline={hasOutline}
           outlineOpen={outlineOpen}
           onToggleOutline={(): void => {
             setOutlineOpen((open) => !open);
@@ -652,42 +800,64 @@ export const ReaderView = ({
       )}
 
       {/*
-        Why words cannot be looked up, when they cannot.
-
-        A document with no text anywhere — a scan — is told so once, for
-        the whole document, wherever the reader is in it, until they put
-        the notice away. A document that has text but not on this page (a
-        cover, a plate) gets the shorter line, for as long as that page is
-        the one being read. Both sit above the pages, across the width of
-        the reader, and neither is announced: they describe the document,
-        they are not events (6.5, audit C-5).
+        Everything the reader is told, in one place, directly under the
+        bar: the application's notices first, then the reader's own. The
+        region is capped and scrolls within itself, so that however many
+        notices there are, the pages keep most of the window.
       */}
-      {ready !== null && scanNotice === 'document' && (
-        <div className="reader__notice" data-testid="scan-notice">
-          <Message kind="info" announce={false}>
-            {NO_TEXT_LAYER_MESSAGE}
-          </Message>
-          <button
-            type="button"
-            className="control"
-            onClick={(): void => {
-              setScanNoticeDismissedFor(ready.document);
-            }}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-      {ready !== null && scanNotice === 'page' && (
-        <div className="reader__notice">
-          <Message kind="info" announce={false}>
-            {PAGE_WITHOUT_TEXT_MESSAGE}
-          </Message>
-        </div>
-      )}
+      <div className="reader__notices" data-testid="notices">
+        {notices}
+
+        {ready !== null && lookupHint.visible && (
+          <div className="reader__notice" data-testid="lookup-hint">
+            <Message kind="info">
+              Tip: double-click any word in the book to see what it means. You can save it from
+              there.
+            </Message>
+            <button type="button" className="control" onClick={lookupHint.dismiss}>
+              Got it
+            </button>
+          </div>
+        )}
+
+        {/*
+          Why words cannot be looked up, when they cannot.
+
+          A document with no text anywhere — a scan — is told so once, for
+          the whole document, wherever the reader is in it, until they put
+          the notice away. A document that has text but not on this page (a
+          cover, a plate) gets the shorter line, for as long as that page is
+          the one being read. Both sit above the pages, across the width of
+          the reader, and neither is announced: they describe the document,
+          they are not events (6.5, audit C-5).
+        */}
+        {ready !== null && scanNotice === 'document' && (
+          <div className="reader__notice" data-testid="scan-notice">
+            <Message kind="info" announce={false}>
+              {NO_TEXT_LAYER_MESSAGE}
+            </Message>
+            <button
+              type="button"
+              className="control"
+              onClick={(): void => {
+                setScanNoticeDismissedFor(ready.document);
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+        {ready !== null && scanNotice === 'page' && (
+          <div className="reader__notice">
+            <Message kind="info" announce={false}>
+              {PAGE_WITHOUT_TEXT_MESSAGE}
+            </Message>
+          </div>
+        )}
+      </div>
 
       <div className="reader__body">
-        {ready !== null && outlineOpen && outline.length > 0 && (
+        {ready !== null && outlineOpen && outline.length > 0 && !readingMode && (
           <OutlinePanel
             entries={outline}
             currentPage={currentPage}
@@ -731,13 +901,19 @@ export const ReaderView = ({
                 className="control start__open"
                 onClick={(): void => void openDialog()}
               >
+                <Icon name="open" />
                 Open PDF…
               </button>
+              <p className="start__hint">
+                You can also drop a PDF anywhere on this window, or right-click a PDF and choose
+                Open with Lexleaf.
+              </p>
               <h3>Recent documents</h3>
               <RecentDocuments
                 recents={recents.snapshot.recents}
                 onOpen={(id): void => void openRecent(id)}
                 onForget={recents.forget}
+                savedWords={savedWordCounts}
               />
             </section>
           )}
@@ -801,7 +977,7 @@ export const ReaderView = ({
 
           {ready !== null && (
             <div
-              className="reader__pages"
+              className={PAGE_TINT_CLASS[preferences.pageTint]}
               style={{
                 height: `${String(layout.totalHeight)}px`,
                 width: `${String(layout.contentWidth)}px`,

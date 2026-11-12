@@ -12,7 +12,7 @@ import { release as osRelease, version as osVersion } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-import { app, BrowserWindow, dialog, ipcMain, net, session, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, net, session, shell } from 'electron';
 import packageMetadata from '../../package.json';
 
 import type { DocumentRequestResult } from '@shared/ipc/contracts';
@@ -42,6 +42,8 @@ import {
 
 import { resolveDevServerOrigin } from './environment';
 import { createAppInfo } from './ipc/appInfo';
+import { buildApplicationMenu } from './menu/applicationMenu';
+import { IpcChannel } from '@shared/ipc/channels';
 import { registerAiIpcHandlers } from './ipc/registerAiIpcHandlers';
 import { registerAppIpcHandlers } from './ipc/registerAppIpcHandlers';
 import { registerDictionaryIpcHandlers } from './ipc/registerDictionaryIpcHandlers';
@@ -749,6 +751,41 @@ const bootstrap = async (): Promise<void> => {
     devServerOrigin,
   });
 
+  const reportProblem = (): void => {
+    // "Ubuntu 24.04.4 LTS" from the distribution's own file; elsewhere
+    // the system's name for itself ("Windows 11 Home").
+    const readSystemName = (): string | null => {
+      if (process.platform !== 'linux') {
+        return osVersion();
+      }
+
+      try {
+        return parseOsReleaseName(readFileSync('/etc/os-release', 'utf8'));
+      } catch {
+        return null;
+      }
+    };
+
+    openExternalUrl(
+      problemReportAddress({
+        version: packageMetadata.version,
+        platform: process.platform,
+        arch: process.arch,
+        systemName: readSystemName(),
+        systemRelease: osRelease(),
+        packaging: detectPackaging({
+          platform: process.platform,
+          packaged: app.isPackaged,
+          env: process.env,
+        }),
+        electronVersion: process.versions.electron,
+        chromeVersion: process.versions.chrome,
+        displayDrivers: process.platform === 'linux' ? displayDrivers(displayDriverProbe) : [],
+        hardwareAcceleration: acceleration.accelerate,
+      }),
+    );
+  };
+
   registerAppIpcHandlers(ipcMain, {
     appInfo: createAppInfo({
       name: packageMetadata.productName,
@@ -756,42 +793,29 @@ const bootstrap = async (): Promise<void> => {
       electronVersion: process.versions.electron,
       chromeVersion: process.versions.chrome,
     }),
-    reportProblem: () => {
-      // "Ubuntu 24.04.4 LTS" from the distribution's own file; elsewhere
-      // the system's name for itself ("Windows 11 Home").
-      const readSystemName = (): string | null => {
-        if (process.platform !== 'linux') {
-          return osVersion();
-        }
-
-        try {
-          return parseOsReleaseName(readFileSync('/etc/os-release', 'utf8'));
-        } catch {
-          return null;
-        }
-      };
-
-      openExternalUrl(
-        problemReportAddress({
-          version: packageMetadata.version,
-          platform: process.platform,
-          arch: process.arch,
-          systemName: readSystemName(),
-          systemRelease: osRelease(),
-          packaging: detectPackaging({
-            platform: process.platform,
-            packaged: app.isPackaged,
-            env: process.env,
-          }),
-          electronVersion: process.versions.electron,
-          chromeVersion: process.versions.chrome,
-          displayDrivers: process.platform === 'linux' ? displayDrivers(displayDriverProbe) : [],
-          hardwareAcceleration: acceleration.accelerate,
-        }),
-      );
+    reportProblem,
+    setFullScreen: (on) => {
+      mainWindow?.setFullScreen(on);
     },
     devServerOrigin,
   });
+
+  /*
+   * Lexleaf's own menu bar, in place of the stock one Electron supplies.
+   * An item sends its command's name to the window, which does what its
+   * own button would have done; see `applicationMenu.ts`.
+   */
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate(
+      buildApplicationMenu({
+        send: (command) => {
+          mainWindow?.webContents.send(IpcChannel.MenuCommand, command);
+        },
+        reportProblem,
+        development: !app.isPackaged,
+      }),
+    ),
+  );
 
   // A reading position recorded a moment before quitting is the one that
   // matters most, so the debounced write is forced out before the process

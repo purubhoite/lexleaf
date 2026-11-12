@@ -24,7 +24,7 @@ type ExportState =
   | { readonly status: 'working' }
   | { readonly status: 'done'; readonly outcome: VocabularyExportOutcome };
 
-const describeOutcome = (outcome: VocabularyExportOutcome): string | null => {
+export const describeExportOutcome = (outcome: VocabularyExportOutcome): string | null => {
   switch (outcome.status) {
     case 'exported':
       return outcome.count === 1
@@ -58,7 +58,7 @@ export const LibraryExport = ({ onExport }: LibraryExportProps): ReactElement =>
       });
   };
 
-  const message = state.status === 'done' ? describeOutcome(state.outcome) : null;
+  const message = state.status === 'done' ? describeExportOutcome(state.outcome) : null;
 
   return (
     <div className="library__export" role="group" aria-label="Export all saved words">

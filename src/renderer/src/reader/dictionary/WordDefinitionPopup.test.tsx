@@ -253,14 +253,18 @@ describe('WordDefinitionPopup', () => {
       expect(screen.getByTestId('vocabulary-save').textContent).toBe('Save from here');
     });
 
-    it('says Saved, and says how many other places the word came from', () => {
+    it('says the word is saved as a statement, not as a button (0.2.3)', () => {
       show(found(), { save: saveControl({ state: 'saved-here', otherPlaces: 3 }) });
 
-      expect(screen.getByTestId('vocabulary-save').textContent).toBe('Saved');
+      // Pressing "Saved" used to remove the word. It is no longer something
+      // that can be pressed.
+      expect(screen.queryByTestId('vocabulary-save')).toBeNull();
+      expect(screen.getByTestId('vocabulary-saved').tagName).toBe('P');
+      expect(screen.getByTestId('vocabulary-saved').textContent).toBe('Saved to your words');
       expect(screen.getByTestId('vocabulary-other-places').textContent).toContain('3 other places');
     });
 
-    it('reports a save, and a removal when it already says Saved', () => {
+    it('reports a save, and a removal only from the control that says Remove', () => {
       const onSave = vi.fn();
       const onRemove = vi.fn();
 
@@ -271,7 +275,14 @@ describe('WordDefinitionPopup', () => {
 
       cleanup();
       show(found(), { save: saveControl({ state: 'saved-here', onSave, onRemove }) });
-      fireEvent.click(screen.getByTestId('vocabulary-save'));
+      fireEvent.click(screen.getByTestId('vocabulary-saved'));
+
+      expect(onRemove).not.toHaveBeenCalled();
+
+      const remove = screen.getByTestId('vocabulary-remove');
+
+      expect(remove.textContent).toBe('Remove from saved words');
+      fireEvent.click(remove);
 
       expect(onRemove).toHaveBeenCalledTimes(1);
       expect(onSave).toHaveBeenCalledTimes(1);
