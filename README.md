@@ -59,6 +59,8 @@ AI explanation code is present for future evaluation and is disabled by default 
 
 The published installer is self-contained; end users do not need Node.js or npm.
 
+To uninstall, open **Settings → Apps → Installed apps**, find **Lexleaf**, and choose **Uninstall**. Your saved vocabulary and preferences are kept in your user profile (`%APPDATA%\Lexleaf`) and are not removed with the application; delete that folder if you want them gone too.
+
 ## Install on Linux
 
 Lexleaf's Linux release targets **x86_64 / amd64** and is distributed as an AppImage and a Debian package. These packages are built from the same v0.1.1 source release as the Windows installer.
@@ -164,6 +166,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and fixture expectations
 ## Dictionary attribution and licensing
 
 Lexleaf application code is licensed under [Apache License 2.0](LICENSE), with project notices in [NOTICE](NOTICE). The bundled dictionary is separate third-party data and is **not** Apache-2.0 application code. It is derived from [Open English WordNet 2024](https://en-word.net/), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), and incorporates material governed by the Princeton WordNet license. See [`resources/dictionary/NOTICE.md`](resources/dictionary/NOTICE.md) for the generated attribution, source information, modification statement, and disclaimers. Lexleaf is not affiliated with, sponsored by, or endorsed by Princeton University or the Open English WordNet team.
+
+## Code signing policy
+
+Lexleaf release binaries are **currently unsigned**. Every release publishes `SHA256SUMS.txt` so that a download can be verified against it.
+
+Releases are built from this repository by GitHub Actions on GitHub-hosted runners, from a commit on `main` that has passed the verification workflow. Nothing is built or uploaded from a developer machine.
+
+Team roles:
+
+- Authors and reviewers: [@purubhoite](https://github.com/purubhoite), the repository owner. Changes from anyone else arrive as pull requests and are reviewed by the owner before merging.
+- Approvers: [@purubhoite](https://github.com/purubhoite). Every release is started and approved manually by the owner.
+
+Privacy policy: this program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. See [Local-first architecture and privacy](#local-first-architecture-and-privacy).
 
 ## Contributing and support
 
