@@ -15,7 +15,7 @@ import {
   type Preferences,
 } from '@core/persistence/preferences';
 import { DEFAULT_ZOOM, type ReadingPosition, type ZoomState } from '@core/persistence/types';
-import { NO_TEXT_LAYER_MESSAGE } from '@core/pdf/messages';
+import { NO_TEXT_LAYER_MESSAGE, PAGE_WITHOUT_TEXT_MESSAGE } from '@core/pdf/messages';
 import type { DesktopBridge, StateWriteHealth } from '@shared/ipc/contracts';
 
 import { useExplainInContext } from './ai/useExplainInContext';
@@ -53,6 +53,7 @@ import { OutlinePanel } from './OutlinePanel';
 import { SearchPanel } from './SearchPanel';
 import { useDocumentOutline } from './useDocumentOutline';
 import { useDocumentSearch } from './useDocumentSearch';
+import { useDocumentTextPresence } from './useDocumentTextPresence';
 import { usePageMetrics } from './usePageMetrics';
 import { useReaderDocument } from './useReaderDocument';
 import { useReadingPosition } from './useReadingPosition';
@@ -147,6 +148,10 @@ export const ReaderView = ({
   const [pagesWithoutText, setPagesWithoutText] = useState<ReadonlySet<number>>(new Set());
   const ready = state.status === 'ready' ? state : null;
   const outline = useDocumentOutline(ready?.document ?? null);
+  const textPresence = useDocumentTextPresence(ready?.document ?? null);
+  // The reader can put the scan notice away; it stays away for that
+  // document and comes back for the next one that needs it.
+  const [scanNoticeDismissedFor, setScanNoticeDismissedFor] = useState<unknown>(null);
   const pdfDocument = ready?.document ?? null;
   const pageCount = ready?.pageCount ?? 0;
   const documentId = ready?.documentId ?? null;
@@ -587,6 +592,17 @@ export const ReaderView = ({
    * Render
    * ---------------------------------------------------------------- */
 
+  const scanNotice: 'document' | 'page' | null =
+    ready === null
+      ? null
+      : textPresence === 'none'
+        ? scanNoticeDismissedFor === ready.document
+          ? null
+          : 'document'
+        : pagesWithoutText.has(currentPage)
+          ? 'page'
+          : null;
+
   const loadingProgress =
     state.status === 'loading' && state.progress.total > 0
       ? `${megabytes(state.progress.loaded)} of ${megabytes(state.progress.total)}`
@@ -633,6 +649,41 @@ export const ReaderView = ({
             search.clear();
           }}
         />
+      )}
+
+      {/*
+        Why words cannot be looked up, when they cannot.
+
+        A document with no text anywhere — a scan — is told so once, for
+        the whole document, wherever the reader is in it, until they put
+        the notice away. A document that has text but not on this page (a
+        cover, a plate) gets the shorter line, for as long as that page is
+        the one being read. Both sit above the pages, across the width of
+        the reader, and neither is announced: they describe the document,
+        they are not events (6.5, audit C-5).
+      */}
+      {ready !== null && scanNotice === 'document' && (
+        <div className="reader__notice" data-testid="scan-notice">
+          <Message kind="info" announce={false}>
+            {NO_TEXT_LAYER_MESSAGE}
+          </Message>
+          <button
+            type="button"
+            className="control"
+            onClick={(): void => {
+              setScanNoticeDismissedFor(ready.document);
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      {ready !== null && scanNotice === 'page' && (
+        <div className="reader__notice">
+          <Message kind="info" announce={false}>
+            {PAGE_WITHOUT_TEXT_MESSAGE}
+          </Message>
+        </div>
       )}
 
       <div className="reader__body">
@@ -782,11 +833,6 @@ export const ReaderView = ({
         </div>
 
         <WordAnnouncement interaction={words.interaction} />
-        {pagesWithoutText.has(currentPage) && (
-          <Message kind="info" announce={false}>
-            {NO_TEXT_LAYER_MESSAGE}
-          </Message>
-        )}
         {!import.meta.env.PROD && ready !== null && (
           <DeveloperDiagnostics
             startOpen={preferences.showDeveloperDiagnostics === 'on'}
