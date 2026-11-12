@@ -129,6 +129,8 @@ The crash that started it, where it has been traced, was in the Nouveau graphics
 4. Open the vocabulary/library view to search, sort, and revisit saved words. Saved entries remain associated with their source document when that context is available.
 5. To take your words elsewhere, use **Export all** in the library: **Spreadsheet (CSV)** opens in Excel, LibreOffice or Google Sheets; **Anki flashcards** writes a text file you bring in with **File › Import** in Anki (word on the front; definition, the sentence you met it in, and the source on the back fields).
 
+**Scanned books.** A scanned PDF is a set of pictures of pages, so there are no words for Lexleaf to look up or search; Lexleaf says so when you open one, and you can still read it. To make lookup work, add a text layer to the file with an OCR tool such as [OCRmyPDF](https://ocrmypdf.readthedocs.io/) (`ocrmypdf scanned.pdf readable.pdf`), then open the new file.
+
 ### Keyboard shortcuts
 
 | Shortcut                     | Action                                                         |

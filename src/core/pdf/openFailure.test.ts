@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { NO_TEXT_LAYER_MESSAGE, UNABLE_TO_OPEN_MESSAGE } from './messages';
+import {
+  NO_TEXT_LAYER_MESSAGE,
+  PAGE_WITHOUT_TEXT_MESSAGE,
+  UNABLE_TO_OPEN_MESSAGE,
+} from './messages';
 import { classifyOpenFailure } from './openFailure';
 
 /** Reproduces the shape of a PDF.js exception without importing the engine. */
@@ -60,8 +64,15 @@ describe('classifyOpenFailure', () => {
     expect(UNABLE_TO_OPEN_MESSAGE).toBe(
       'Unable to open this PDF.\n\nThe file may be corrupted, encrypted, or unsupported.',
     );
-    expect(NO_TEXT_LAYER_MESSAGE).toBe(
-      'This PDF does not contain selectable text.\nWord lookup is unavailable for this document.',
-    );
+  });
+
+  it('tells the reader of a scan why, that it can be read, and what would help', () => {
+    expect(NO_TEXT_LAYER_MESSAGE).toContain('This PDF does not contain selectable text');
+    expect(NO_TEXT_LAYER_MESSAGE).toContain('cannot be looked up');
+    expect(NO_TEXT_LAYER_MESSAGE).toContain('You can still read it here.');
+    expect(NO_TEXT_LAYER_MESSAGE).toContain('OCR');
+    expect(PAGE_WITHOUT_TEXT_MESSAGE).toContain('This page does not contain selectable text');
+    // A single page is never described as the whole document.
+    expect(PAGE_WITHOUT_TEXT_MESSAGE).not.toContain('This PDF');
   });
 });

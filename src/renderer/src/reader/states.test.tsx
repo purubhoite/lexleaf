@@ -35,6 +35,11 @@ const PAGE_TEXT = 'harbour lighthouse';
 
 const page = vi.hoisted(() => ({
   hasTextLayer: true,
+  /**
+   * When set, the pages that have text according to the engine, whatever
+   * the page on screen has: a document that is only partly a scan.
+   */
+  pagesWithText: null as readonly number[] | null,
   /** When set, the engine reports this error instead of opening. */
   openError: null as Error | null,
 }));
@@ -42,12 +47,16 @@ const page = vi.hoisted(() => ({
 const fakeDocument = (): OpenedPdf => ({
   pageCount: 2,
   label: 'harbour.pdf',
-  getPageText: (pageNumber: number) =>
-    Promise.resolve({
+  getPageText: (pageNumber: number) => {
+    const hasText =
+      page.pagesWithText === null ? page.hasTextLayer : page.pagesWithText.includes(pageNumber);
+
+    return Promise.resolve({
       pageNumber,
-      segments: page.hasTextLayer ? [{ text: PAGE_TEXT, endsLine: false }] : [],
-      hasTextLayer: page.hasTextLayer,
-    }),
+      segments: hasText ? [{ text: PAGE_TEXT, endsLine: false }] : [],
+      hasTextLayer: hasText,
+    });
+  },
   getPageSize: () => Promise.resolve({ width: 600, height: 800, rotation: 0 }),
   getOutline: () => Promise.resolve([]),
   getNativePage: () => Promise.resolve({}),
@@ -155,6 +164,7 @@ const originalWidth = window.innerWidth;
 
 beforeEach(() => {
   page.hasTextLayer = true;
+  page.pagesWithText = null;
   page.openError = null;
   windowWidth(1440);
 });
@@ -291,6 +301,53 @@ describe('a neutral notice is not dressed as a failure (ST-2, I6)', () => {
     expect(notice.className).toContain('message--info');
     expect(notice.className).not.toContain('message--problem');
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('tells the reader of a scan why, once, for the whole document', async () => {
+    page.hasTextLayer = false;
+    await openReader();
+
+    const notice = await screen.findByTestId('scan-notice');
+
+    expect(notice.textContent).toContain('This PDF does not contain selectable text');
+    expect(notice.textContent).toContain('You can still read it here.');
+    expect(notice.textContent).toContain('OCR');
+    // One notice, not one for the document and one for the page.
+    expect(screen.getAllByText(/does not contain selectable text/)).toHaveLength(1);
+  });
+
+  it('lets the reader put the scan notice away', async () => {
+    page.hasTextLayer = false;
+    await openReader();
+    await screen.findByTestId('scan-notice');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+
+    expect(screen.queryByTestId('scan-notice')).toBeNull();
+    expect(screen.queryByText(/does not contain selectable text/)).toBeNull();
+  });
+
+  it('speaks of the page, not the document, when only this page has no text', async () => {
+    // The page on screen is a picture; the next one is real text.
+    page.hasTextLayer = false;
+    page.pagesWithText = [2];
+    await openReader();
+
+    const notice = await screen.findByText(/This page does not contain selectable text/);
+
+    expect(notice.className).toContain('message--info');
+    expect(screen.queryByTestId('scan-notice')).toBeNull();
+    expect(screen.queryByText(/This PDF does not contain/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+  });
+
+  it('says nothing about a document that has text', async () => {
+    await openReader();
+    // Long enough for the document to have been looked through.
+    await screen.findByRole('region', { name: 'Document' });
+    await Promise.resolve();
+
+    expect(screen.queryByText(/does not contain selectable text/)).toBeNull();
   });
 
   it('opens a readable document with nothing to recover from', async () => {

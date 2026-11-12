@@ -57,6 +57,18 @@
   text-overflow: ellipsis;
 }
 
+/* The scanned-document notice: its text, and the button that puts it away. */
+.reader__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.reader__notice > .message {
+  flex: 1;
+  min-width: 0;
+}
+
 .reader__body {
   display: flex;
   min-height: 0;

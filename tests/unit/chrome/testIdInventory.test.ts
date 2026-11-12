@@ -110,6 +110,8 @@ const ADDED_AFTER_MILESTONE_5 = [
   'outline-toggle',
   'outline',
   'outline-entry',
+  // The notice a scanned document gets, once, for the whole document.
+  'scan-notice',
 ] as const;
 
 /**
