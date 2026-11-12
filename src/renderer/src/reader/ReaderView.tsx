@@ -58,6 +58,7 @@ import { SearchPanel } from './SearchPanel';
 import { useDocumentOutline } from './useDocumentOutline';
 import { useDocumentSearch } from './useDocumentSearch';
 import { useDocumentTextPresence } from './useDocumentTextPresence';
+import { useGestureZoom } from './useGestureZoom';
 import { useLookupHint } from './useLookupHint';
 import { useSavedWordCounts } from './useSavedWordCounts';
 import { usePageMetrics } from './usePageMetrics';
@@ -531,6 +532,13 @@ export const ReaderView = ({
   const zoomIn = useCallback((): void => {
     setZoom({ mode: 'fixed', scale: nextZoomLevel(scale) });
   }, [scale]);
+
+  // Pinch on a trackpad, or Ctrl + wheel: any zoom, not only the listed ones.
+  const zoomTo = useCallback((next: number): void => {
+    setZoom({ mode: 'fixed', scale: next });
+  }, []);
+
+  useGestureZoom(scrollRef, scale, zoomTo, ready !== null);
 
   const zoomOut = useCallback((): void => {
     setZoom({ mode: 'fixed', scale: previousZoomLevel(scale) });

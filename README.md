@@ -35,7 +35,7 @@ Lexleaf is released for **Windows x64 and Linux x86_64**. The [latest release](h
 - Search and sort saved vocabulary, with document-aware library context.
 - Export saved words as a spreadsheet (CSV) or as an Anki import file.
 - Reading-position and recent-document persistence.
-- Zoom controls: `Ctrl/Cmd++`, `Ctrl/Cmd+-`, and `Ctrl/Cmd+0` for fit width.
+- Zoom by pinching on a trackpad or with `Ctrl` + mouse wheel, to any size; or step with `Ctrl/Cmd++`, `Ctrl/Cmd+-`, and `Ctrl/Cmd+0` for fit width.
 - In-document search with `Ctrl/Cmd+F`.
 - Light, dark, and system appearance preferences, plus reduced-motion support.
 - Updates on request: Lexleaf tells you when a newer version has been released and, when you ask, downloads and installs it. The check can be turned off in Settings.
@@ -140,6 +140,7 @@ The crash that started it, where it has been traced, was in the Nouveau graphics
 | `Ctrl/Cmd +` or `Ctrl/Cmd =` | Zoom in                                                        |
 | `Ctrl/Cmd -`                 | Zoom out                                                       |
 | `Ctrl/Cmd 0`                 | Fit page to width                                              |
+| Pinch, or `Ctrl` + wheel     | Zoom in and out smoothly                                       |
 | `Ctrl/Cmd F`                 | Open document search                                           |
 | `Ctrl/Cmd O`                 | Open a PDF                                                     |
 | `Ctrl/Cmd W`                 | Close the document                                             |

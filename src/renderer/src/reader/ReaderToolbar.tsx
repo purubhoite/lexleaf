@@ -226,6 +226,14 @@ export const ReaderToolbar = ({
             <option value={ZOOM_SELECT_FIT_PAGE}>
               {zoom.mode === 'fit-page' ? describeZoom(zoom, scale) : 'Fit page'}
             </option>
+            {/*
+              A zoom reached by pinching is rarely one of the listed
+              levels. It is shown as itself, so the menu always says the
+              zoom the page is actually at.
+            */}
+            {zoom.mode === 'fixed' && !ZOOM_LEVELS.some((level) => level === zoom.scale) && (
+              <option value={String(zoom.scale)}>{formatZoomPercentage(zoom.scale)}</option>
+            )}
             {ZOOM_LEVELS.map((level) => (
               <option key={level} value={level}>
                 {formatZoomPercentage(level)}
