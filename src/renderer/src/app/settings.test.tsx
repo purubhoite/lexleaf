@@ -92,17 +92,18 @@ describe('reaching the settings', () => {
     expect(screen.getByTestId('reader-surface').hasAttribute('hidden')).toBe(false);
   });
 
-  it('hides the reading surface without unmounting it', () => {
+  it('opens beside the reading surface, which stays mounted and visible', () => {
     render(<App bridge={bridge()} />);
 
     const surface = screen.getByTestId('reader-surface');
 
     fireEvent.click(settingsToggle());
 
-    // The open document, its rendered pages and the reader's place in it
-    // all survive a trip to the settings, as they do for the library.
+    // 0.2.3: settings open in the side panel, so a change of appearance
+    // or page colour can be seen on the book while it is being made.
     expect(screen.getByTestId('reader-surface')).toBe(surface);
-    expect(surface.hasAttribute('hidden')).toBe(true);
+    expect(surface.hasAttribute('hidden')).toBe(false);
+    expect(screen.getByTestId('side-panel').contains(screen.getByTestId('settings'))).toBe(true);
   });
 
   it('shows the settings or the library, never both', () => {
@@ -120,16 +121,15 @@ describe('reaching the settings', () => {
     expect(screen.queryByTestId('library')).toBeNull();
   });
 
-  it('does not offer the skip link while the settings are open', () => {
-    // The link targets the document scroller, which is hidden: moving
-    // focus there would be a trap rather than a shortcut (A11Y-10).
+  it('still offers the skip link while the settings are open', () => {
+    // The document is beside the settings now, not behind them (A11Y-10).
     render(<App bridge={bridge()} />);
 
     expect(screen.getByTestId('skip-to-document')).toBeTruthy();
 
     fireEvent.click(settingsToggle());
 
-    expect(screen.queryByTestId('skip-to-document')).toBeNull();
+    expect(screen.getByTestId('skip-to-document')).toBeTruthy();
   });
 });
 
@@ -225,6 +225,7 @@ describe('changing a preference from the shell', () => {
       'system',
       'system',
       'fit-width',
+      'original',
       'off',
     ]);
   });

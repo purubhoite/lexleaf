@@ -7,6 +7,8 @@ describe('IPC channels', () => {
     expect(Object.values(IpcChannel)).toEqual([
       'app:get-info',
       'app:report-problem',
+      'menu:command',
+      'window:set-full-screen',
       'pdf:open-dialog',
       'pdf:initial-document',
       'pdf:open-recent',

@@ -58,6 +58,75 @@
 }
 
 /* The scanned-document notice: its text, and the button that puts it away. */
+/*
+ * The one place notices appear: under the bar, above the pages. It takes
+ * no room while it is empty, and however many notices arrive it is capped
+ * and scrolls inside itself, so the pages keep most of the window.
+ */
+.reader__notices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+  max-height: 30vh;
+  overflow-y: auto;
+}
+
+.reader__notices:empty {
+  display: none;
+}
+
+/* With no document open the bar holds only the application's controls. */
+.reader__bar--idle {
+  justify-content: flex-end;
+}
+
+/* The way out of reading mode: in the corner, faint until it is wanted. */
+.reader__exit-reading {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-4);
+  z-index: 20;
+  opacity: 0.35;
+}
+
+.reader__exit-reading:hover,
+.reader__exit-reading:focus-visible {
+  opacity: 1;
+}
+
+/*
+ * Page colour (0.2.3). A filter over the picture of the page, chosen by
+ * the reader in Settings; "original" has no rule and leaves the page
+ * exactly as the document defines it. Nothing here is a theme colour: the
+ * page's own colours are transformed, not replaced.
+ */
+.reader__pages--sepia .page {
+  filter: sepia(0.45) brightness(0.97);
+}
+
+.reader__pages--dimmed .page {
+  filter: brightness(0.78);
+}
+
+.reader__pages--dark .page {
+  filter: invert(0.9) hue-rotate(180deg);
+}
+
+.start__hint {
+  margin: 0;
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+}
+
+.recents__progress {
+  flex: 0 0 4rem;
+  width: 4rem;
+  height: 0.375rem;
+  align-self: center;
+  accent-color: var(--colour-accent);
+}
+
 .reader__notice {
   display: flex;
   align-items: flex-start;
@@ -280,11 +349,6 @@
 .reader__group--document {
   flex: 1 1 14rem;
   min-width: 0;
-}
-
-.reader__zoom-readout {
-  color: var(--colour-text-muted);
-  font-size: var(--text-sm);
 }
 
 /*
@@ -735,17 +799,23 @@
 }
 
 .dictionary-popup__save-button,
-.dictionary-popup__saved {
+.dictionary-popup__remove {
   align-self: flex-start;
 }
 
+/* A statement, not a button: the word is saved. Removing it is the
+   separate, quieter control underneath. */
 .dictionary-popup__saved {
-  border-color: var(--colour-accent);
+  margin: 0;
   font-weight: 600;
 }
 
-.dictionary-popup__save-button:disabled,
-.dictionary-popup__saved:disabled {
+.dictionary-popup__remove {
+  color: var(--colour-text-muted);
+  font-size: var(--text-sm);
+}
+
+.dictionary-popup__save-button:disabled {
   cursor: progress;
 }
 

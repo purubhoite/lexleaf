@@ -1,9 +1,13 @@
-import { useCallback, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 
 import type { SavedWord } from '@core/vocabulary/types';
 import type { DesktopBridge } from '@shared/ipc/contracts';
+import { keyboardCommand } from '@shared/ipc/menuCommands';
+import type { VocabularyExportFormat, VocabularyExportOutcome } from '@core/vocabulary/export';
 
+import { describeExportOutcome } from '../library/LibraryExport';
 import { LibraryView } from '../library/LibraryView';
+import { Icon } from '../ui/Icon';
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { ReportProblem } from '../support/ReportProblem';
 import { usePreferences } from '../settings/usePreferences';
@@ -18,7 +22,9 @@ import type {
   OccurrenceTarget,
 } from '../reader/vocabulary/useOccurrenceNavigation';
 
+import { createCommandBus } from './commandBus';
 import { APP_INFO_FAILURE_MESSAGES, useAppInfo } from './useAppInfo';
+import { useFileDragOver } from './useFileDragOver';
 import { PERSISTENCE_FAILURE_MESSAGE, usePersistenceNotice } from './usePersistenceNotice';
 import { RECOVERY_NOTICE_MESSAGE, useSessionRecovery } from './useSessionRecovery';
 import { VocabularyRecoveryPanel } from './VocabularyRecoveryPanel';
@@ -104,6 +110,9 @@ export const App = ({ bridge }: AppProps): ReactElement => {
   const [showSettings, setShowSettings] = useState(false);
   const [target, setTarget] = useState<OccurrenceTarget | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [readingMode, setReadingMode] = useState(false);
+  const bus = useMemo(() => createCommandBus(), []);
+  const draggingFile = useFileDragOver();
 
   const library = useVocabularyLibrary({ bridge, active: showLibrary });
   /*
@@ -171,7 +180,6 @@ export const App = ({ bridge }: AppProps): ReactElement => {
           charEnd: place.charEnd,
           pageOffsetFraction: place.pageOffsetFraction,
         });
-        setShowLibrary(false);
       });
     },
     [bridge],
@@ -190,108 +198,188 @@ export const App = ({ bridge }: AppProps): ReactElement => {
     [target],
   );
 
-  return (
-    <div className="shell">
-      {/*
-        A11Y-10. First in the DOM, so first in the tab order, and rendered
-        only while the reader is on screen: with the library open the
-        document surface is `hidden`, and a link that moves focus to a
-        hidden region would be a trap rather than a shortcut.
+  const setFullScreen = bridge?.setFullScreen;
 
-        The default action is prevented instead of letting the fragment
-        navigate: this is a `file://` document, and changing the URL to
-        move focus would be a navigation the application does not want.
-      */}
-      {!showLibrary && !showSettings && (
-        <a
-          className="skip-link"
-          href={`#${DOCUMENT_SCROLLER_ID}`}
-          data-testid="skip-to-document"
-          onClick={(event): void => {
-            event.preventDefault();
-            document.getElementById(DOCUMENT_SCROLLER_ID)?.focus();
-          }}
-        >
-          Skip to document
-        </a>
-      )}
+  const changeReadingMode = useCallback(
+    (on: boolean): void => {
+      setReadingMode(on);
 
-      {/*
-        W16, CTL-10. One compact row: the application's own name, the two
-        chrome controls, nothing else. The window already carries a title
-        bar, so the heading is sized as a heading of a small region rather
-        than as a product wordmark, and the row never grows a second line.
-      */}
-      <div className="shell__header">
-        <h1 className="shell__title">Lexleaf</h1>
-        <div className="shell__actions">
-          {/*
-            CTL-3's rule, applied to the library toggle (6.4, Part 3).
+      if (on) {
+        setShowLibrary(false);
+        setShowSettings(false);
+      }
 
-            The label used to flip between "Saved words" and "Back to
-            reading", which renamed the control every time it was pressed:
-            to assistive technology the button's identity changed rather
-            than its state. The name is now fixed and names the thing the
-            button leads to; `aria-pressed` carries whether the reader is
-            there already. The visible text is the accessible name, so it
-            has to be the stable one too — an `aria-label` that disagreed
-            with changing visible text would break WCAG 2.5.3. The way back
-            is not lost: the library screen renders its own "Back to
-            reading" button, and this control is a toggle besides.
-          */}
-          <button
-            type="button"
-            className="control shell__library-toggle"
-            data-testid="library-toggle"
-            aria-pressed={showLibrary}
-            onClick={(): void => {
-              setShowSettings(false);
-              setShowLibrary((current) => !current);
-            }}
-          >
-            Saved words
-          </button>
-          {/*
-            The settings toggle, built exactly like the library one above
-            and for the same reasons: a fixed name that says where it
-            leads, `aria-pressed` for whether the reader is there, and the
-            panel itself offering its own way back.
-          */}
-          <button
-            type="button"
-            className="control shell__settings-toggle"
-            data-testid="settings-toggle"
-            aria-pressed={showSettings}
-            onClick={(): void => {
-              setShowLibrary(false);
-              setShowSettings((current) => !current);
-            }}
-          >
-            Settings
-          </button>
-          <details className="shell__about">
-            <summary className="disclosure__summary">About Lexleaf</summary>
-            <RuntimeDetails bridge={bridge} />
-          </details>
-        </div>
-      </div>
+      void setFullScreen?.(on);
+    },
+    [setFullScreen],
+  );
 
+  const exportLibrary = bridge?.vocabulary.exportLibrary;
+
+  const exportFromMenu = useCallback(
+    (format: VocabularyExportFormat): void => {
+      if (exportLibrary === undefined) {
+        return;
+      }
+
+      void exportLibrary(format)
+        .catch((): VocabularyExportOutcome => ({ status: 'failed' }))
+        .then((outcome) => {
+          setMessage(describeExportOutcome(outcome));
+        });
+    },
+    [exportLibrary],
+  );
+
+  /* The shell's share of the commands; the reader answers the rest. */
+  useEffect(
+    () =>
+      bus.subscribe((command) => {
+        switch (command) {
+          case 'toggle-saved-words':
+            setReadingMode(false);
+            setShowSettings(false);
+            setShowLibrary((current) => !current);
+            break;
+          case 'toggle-settings':
+            setReadingMode(false);
+            setShowLibrary(false);
+            setShowSettings((current) => !current);
+            break;
+          case 'about':
+            setReadingMode(false);
+            setShowLibrary(false);
+            setShowSettings(true);
+            break;
+          case 'export-csv':
+            exportFromMenu('csv');
+            break;
+          case 'export-anki':
+            exportFromMenu('anki');
+            break;
+          case 'toggle-reading-mode':
+            changeReadingMode(!readingMode);
+            break;
+          default:
+            break;
+        }
+      }),
+    [bus, exportFromMenu, changeReadingMode, readingMode],
+  );
+
+  /* The menu, when there is one. */
+  const onMenuCommand = bridge?.onMenuCommand;
+
+  useEffect(() => onMenuCommand?.(bus.dispatch), [onMenuCommand, bus]);
+
+  /* The keyboard. Escape leaves reading mode before it does anything else. */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented) {
+        return;
+      }
+
+      if (event.key === 'Escape' && readingMode) {
+        event.preventDefault();
+        changeReadingMode(false);
+
+        return;
+      }
+
+      const command = keyboardCommand(event);
+
+      if (command !== null) {
+        event.preventDefault();
+        bus.dispatch(command);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+
+    return (): void => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [bus, readingMode, changeReadingMode]);
+
+  const panelOpen = showLibrary || showSettings;
+
+  /*
+    The application's own controls. They are handed to the reader, which
+    puts them at the end of its bar: one bar for the window, not a title
+    row above a toolbar.
+
+    CTL-3: each toggle has a fixed name that says where it leads, and
+    `aria-pressed` carries whether the reader is there already.
+  */
+  const controls = (
+    <div className="shell__actions" role="group" aria-label="Lexleaf">
+      <button
+        type="button"
+        className="control shell__library-toggle"
+        data-testid="library-toggle"
+        aria-pressed={showLibrary}
+        title="Saved words (Ctrl+L)"
+        onClick={(): void => {
+          bus.dispatch('toggle-saved-words');
+        }}
+      >
+        <Icon name="bookmark" />
+        Saved words
+      </button>
+      <button
+        type="button"
+        className="control shell__reading-toggle"
+        data-testid="reading-mode-toggle"
+        title="Reading mode: full screen, nothing but the page (F11)"
+        onClick={(): void => {
+          changeReadingMode(true);
+        }}
+      >
+        <Icon name="expand" />
+        Reading mode
+      </button>
+      <button
+        type="button"
+        className="control shell__settings-toggle"
+        data-testid="settings-toggle"
+        aria-pressed={showSettings}
+        title="Settings (Ctrl+,)"
+        onClick={(): void => {
+          bus.dispatch('toggle-settings');
+        }}
+      >
+        <Icon name="settings" />
+        Settings
+      </button>
+    </div>
+  );
+
+  /*
+    The application's notices. The reader shows them with its own, in the
+    one place notices appear. Each is still the shared `Message`, announced
+    once and dismissed by the reader; there is no toast, timer or queue.
+  */
+  const notices = (
+    <>
       {bridge !== null && <VocabularyRecoveryPanel bridge={bridge} />}
 
       {message !== null && (
-        <p className="shell__notice" role="status" data-testid="navigation-notice">
-          {message}
-        </p>
+        <div className="shell__notice" data-testid="navigation-notice">
+          <p className="shell__notice-text" role="status">
+            {message}
+          </p>
+          <button
+            type="button"
+            className="control"
+            onClick={(): void => {
+              setMessage(null);
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
       )}
 
-      {/*
-        R6's answer, and nothing more than R6's answer. It is the shared
-        `Message` in its `problem` kind — so it is announced once, as an
-        alert, and painted like every other failure in the product — laid
-        out with the class the navigation notice already uses. There is no
-        toast, no timer, no portal and no queue: this is the only message
-        of its kind the session can produce, and the reader closes it.
-      */}
       {persistence.visible && (
         <Message kind="problem" className="shell__persistence" testId="persistence-notice">
           {PERSISTENCE_FAILURE_MESSAGE}{' '}
@@ -301,13 +389,6 @@ export const App = ({ bridge }: AppProps): ReactElement => {
         </Message>
       )}
 
-      {/*
-        R1's answer. The window the reader is looking at is not the one
-        they had a moment ago, and saying nothing about that would be the
-        same silence the investigation found. It is the shared `Message`
-        in its `problem` kind, dismissible, and it interrupts nothing: the
-        document is already reopening behind it.
-      */}
       {recovery.visible && (
         <Message kind="problem" className="shell__persistence" testId="recovery-notice">
           {RECOVERY_NOTICE_MESSAGE}{' '}
@@ -325,45 +406,93 @@ export const App = ({ bridge }: AppProps): ReactElement => {
           dismissible
         />
       )}
+    </>
+  );
 
-      <div
-        className="shell__surface"
-        hidden={showLibrary || showSettings}
-        data-testid="reader-surface"
+  return (
+    <div className={readingMode ? 'shell shell--reading' : 'shell'}>
+      {/*
+        A11Y-10. First in the DOM, so first in the tab order. The default
+        action is prevented instead of letting the fragment navigate: this
+        is a `file://` document, and changing the URL to move focus would
+        be a navigation the application does not want.
+      */}
+      <a
+        className="skip-link"
+        href={`#${DOCUMENT_SCROLLER_ID}`}
+        data-testid="skip-to-document"
+        onClick={(event): void => {
+          event.preventDefault();
+          document.getElementById(DOCUMENT_SCROLLER_ID)?.focus();
+        }}
       >
-        <ReaderView
-          bridge={bridge}
-          occurrence={target}
-          onOccurrenceOutcome={onOutcome}
-          preferences={preferences}
-          onWriteHealth={reportWriteHealth}
-        />
+        Skip to document
+      </a>
+
+      {/*
+        The book and, beside it, at most one panel. The book is never
+        replaced: saved words and settings open next to the page, so a
+        word can be checked against the sentence it came from. In a window
+        too narrow for both, the stylesheet gives the panel the whole
+        width, and its own close button brings the book back.
+      */}
+      <div className={panelOpen ? 'shell__body shell__body--panel' : 'shell__body'}>
+        <div className="shell__surface" data-testid="reader-surface">
+          <ReaderView
+            bridge={bridge}
+            occurrence={target}
+            onOccurrenceOutcome={onOutcome}
+            preferences={preferences}
+            onWriteHealth={reportWriteHealth}
+            trailing={controls}
+            notices={notices}
+            commands={bus}
+            readingMode={readingMode}
+            onExitReadingMode={(): void => {
+              changeReadingMode(false);
+            }}
+          />
+        </div>
+
+        {showSettings && (
+          <aside className="shell__panel" data-testid="side-panel">
+            <SettingsPanel
+              preferences={preferences}
+              onChange={setPreference}
+              onClose={(): void => {
+                setShowSettings(false);
+              }}
+            >
+              <UpdateSettings updates={updates} />
+              {reportProblem !== undefined && <ReportProblem onReport={reportProblem} />}
+              <section className="settings__group shell__about" data-testid="about">
+                <h3 className="settings__legend">About Lexleaf</h3>
+                <RuntimeDetails bridge={bridge} />
+              </section>
+            </SettingsPanel>
+          </aside>
+        )}
+
+        {showLibrary && (
+          <aside className="shell__panel" data-testid="side-panel">
+            <LibraryView
+              library={library}
+              onOpenOrigin={openOrigin}
+              onClose={(): void => {
+                setShowLibrary(false);
+              }}
+              {...(bridge === null
+                ? {}
+                : { onExport: (format) => bridge.vocabulary.exportLibrary(format) })}
+            />
+          </aside>
+        )}
       </div>
 
-      {showSettings && (
-        <SettingsPanel
-          preferences={preferences}
-          onChange={setPreference}
-          onClose={(): void => {
-            setShowSettings(false);
-          }}
-        >
-          <UpdateSettings updates={updates} />
-          {reportProblem !== undefined && <ReportProblem onReport={reportProblem} />}
-        </SettingsPanel>
-      )}
-
-      {showLibrary && (
-        <LibraryView
-          library={library}
-          onOpenOrigin={openOrigin}
-          onClose={(): void => {
-            setShowLibrary(false);
-          }}
-          {...(bridge === null
-            ? {}
-            : { onExport: (format) => bridge.vocabulary.exportLibrary(format) })}
-        />
+      {draggingFile && (
+        <div className="shell__drop" data-testid="drop-target" aria-hidden="true">
+          <p className="shell__drop-text">Drop the PDF to open it</p>
+        </div>
       )}
     </div>
   );

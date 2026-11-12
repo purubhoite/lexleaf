@@ -150,14 +150,14 @@ describe('the library screen', () => {
       .getByTestId('library-card')
       .querySelectorAll<HTMLButtonElement>('button');
 
-    expect([...actions].map((button) => button.textContent)).toEqual(['Open origin', 'Remove']);
+    expect([...actions].map((button) => button.textContent)).toEqual(['Show in book', 'Remove']);
   });
 
   it('asks to open the place a word was met', () => {
     const onOpenOrigin = vi.fn();
 
     show(controls({ items: [aSavedWord()] }), onOpenOrigin);
-    fireEvent.click(screen.getByRole('button', { name: 'Open origin' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show in book' }));
 
     expect(onOpenOrigin).toHaveBeenCalledWith(expect.objectContaining({ id: 'item-1' }));
   });

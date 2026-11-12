@@ -245,15 +245,6 @@ body {
   min-height: 0;
 }
 
-.shell__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  /* The header never scrolls away and never grows: the document does. */
-  flex: 0 0 auto;
-}
-
 /*
  * The two chrome controls travel together at the end of the row, so the
  * title can take whatever width is left and give it back when the window
@@ -262,20 +253,10 @@ body {
 .shell__actions {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   flex: 0 0 auto;
-}
-
-.shell__title {
-  margin: 0;
-  font-size: var(--text-md);
-  font-weight: 600;
-  /* CTL-10: the one flexible item in the row, and it truncates rather
-     than pushing the controls off the end of a narrow window. */
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  /* Last in the bar, and pushed to its far end. */
+  margin-inline-start: auto;
 }
 
 /* ------------------------------------------------------------------ *
@@ -335,13 +316,6 @@ body {
   font-size: var(--text-sm);
 }
 
-.shell__about[open] {
-  padding: var(--space-2) var(--space-3);
-  border: var(--border-width) solid var(--colour-border);
-  border-radius: var(--radius-md);
-  background-color: var(--colour-surface);
-}
-
 .shell__library-toggle[aria-pressed='true'] {
   border-color: var(--colour-problem);
 }
@@ -356,14 +330,91 @@ body {
   min-height: 0;
 }
 
-.shell__surface[hidden] {
-  display: none;
+/*
+ * The book and the panel beside it (0.2.3).
+ *
+ * Saved words and settings used to replace the book. They now open next
+ * to it, in a column of their own that scrolls on its own, so the page
+ * stays where it was and stays readable.
+ */
+.shell__body {
+  display: flex;
+  gap: var(--space-3);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.shell__body > .shell__surface {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.shell__panel {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 clamp(20rem, 34vw, 28rem);
+  min-width: 0;
+  min-height: 0;
+  padding: var(--space-3);
+  overflow-y: auto;
+  background-color: var(--colour-surface);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-md);
+}
+
+/* Inline icons: the size of the text they sit beside, and its colour. */
+.icon {
+  flex: 0 0 auto;
+  width: 1em;
+  height: 1em;
+}
+
+/*
+ * Reading mode: the window is the page. The padding goes, and the reader
+ * puts its bar away; one small button in the corner is the way back, and
+ * it stays out of the way until the pointer or the keyboard reaches it.
+ */
+.shell--reading {
+  padding: 0;
+  gap: 0;
+}
+
+/*
+ * Shown while a file is held over the window. It never takes the pointer:
+ * the drop itself has to reach the page underneath.
+ */
+.shell__drop {
+  position: absolute;
+  inset: var(--space-3);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background-color: var(--colour-surface);
+  border: var(--border-width) dashed var(--colour-accent);
+  border-radius: var(--radius-md);
+  opacity: 0.94;
+}
+
+.shell__drop-text {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 600;
 }
 
 .shell__notice {
-  margin: 0 0 var(--space-2);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
   color: var(--colour-text-muted);
   font-size: var(--text-sm);
+}
+
+.shell__notice-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
 }
 
 /*
@@ -377,7 +428,7 @@ body {
   why this could not simply borrow that class.
 */
 .shell__persistence {
-  margin: 0 0 var(--space-2);
+  margin: 0;
 }
 
 /* ------------------------------------------------------------------ *
@@ -526,6 +577,16 @@ body {
 @media (max-width: 819.98px) {
   .library__list {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* No room for a book and a panel side by side: the panel has the window
+     until it is closed, and the book is kept, unseen, behind it. */
+  .shell__body--panel > .shell__surface {
+    display: none;
+  }
+
+  .shell__panel {
+    flex: 1 1 auto;
   }
 }
 

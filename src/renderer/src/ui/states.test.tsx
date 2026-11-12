@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { EMPTY_READER_STATE_SNAPSHOT } from '@shared/ipc/contracts';
@@ -227,6 +227,7 @@ describe('a failure never quotes the machine (6.5 closure, audit C-3)', () => {
         )}
       />,
     );
+    fireEvent.click(screen.getByTestId('settings-toggle'));
 
     const alert = await screen.findByRole('alert');
 
@@ -239,6 +240,7 @@ describe('a failure never quotes the machine (6.5 closure, audit C-3)', () => {
     for (const [label, rejection] of HOSTILE_REJECTIONS) {
       cleanup();
       render(<App bridge={appInfoBridge((): Promise<AppInfo> => Promise.reject(rejection))} />);
+      fireEvent.click(screen.getByTestId('settings-toggle'));
 
       const text = (await screen.findByRole('alert')).textContent ?? '';
 
@@ -249,6 +251,7 @@ describe('a failure never quotes the machine (6.5 closure, audit C-3)', () => {
 
   it('explains a missing bridge in its own words, still as a failure', async () => {
     render(<App bridge={null} />);
+    fireEvent.click(screen.getByTestId('settings-toggle'));
 
     const alert = await screen.findByRole('alert');
 

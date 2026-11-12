@@ -49,7 +49,7 @@ describe('the settings panel', () => {
     expect(document.querySelector('dialog')).toBeNull();
   });
 
-  it('shows exactly the four preferences the ADR allows', () => {
+  it('shows exactly the preferences there are', () => {
     panel();
 
     const groups = screen.getAllByRole('group');
@@ -58,12 +58,14 @@ describe('the settings panel', () => {
       'setting-appearance',
       'setting-reduce-motion',
       'setting-default-zoom',
+      'setting-page-tint',
       'setting-developer-diagnostics',
     ]);
     expect(groups.map((group) => group.querySelector('legend')?.textContent)).toStrictEqual([
       'Appearance',
       'Motion',
       'Default zoom',
+      'Page colour',
       'Developer diagnostics',
     ]);
   });
@@ -71,12 +73,13 @@ describe('the settings panel', () => {
   it('offers every value of every preference as a radio button', () => {
     panel();
 
-    expect(screen.getAllByRole('radio')).toHaveLength(10);
+    expect(screen.getAllByRole('radio')).toHaveLength(14);
 
     for (const [testId, labels] of [
       ['setting-appearance', ['Match the system', 'Light', 'Dark']],
       ['setting-reduce-motion', ['Match the system', 'Always reduce motion']],
       ['setting-default-zoom', ['Fit width', 'Fit page', 'The zoom I used last']],
+      ['setting-page-tint', ['Original', 'Sepia', 'Dimmed', 'Night']],
       ['setting-developer-diagnostics', ['Keep it closed', 'Open it by default']],
     ] as const) {
       const group = screen.getByTestId(testId);
@@ -105,6 +108,7 @@ describe('the settings panel', () => {
       'dark',
       'always',
       'last-used',
+      'original',
       'on',
     ]);
   });
@@ -180,6 +184,7 @@ describe('the settings panel’s accessible structure', () => {
     expect([...names].sort()).toStrictEqual([
       'appearance',
       'defaultZoomMode',
+      'pageTint',
       'reduceMotion',
       'showDeveloperDiagnostics',
     ]);
@@ -228,7 +233,7 @@ describe('what the settings panel cannot contain (ADR-031)', () => {
 
     const inputs = [...document.querySelectorAll('input')];
 
-    expect(inputs).toHaveLength(10);
+    expect(inputs).toHaveLength(14);
     expect(inputs.every((input) => input.type === 'radio')).toBe(true);
     expect(document.querySelectorAll('textarea, select, input[type="file"]')).toHaveLength(0);
   });

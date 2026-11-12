@@ -101,14 +101,15 @@ describe('skip link (A11Y-10)', () => {
     expect(window.location.href).toBe(before);
   });
 
-  it('is not offered while the library is covering the document', () => {
+  it('is still offered with the saved words open, because the document is still there', () => {
     render(<App bridge={bridge()} />);
 
     fireEvent.click(screen.getByTestId('library-toggle'));
 
-    // The document surface is hidden in this state; a link into it would
-    // send focus somewhere the reader cannot see.
-    expect(screen.queryByTestId('skip-to-document')).toBeNull();
+    // 0.2.3: the panel opens beside the document rather than over it, so
+    // the link still leads somewhere the reader can see.
+    expect(screen.getByTestId('skip-to-document')).toBeDefined();
+    expect(screen.getByTestId('reader-surface').hasAttribute('hidden')).toBe(false);
   });
 
   it('points at a target that actually exists', () => {
@@ -143,20 +144,22 @@ describe('landmarks (A11Y-15)', () => {
 });
 
 describe('disclosure controls (6.1 audit, finding 4)', () => {
-  it('keeps the native summary element and its native open state', () => {
+  it('keeps the native summary element and its native open state', async () => {
     render(<App bridge={bridge()} />);
+    fireEvent.click(screen.getByTestId('settings-toggle'));
 
-    const summary = screen.getByText('About Lexleaf');
+    const summary = await screen.findByText('Technical information');
     const details = summary.closest('details');
 
     expect(summary.tagName).toBe('SUMMARY');
     expect(details?.open).toBe(false);
   });
 
-  it('does not re-implement the disclosure with ARIA of its own', () => {
+  it('does not re-implement the disclosure with ARIA of its own', async () => {
     render(<App bridge={bridge()} />);
+    fireEvent.click(screen.getByTestId('settings-toggle'));
 
-    const summary = screen.getByText('About Lexleaf');
+    const summary = await screen.findByText('Technical information');
 
     // `<details>` already exposes expanded state to assistive technology.
     // A hand-written `aria-expanded` here would be a second source of
@@ -165,10 +168,11 @@ describe('disclosure controls (6.1 audit, finding 4)', () => {
     expect(summary.getAttribute('role')).toBeNull();
   });
 
-  it('is reachable by Tab without a tabindex of its own', () => {
+  it('is reachable by Tab without a tabindex of its own', async () => {
     render(<App bridge={bridge()} />);
+    fireEvent.click(screen.getByTestId('settings-toggle'));
 
-    const summary = screen.getByText('About Lexleaf');
+    const summary = await screen.findByText('Technical information');
 
     expect(summary.getAttribute('tabindex')).toBeNull();
     expect(focusables()).toContain(summary);

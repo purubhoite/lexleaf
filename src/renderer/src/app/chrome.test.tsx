@@ -95,7 +95,7 @@ describe('the library toggle keeps one name (6.4, Part 3)', () => {
     expect(toggle().textContent?.trim()).toBe('Saved words');
   });
 
-  it('still switches between the two screens', () => {
+  it('still opens and closes the saved words', () => {
     render(<App bridge={bridge()} />);
 
     expect(screen.getByTestId('reader-surface').hasAttribute('hidden')).toBe(false);
@@ -103,8 +103,13 @@ describe('the library toggle keeps one name (6.4, Part 3)', () => {
 
     fireEvent.click(toggle());
 
-    expect(screen.getByTestId('reader-surface').hasAttribute('hidden')).toBe(true);
+    // 0.2.3: beside the book, not instead of it.
+    expect(screen.getByTestId('reader-surface').hasAttribute('hidden')).toBe(false);
     expect(screen.getByTestId('library')).toBeDefined();
+
+    fireEvent.click(toggle());
+
+    expect(screen.queryByTestId('library')).toBeNull();
   });
 
   it('is not the only way back, which is what makes the stable name safe', () => {
@@ -112,41 +117,42 @@ describe('the library toggle keeps one name (6.4, Part 3)', () => {
 
     fireEvent.click(toggle());
 
-    const back = screen.getByRole('button', { name: 'Back to reading' });
+    const back = screen.getByRole('button', { name: 'Close saved words' });
 
     fireEvent.click(back);
 
-    expect(screen.getByTestId('reader-surface').hasAttribute('hidden')).toBe(false);
+    expect(screen.queryByTestId('library')).toBeNull();
     expect(toggle().getAttribute('aria-pressed')).toBe('false');
   });
 });
 
-describe('the shell header is one compact row (W16, CTL-10)', () => {
-  it('holds the title and the chrome controls, and nothing else', () => {
+describe('the window has one bar (0.2.3; W16, CTL-10)', () => {
+  it('puts the application\u2019s controls in the reader\u2019s bar, not in a row of their own', () => {
     render(<App bridge={bridge()} />);
 
-    const header = document.querySelector('.shell__header');
-
-    expect(header).not.toBeNull();
-    expect(header?.querySelector('h1')?.textContent).toBe('Lexleaf');
-    expect(header?.contains(toggle())).toBe(true);
-    expect(header?.contains(screen.getByText('About Lexleaf'))).toBe(true);
+    expect(document.querySelector('.shell__header')).toBeNull();
+    expect(document.querySelectorAll('.reader__bar')).toHaveLength(1);
+    expect(document.querySelector('.reader__bar')?.contains(toggle())).toBe(true);
+    expect(
+      document.querySelector('.reader__bar')?.contains(screen.getByTestId('settings-toggle')),
+    ).toBe(true);
   });
 
-  it('does not grow a second heading level in the chrome', () => {
+  it('does not spend a heading on the application\u2019s own name', () => {
     render(<App bridge={bridge()} />);
 
-    // One document title. A second `h1` in the shell would make the
-    // heading outline ambiguous for anyone navigating by headings.
-    expect(document.querySelectorAll('h1')).toHaveLength(1);
+    // The title bar says "Lexleaf"; the window does not say it again.
+    expect(document.querySelectorAll('h1')).toHaveLength(0);
   });
 
-  it('keeps the about disclosure closed and native', () => {
+  it('keeps About out of the bar and in the settings', () => {
     render(<App bridge={bridge()} />);
 
-    const summary = screen.getByText('About Lexleaf');
+    expect(screen.queryByText('About Lexleaf')).toBeNull();
 
-    expect(summary.tagName).toBe('SUMMARY');
-    expect(summary.closest('details')?.open).toBe(false);
+    fireEvent.click(screen.getByTestId('settings-toggle'));
+
+    expect(screen.getByTestId('about').contains(screen.getByText('About Lexleaf'))).toBe(true);
+    expect(screen.getByTestId('settings').contains(screen.getByTestId('about'))).toBe(true);
   });
 });

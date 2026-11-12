@@ -191,6 +191,7 @@ describe('the session recovery value crossing the real boundary', () => {
       reduceMotion: 'system',
       defaultZoomMode: 'fit-width',
       showDeveloperDiagnostics: 'off',
+      pageTint: 'original',
     });
     await service.flush();
 

@@ -46,16 +46,23 @@ afterEach(() => {
 });
 
 describe('App', () => {
-  it('always shows the product shell', () => {
+  it('always shows the product shell, without a heading that repeats the window title', () => {
     render(<App bridge={null} />);
 
-    expect(screen.getByRole('heading', { name: 'Lexleaf' })).toBeDefined();
+    // 0.2.3: the window's title bar names the application; the row that
+    // repeated it is gone and its controls sit in the one bar.
+    expect(screen.queryByRole('heading', { name: 'Lexleaf' })).toBeNull();
+    expect(screen.getByTestId('library-toggle')).toBeDefined();
+    expect(screen.getByTestId('settings-toggle')).toBeDefined();
+    expect(screen.getByTestId('reading-mode-toggle')).toBeDefined();
   });
 
   it('shows runtime details supplied by the desktop bridge', async () => {
     const bridge = bridgeWith((): Promise<AppInfo> => Promise.resolve(appInfo));
 
     render(<App bridge={bridge} />);
+
+    fireEvent.click(screen.getByTestId('settings-toggle'));
 
     expect(await screen.findByText('0.1.0')).toBeDefined();
     expect(screen.getByText('41.10.7')).toBeDefined();
@@ -64,7 +71,9 @@ describe('App', () => {
   it('explains the situation instead of failing when the bridge is missing', async () => {
     render(<App bridge={null} />);
 
-    expect(await screen.findByRole('status')).toBeDefined();
+    fireEvent.click(screen.getByTestId('settings-toggle'));
+
+    expect(await screen.findByRole('alert')).toBeDefined();
     // 6.5: a failure is an `alert`, not a polite `status` (ST-2).
     expect(screen.getByRole('alert').textContent).toContain('unavailable');
   });
@@ -81,11 +90,11 @@ describe('App', () => {
 
     fireEvent.click(screen.getByTestId('library-toggle'));
 
-    // The reading surface is hidden, not unmounted: an open document, its
-    // rendered pages and the reader's place in it all survive a glance at
-    // the word list.
+    // 0.2.3: the word list opens beside the book. The reading surface is
+    // neither unmounted nor hidden, so a word can be read against its page.
     expect(screen.getByTestId('library')).toBeDefined();
-    expect(screen.getByTestId('reader-surface').hasAttribute('hidden')).toBe(true);
+    expect(screen.getByTestId('side-panel').contains(screen.getByTestId('library'))).toBe(true);
+    expect(screen.getByTestId('reader-surface').hasAttribute('hidden')).toBe(false);
     expect(screen.getByTestId('reader-surface')).toBe(surface);
 
     fireEvent.click(screen.getByTestId('library-toggle'));
@@ -109,6 +118,8 @@ describe('App', () => {
     );
 
     render(<App bridge={bridge} />);
+
+    fireEvent.click(screen.getByTestId('settings-toggle'));
 
     // 6.5: a failure is an `alert` (ST-2).
     // 6.5 closure: and what it says comes from the failure, not from the

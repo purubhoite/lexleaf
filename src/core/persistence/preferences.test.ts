@@ -38,12 +38,13 @@ const hostile: readonly unknown[] = [
 ];
 
 describe('the preference defaults', () => {
-  it('is exactly four preferences, and the ADR names them', () => {
+  it('is exactly these preferences: the four ADR-031 names, and the page colour', () => {
     expect(PREFERENCE_KEYS).toStrictEqual([
       'appearance',
       'reduceMotion',
       'defaultZoomMode',
       'showDeveloperDiagnostics',
+      'pageTint',
     ]);
     expect(Object.keys(DEFAULT_PREFERENCES).sort()).toStrictEqual([...PREFERENCE_KEYS].sort());
   });
@@ -54,6 +55,7 @@ describe('the preference defaults', () => {
       reduceMotion: 'system',
       defaultZoomMode: 'fit-width',
       showDeveloperDiagnostics: 'off',
+      pageTint: 'original',
     });
   });
 
@@ -85,6 +87,10 @@ describe('the preference alphabet', () => {
       'last-used',
       'off',
       'on',
+      'original',
+      'sepia',
+      'dimmed',
+      'dark',
     ]);
   });
 
@@ -118,6 +124,7 @@ describe('parsing stored preferences', () => {
       reduceMotion: 'always',
       defaultZoomMode: 'fit-page',
       showDeveloperDiagnostics: 'on',
+      pageTint: 'sepia',
     };
 
     expect(parsePreferences(stored)).toStrictEqual(stored);
@@ -142,12 +149,14 @@ describe('parsing stored preferences', () => {
         reduceMotion: 'sometimes',
         defaultZoomMode: 'fit-page',
         showDeveloperDiagnostics: 'on',
+        pageTint: 'sepia',
       }),
     ).toStrictEqual({
       appearance: 'dark',
       reduceMotion: 'system',
       defaultZoomMode: 'fit-page',
       showDeveloperDiagnostics: 'on',
+      pageTint: 'sepia',
     });
   });
 

@@ -12,6 +12,8 @@ export interface AppIpcOptions {
    * renderer supplies nothing: where it leads is decided here.
    */
   readonly reportProblem: () => void;
+  /** Puts the window in or out of full screen. */
+  readonly setFullScreen: (on: boolean) => void;
   /** Origin of the Vite dev server, or `null` in production. */
   readonly devServerOrigin: string | null;
 }
@@ -24,7 +26,7 @@ export interface AppIpcOptions {
  */
 export const registerAppIpcHandlers = (
   ipc: IpcHandlerRegistrar,
-  { appInfo, reportProblem, devServerOrigin }: AppIpcOptions,
+  { appInfo, reportProblem, setFullScreen, devServerOrigin }: AppIpcOptions,
 ): void => {
   const guard = createSenderGuard(devServerOrigin);
 
@@ -38,6 +40,24 @@ export const registerAppIpcHandlers = (
     guard(IpcChannel.ReportProblem, (): boolean => {
       try {
         reportProblem();
+
+        return true;
+      } catch {
+        return false;
+      }
+    }),
+  );
+
+  ipc.handle(
+    IpcChannel.SetFullScreen,
+    guard(IpcChannel.SetFullScreen, (raw: unknown): boolean => {
+      // A boolean and nothing else: anything unexpected leaves the window as it is.
+      if (typeof raw !== 'boolean') {
+        return false;
+      }
+
+      try {
+        setFullScreen(raw);
 
         return true;
       } catch {

@@ -14,6 +14,13 @@ export const IpcChannel = {
    * nothing: the address is built in the main process.
    */
   ReportProblem: 'app:report-problem',
+  /**
+   * Main to window, the only channel in that direction: the name of a
+   * menu command. The window does what its own button would have done.
+   */
+  MenuCommand: 'menu:command',
+  /** Puts the window in, or takes it out of, full screen for reading mode. */
+  SetFullScreen: 'window:set-full-screen',
   /** Asks the main process to show the "open PDF" dialog and read the choice. */
   OpenDocumentDialog: 'pdf:open-dialog',
   /** Returns the document named on the command line, if there was one. */

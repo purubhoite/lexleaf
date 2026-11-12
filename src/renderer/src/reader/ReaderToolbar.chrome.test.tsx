@@ -44,9 +44,9 @@ const show = (overrides: Partial<Parameters<typeof ReaderToolbar>[0]> = {}): voi
   );
 };
 
-/** A button whose label is a glyph: it has no readable text of its own. */
+/** A button whose whole label is a drawn icon: it has no readable text of its own. */
 const isIconOnly = (button: HTMLElement): boolean =>
-  !/[A-Za-z0-9]/u.test(button.textContent ?? '') && (button.textContent ?? '').trim().length > 0;
+  (button.textContent ?? '').trim().length === 0 && button.querySelector('svg') !== null;
 
 afterEach(() => {
   cleanup();
@@ -82,7 +82,7 @@ describe('icon-only controls name themselves twice over (CTL-2)', () => {
   it('finds icon-only controls to judge, so the rule cannot pass vacuously', () => {
     show();
 
-    expect(screen.getAllByRole('button').filter(isIconOnly).length).toBeGreaterThanOrEqual(6);
+    expect(screen.getAllByRole('button').filter(isIconOnly).length).toBeGreaterThanOrEqual(4);
   });
 
   it('gives the pointer the same name it gives the screen reader', () => {

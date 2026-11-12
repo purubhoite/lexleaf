@@ -284,11 +284,28 @@ describe('the document surface is not themed', () => {
     expect(problem).not.toBe(message);
   });
 
-  it('never applies a filter, blend mode or inversion to the document', () => {
-    for (const property of ['filter', 'backdrop-filter', 'mix-blend-mode', 'invert']) {
+  it('never blends or blurs the document, and never filters the chrome', () => {
+    for (const property of ['backdrop-filter', 'mix-blend-mode', 'invert']) {
       expect(withoutComments(sources.reader)).not.toContain(`${property}:`);
       expect(withoutComments(sources.global)).not.toContain(`${property}:`);
     }
+
+    expect(withoutComments(sources.global)).not.toContain('filter:');
+  });
+
+  it('filters the page only where the reader chose a page colour (0.2.3)', () => {
+    // The appearance still never recolours a page. The one way a page is
+    // shown differently is the reader's own "Page colour" setting, and
+    // every filter in the stylesheet belongs to one of its three values.
+    const filtered = [...withoutComments(sources.reader).matchAll(/([^{}]+)\{[^}]*filter:/gu)].map(
+      (match) => (match[1] ?? '').trim(),
+    );
+
+    expect(filtered).toStrictEqual([
+      '.reader__pages--sepia .page',
+      '.reader__pages--dimmed .page',
+      '.reader__pages--dark .page',
+    ]);
   });
 
   it('still keeps the highlights distinguishable by more than hue', () => {

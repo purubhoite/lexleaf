@@ -10,6 +10,7 @@ import {
 
 import type { DictionaryResult, DictionarySense } from '@core/dictionary/types';
 
+import { Icon } from '../../ui/Icon';
 import { Message } from '../../ui/Message';
 import { ExplainControl } from '../ai/ExplainControl';
 import type { ExplainControl as ExplainControlState } from '../ai/useExplainInContext';
@@ -126,38 +127,63 @@ const SaveButton = ({ save }: { readonly save: SaveControl }): ReactElement | nu
     return null;
   }
 
-  const saved = save.state === 'saved-here';
+  /*
+    A saved word says so, as a statement, and removing it is a separate,
+    smaller button that names what it does. Until 0.2.3 the statement was
+    itself the button: pressing "Saved" removed the word, with nothing in
+    the popup to undo it, so a second click meant to confirm a save threw
+    it away.
+  */
+  if (save.state === 'saved-here') {
+    return (
+      <div className="dictionary-popup__save">
+        <p className="dictionary-popup__saved" data-testid="vocabulary-saved">
+          Saved to your words
+        </p>
+        <button
+          type="button"
+          className="control control--quiet dictionary-popup__remove"
+          data-testid="vocabulary-remove"
+          onClick={save.onRemove}
+        >
+          Remove from saved words
+        </button>
+
+        {save.otherPlaces > 0 && (
+          <p className="dictionary-popup__save-note" data-testid="vocabulary-other-places">
+            Also saved from {String(save.otherPlaces)} other{' '}
+            {save.otherPlaces === 1 ? 'place' : 'places'}.
+          </p>
+        )}
+
+        {save.error !== null && (
+          <p className="dictionary-popup__save-error" role="alert" data-testid="vocabulary-error">
+            {save.error}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   const label =
     save.state === 'saved-elsewhere'
       ? 'Save from here'
-      : saved
-        ? 'Saved'
-        : save.state === 'working'
-          ? 'Working…'
-          : 'Save word';
+      : save.state === 'working'
+        ? 'Working…'
+        : 'Save word';
 
   return (
     <div className="dictionary-popup__save">
       <button
         type="button"
-        className={
-          saved ? 'control dictionary-popup__saved' : 'control dictionary-popup__save-button'
-        }
+        className="control dictionary-popup__save-button"
         data-testid="vocabulary-save"
         data-state={save.state}
         disabled={save.state === 'working'}
-        aria-pressed={saved}
-        onClick={saved ? save.onRemove : save.onSave}
+        onClick={save.onSave}
       >
         {label}
       </button>
-
-      {save.state === 'saved-here' && save.otherPlaces > 0 && (
-        <p className="dictionary-popup__save-note" data-testid="vocabulary-other-places">
-          Also saved from {String(save.otherPlaces)} other{' '}
-          {save.otherPlaces === 1 ? 'place' : 'places'}.
-        </p>
-      )}
 
       {save.error !== null && (
         <p className="dictionary-popup__save-error" role="alert" data-testid="vocabulary-error">
@@ -466,7 +492,7 @@ export const WordDefinitionPopup = ({
             onClick={onClose}
             aria-label="Close definition"
           >
-            ×
+            <Icon name="close" />
           </button>
         </header>
 

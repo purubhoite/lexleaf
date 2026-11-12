@@ -1,6 +1,8 @@
-import { useState, type FormEvent, type ReactElement } from 'react';
+import { useState, type FormEvent, type ReactElement, type ReactNode, type Ref } from 'react';
 
 import type { ZoomState } from '@core/persistence/types';
+
+import { Icon } from '../ui/Icon';
 
 import { describeZoom, ZOOM_LEVELS, formatZoomPercentage } from './model/zoom';
 
@@ -31,6 +33,10 @@ export interface ReaderToolbarProps {
   readonly onZoomOut: () => void;
   readonly onZoomChange: (zoom: ZoomState) => void;
   readonly onToggleSearch: () => void;
+  /** The page-number field, so "Go to page" can put the cursor in it. */
+  readonly pageFieldRef?: Ref<HTMLInputElement>;
+  /** Controls that belong to the application rather than the document, shown last. */
+  readonly trailing?: ReactNode;
 }
 
 const ZOOM_SELECT_FIT_WIDTH = 'fit-width';
@@ -53,6 +59,8 @@ export const ReaderToolbar = ({
   onZoomOut,
   onZoomChange,
   onToggleSearch,
+  pageFieldRef,
+  trailing,
 }: ReaderToolbarProps): ReactElement => {
   // While the reader is not editing it, the field simply shows where they
   // are; it only holds its own value between a keystroke and a submission,
@@ -99,6 +107,7 @@ export const ReaderToolbar = ({
       */}
       <div className="reader__group reader__group--document" role="group" aria-label="File">
         <button type="button" className="control" onClick={onOpen}>
+          <Icon name="open" />
           Open PDF…
         </button>
         <button type="button" className="control" onClick={onClose}>
@@ -125,19 +134,8 @@ export const ReaderToolbar = ({
           title={hasOutline ? 'Table of contents' : 'This document has no table of contents'}
           onClick={onToggleOutline}
         >
+          <Icon name="contents" />
           Contents
-        </button>
-        <button
-          type="button"
-          className="control"
-          aria-label="First page"
-          title="First page"
-          disabled={currentPage <= 1}
-          onClick={(): void => {
-            onGoToPage(1);
-          }}
-        >
-          ⏮
         </button>
         <button
           type="button"
@@ -149,13 +147,14 @@ export const ReaderToolbar = ({
             onGoToPage(currentPage - 1);
           }}
         >
-          ◀
+          <Icon name="chevron-left" />
         </button>
 
         <form className="reader__page-form" onSubmit={submitPage}>
           <label>
             <span className="visually-hidden">Page number</span>
             <input
+              ref={pageFieldRef}
               className="control control--field reader__page-input"
               inputMode="numeric"
               value={pageField}
@@ -178,19 +177,7 @@ export const ReaderToolbar = ({
             onGoToPage(currentPage + 1);
           }}
         >
-          ▶
-        </button>
-        <button
-          type="button"
-          className="control"
-          aria-label="Last page"
-          title="Last page"
-          disabled={currentPage >= pageCount}
-          onClick={(): void => {
-            onGoToPage(pageCount);
-          }}
-        >
-          ⏭
+          <Icon name="chevron-right" />
         </button>
       </div>
 
@@ -202,7 +189,7 @@ export const ReaderToolbar = ({
           title="Zoom out"
           onClick={onZoomOut}
         >
-          −
+          <Icon name="minus" />
         </button>
         <label>
           <span className="visually-hidden">Zoom level</span>
@@ -211,8 +198,8 @@ export const ReaderToolbar = ({
             level" whatever the value is (W12, AC 9). It previously carried
             an `aria-label` built from the current zoom, which overrode the
             label and renamed the control every time its value changed; the
-            value is already conveyed by the selected option, and the
-            readout beside it states it visibly.
+            value is already conveyed by the selected option, and a
+            fitted mode states its percentage in its own option.
           */}
           <select
             className="control"
@@ -227,8 +214,26 @@ export const ReaderToolbar = ({
               }
             }}
           >
-            <option value={ZOOM_SELECT_FIT_WIDTH}>Fit width</option>
-            <option value={ZOOM_SELECT_FIT_PAGE}>Fit page</option>
+            {/*
+              The fitted modes say what they came to, in the menu itself:
+              "Fit width (137 %)". That figure used to be a second readout
+              beside the menu, repeating the menu whenever a fixed level
+              was chosen.
+            */}
+            <option value={ZOOM_SELECT_FIT_WIDTH}>
+              {zoom.mode === 'fit-width' ? describeZoom(zoom, scale) : 'Fit width'}
+            </option>
+            <option value={ZOOM_SELECT_FIT_PAGE}>
+              {zoom.mode === 'fit-page' ? describeZoom(zoom, scale) : 'Fit page'}
+            </option>
+            {/*
+              A zoom reached by pinching is rarely one of the listed
+              levels. It is shown as itself, so the menu always says the
+              zoom the page is actually at.
+            */}
+            {zoom.mode === 'fixed' && !ZOOM_LEVELS.some((level) => level === zoom.scale) && (
+              <option value={String(zoom.scale)}>{formatZoomPercentage(zoom.scale)}</option>
+            )}
             {ZOOM_LEVELS.map((level) => (
               <option key={level} value={level}>
                 {formatZoomPercentage(level)}
@@ -243,9 +248,8 @@ export const ReaderToolbar = ({
           title="Zoom in"
           onClick={onZoomIn}
         >
-          +
+          <Icon name="plus" />
         </button>
-        <span className="reader__zoom-readout">{describeZoom(zoom, scale)}</span>
       </div>
 
       <div className="reader__group" role="group" aria-label="Search">
@@ -255,9 +259,12 @@ export const ReaderToolbar = ({
           aria-expanded={searchOpen}
           onClick={onToggleSearch}
         >
+          <Icon name="search" />
           Search
         </button>
       </div>
+
+      {trailing}
     </header>
   );
 };

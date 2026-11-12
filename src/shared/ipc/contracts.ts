@@ -23,6 +23,7 @@ import {
   type Preferences,
 } from '@core/persistence/preferences';
 import type { ReadingPosition, ZoomMode, ZoomState } from '@core/persistence/types';
+import type { MenuCommand } from './menuCommands';
 import type { UpdateBridge } from './updateContracts';
 import type { VocabularyExportFormat, VocabularyExportOutcome } from '@core/vocabulary/export';
 import type { SavedOccurrence, SavedWord, SavedWordState } from '@core/vocabulary/types';
@@ -356,6 +357,13 @@ export interface DesktopBridge {
    * Absent in a build that has nowhere to report to.
    */
   readonly reportProblem?: () => Promise<boolean>;
+  /**
+   * Listens for commands from the application menu. Returns the function
+   * that stops listening. Absent where there is no menu.
+   */
+  readonly onMenuCommand?: (listener: (command: MenuCommand) => void) => () => void;
+  /** Puts the window in or out of full screen, for reading mode. */
+  readonly setFullScreen?: (on: boolean) => Promise<void>;
 }
 
 const isNonEmptyString = (value: unknown): value is string =>
