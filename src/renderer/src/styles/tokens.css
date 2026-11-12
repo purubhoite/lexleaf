@@ -79,10 +79,10 @@
    * the same four colours at full strength, for the buttons that choose
    * between them and the stripe beside each note.
    */
-  --colour-mark-yellow: rgb(255 226 86 / 55%);
-  --colour-mark-green: rgb(140 222 130 / 55%);
-  --colour-mark-blue: rgb(130 196 255 / 55%);
-  --colour-mark-pink: rgb(255 160 200 / 55%);
+  --colour-mark-yellow: rgb(255 238 60);
+  --colour-mark-green: rgb(160 238 150);
+  --colour-mark-blue: rgb(155 212 255);
+  --colour-mark-pink: rgb(255 178 214);
   --colour-mark-noted: rgb(60 60 60 / 70%);
   --colour-swatch-yellow: rgb(245 206 50);
   --colour-swatch-green: rgb(110 200 100);

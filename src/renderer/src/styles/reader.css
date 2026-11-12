@@ -468,11 +468,18 @@
   contain: paint;
 }
 
+/*
+ * The layer is multiplied into the page (0.2.5), the way a marker soaks
+ * into paper: the colour shows at full strength on the white and the ink
+ * under it stays as dark as it was. Painted plainly over the page, a
+ * colour strong enough to see also greyed the words it covered.
+ */
 .page__highlights {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 2;
+  mix-blend-mode: multiply;
 }
 
 .highlight {

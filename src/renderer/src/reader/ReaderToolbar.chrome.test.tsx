@@ -39,8 +39,6 @@ const show = (overrides: Partial<Parameters<typeof ReaderToolbar>[0]> = {}): voi
       onViewModeChange={(): void => {}}
       onRotate={(): void => {}}
       onPrint={(): void => {}}
-      onOpen={(): void => {}}
-      onClose={(): void => {}}
       onGoToPage={(): void => {}}
       onZoomIn={(): void => {}}
       onZoomOut={(): void => {}}
