@@ -31,9 +31,12 @@ jobs:
       - name: Verify packages and run smoke test
         run: |
           set -euo pipefail
-          test -s dist/Lexleaf-0.1.0-x86_64.AppImage
-          test -s dist/Lexleaf-0.1.0-amd64.deb
-          ar t dist/Lexleaf-0.1.0-amd64.deb | grep -q '^debian-binary$'
-          sha256sum dist/Lexleaf-0.1.0-x86_64.AppImage dist/Lexleaf-0.1.0-amd64.deb > dist/SHA256SUMS.txt
+          version=$(node -p "require('./package.json').version")
+          appimage="dist/Lexleaf-${version}-x86_64.AppImage"
+          deb="dist/Lexleaf-${version}-amd64.deb"
+          test -s "$appimage"
+          test -s "$deb"
+          ar t "$deb" | grep -q '^debian-binary$'
+          sha256sum "$appimage" "$deb" > dist/SHA256SUMS.txt
           timeout 20s xvfb-run -a ./dist/linux-unpacked/lexleaf --no-sandbox --disable-gpu >/tmp/lexleaf-linux.log 2>&1 || status=$?
           if [[ "${status:-0}" -ne 0 && "${status:-0}" -ne 124 ]]; then cat /tmp/lexleaf-linux.log; exit "$status"; fi
