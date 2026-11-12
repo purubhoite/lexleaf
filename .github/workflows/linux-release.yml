@@ -110,6 +110,8 @@ jobs:
           test -s "$deb"
           file "$appimage" "$deb"
           ar t "$deb" | grep -q '^debian-binary$'
+          dpkg-deb --fsys-tarfile "$deb" | tar -xO --wildcards '*etc/apport/report-ignore/lexleaf' | grep -Fx '/opt/Lexleaf/lexleaf'
+          dpkg-deb --fsys-tarfile "$deb" | tar -t | grep -Ex '(\./)?opt/Lexleaf/lexleaf'
           sha256sum "$appimage" "$deb" > dist/linux-SHA256SUMS.txt
           grep -F "Lexleaf-${EXPECTED_VERSION}-x86_64.AppImage" dist/linux-SHA256SUMS.txt
           grep -F "Lexleaf-${EXPECTED_VERSION}-amd64.deb" dist/linux-SHA256SUMS.txt

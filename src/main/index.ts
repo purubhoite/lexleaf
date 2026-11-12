@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import {
   access,
   open as openFile,
@@ -75,6 +75,12 @@ import {
   createElectronUpdaterInstaller,
   type AutoUpdaterLike,
 } from './update/updateInstaller';
+import {
+  ORPHANED_ZYGOTE_SWEEP_INTERVAL_MS,
+  parseProcessStat,
+  stopOrphanedZygotes,
+  type ProcessTable,
+} from './lifecycle/orphanedZygotes';
 import { createUpdateService } from './update/updateService';
 import { UPDATE_SETTINGS_FILE, createUpdateSettingsStore } from './update/updateSettings';
 import { createMainWindow } from './window/createMainWindow';
@@ -132,8 +138,52 @@ const chooseDocumentPath = async (): Promise<string | null> => {
   return selection.canceled || path === undefined ? null : path;
 };
 
+/*
+ * Linux only: a Lexleaf helper process that has been left, or started,
+ * with no application behind it spins forever and fills the system log.
+ * Looked for at startup and every couple of minutes while running; see
+ * `orphanedZygotes.ts` for the defect and for why the rule is safe.
+ */
+const watchForOrphanedZygotes = (): void => {
+  if (process.platform !== 'linux' || !app.isPackaged) {
+    return;
+  }
+
+  const table: ProcessTable = {
+    list: () => readdirSync('/proc'),
+    read: (pid, file) => {
+      try {
+        return readFileSync(`/proc/${String(pid)}/${file}`, 'utf8');
+      } catch {
+        return null;
+      }
+    },
+  };
+  const ownName = parseProcessStat(table.read(process.pid, 'stat'))?.name ?? '';
+
+  const sweep = (): void => {
+    stopOrphanedZygotes({
+      table,
+      ownName,
+      ownPid: process.pid,
+      kill: (pid) => {
+        process.kill(pid, 'SIGKILL');
+      },
+      onDiagnostic: (message) => {
+        console.warn(`${LOG_PREFIX} ${message}`);
+      },
+    });
+  };
+
+  sweep();
+  // Never the reason the application stays open.
+  setInterval(sweep, ORPHANED_ZYGOTE_SWEEP_INTERVAL_MS).unref();
+};
+
 const bootstrap = async (): Promise<void> => {
   const devServerUrl = process.env['ELECTRON_RENDERER_URL'] ?? null;
+
+  watchForOrphanedZygotes();
 
   /*
    * The window the recovery acts on. It is a variable rather than a

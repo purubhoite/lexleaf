@@ -1,0 +1,8 @@
+# Installed as /etc/apport/report-ignore/lexleaf by the Lexleaf Debian package.
+#
+# Ubuntu's crash reporter (Apport) offers to "relaunch" a crashed program by
+# running the crashed process's own command line again. For one of Lexleaf's
+# helper processes that starts a Chromium zygote with no application behind
+# it, which loops forever writing an error to the system log until the disk
+# is full. Listing the executable here stops Apport from handling it.
+/opt/Lexleaf/lexleaf
