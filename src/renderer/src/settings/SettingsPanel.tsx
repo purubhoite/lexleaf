@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 import type { PreferenceKey, Preferences } from '@core/persistence/preferences';
 
@@ -37,6 +37,11 @@ export interface SettingsPanelProps {
   readonly preferences: Preferences;
   readonly onChange: <K extends PreferenceKey>(key: K, value: Preferences[K]) => void;
   readonly onClose: () => void;
+  /**
+   * Groups owned by another part of the application, shown after the
+   * preferences. The panel lays them out and knows nothing else about them.
+   */
+  readonly children?: ReactNode;
 }
 
 interface Choice<Value extends string> {
@@ -143,6 +148,7 @@ export const SettingsPanel = ({
   preferences,
   onChange,
   onClose,
+  children,
 }: SettingsPanelProps): ReactElement => (
   <section className="settings" aria-label="Settings" data-testid="settings">
     <div className="settings__header">
@@ -158,8 +164,8 @@ export const SettingsPanel = ({
     </div>
 
     <p className="settings__intro">
-      Changes apply straight away and are remembered for next time. Nothing here is sent anywhere:
-      these four choices are stored on this computer, beside the list of documents you have opened.
+      Changes apply straight away and are remembered for next time. Your choices are stored on this
+      computer, beside the list of documents you have opened, and are not sent anywhere.
     </p>
 
     <ChoiceGroup
@@ -203,5 +209,7 @@ export const SettingsPanel = ({
         onChange={onChange}
       />
     )}
+
+    {children}
   </section>
 );

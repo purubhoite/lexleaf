@@ -68,6 +68,9 @@ export const IpcChannel = {
   AiExplain: 'ai:explain',
   /** Abandon a generation by request id. */
   AiCancel: 'ai:cancel',
+  UpdateCheck: 'update:check',
+  UpdateSetAutomatic: 'update:set-automatic',
+  UpdateOpenDownload: 'update:open-download',
 } as const;
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];

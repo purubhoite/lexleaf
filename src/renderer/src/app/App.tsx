@@ -7,6 +7,8 @@ import { LibraryView } from '../library/LibraryView';
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { usePreferences } from '../settings/usePreferences';
 import { Message } from '../ui/Message';
+import { UpdateSettings } from '../update/UpdateSettings';
+import { useUpdateCheck } from '../update/useUpdateCheck';
 import { useVocabularyLibrary } from '../library/useVocabularyLibrary';
 import { DOCUMENT_SCROLLER_ID, ReaderView } from '../reader/ReaderView';
 import type {
@@ -119,6 +121,12 @@ export const App = ({ bridge }: AppProps): ReactElement => {
    * shell is where a fact about the session belongs.
    */
   const recovery = useSessionRecovery(bridge);
+  /*
+   * The third session-level notice: a newer release exists. Unlike the two
+   * above it is not a problem, so it is the shared `Message` in its `info`
+   * kind, and like them it is said once and the reader closes it.
+   */
+  const updates = useUpdateCheck(bridge);
   /*
    * The one copy of the four preferences (ADR-031). It lives here because
    * two different places need it — the settings panel that changes it and
@@ -306,6 +314,18 @@ export const App = ({ bridge }: AppProps): ReactElement => {
         </Message>
       )}
 
+      {updates.noticeVisible && updates.outcome.status === 'available' && (
+        <Message kind="info" className="shell__persistence" testId="update-notice">
+          Lexleaf {updates.outcome.version} is available.{' '}
+          <button type="button" className="control" onClick={updates.openDownload}>
+            Open the download page
+          </button>{' '}
+          <button type="button" className="control" onClick={updates.dismissNotice}>
+            Dismiss
+          </button>
+        </Message>
+      )}
+
       <div
         className="shell__surface"
         hidden={showLibrary || showSettings}
@@ -327,7 +347,9 @@ export const App = ({ bridge }: AppProps): ReactElement => {
           onClose={(): void => {
             setShowSettings(false);
           }}
-        />
+        >
+          <UpdateSettings updates={updates} />
+        </SettingsPanel>
       )}
 
       {showLibrary && (

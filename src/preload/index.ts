@@ -29,6 +29,12 @@ import {
   type VocabularyBridge,
 } from '@shared/ipc/contracts';
 import {
+  UPDATE_STATE_UNKNOWN,
+  parseUpdateState,
+  type UpdateBridge,
+  type UpdateIpcState,
+} from '@shared/ipc/updateContracts';
+import {
   parseLibraryPageResult,
   parseOccurrencesResult,
   parseSavedWordResult,
@@ -186,6 +192,26 @@ const recovery: NonNullable<DesktopBridge['recovery']> = {
     ) ?? { ok: false, error: 'blocked' as const },
 };
 
+/**
+ * The update bridge: three fixed methods and no address.
+ *
+ * A reply that does not parse reads as "nothing to report": an update
+ * check that went wrong must never interrupt reading.
+ */
+const updates: UpdateBridge = {
+  check: async (manual: boolean): Promise<UpdateIpcState> =>
+    parseUpdateState(
+      await ipcRenderer.invoke(IpcChannel.UpdateCheck, { manual: manual === true }),
+    ) ?? UPDATE_STATE_UNKNOWN,
+  setAutomatic: async (automatic: boolean): Promise<UpdateIpcState> =>
+    parseUpdateState(
+      await ipcRenderer.invoke(IpcChannel.UpdateSetAutomatic, { automatic: automatic === true }),
+    ) ?? UPDATE_STATE_UNKNOWN,
+  openDownload: async (): Promise<void> => {
+    await ipcRenderer.invoke(IpcChannel.UpdateOpenDownload);
+  },
+};
+
 const desktopBridge: DesktopBridge = {
   getAppInfo,
   openDocumentDialog: async () => requestDocument(IpcChannel.OpenDocumentDialog),
@@ -223,6 +249,7 @@ const desktopBridge: DesktopBridge = {
   vocabulary,
   ai,
   recovery,
+  updates,
 };
 
 contextBridge.exposeInMainWorld(DESKTOP_BRIDGE_KEY, desktopBridge);

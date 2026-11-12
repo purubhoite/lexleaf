@@ -39,6 +39,7 @@ The current release is **v0.1.1 for Windows x64 and Linux x86_64**. The installe
 - Zoom controls: `Ctrl/Cmd++`, `Ctrl/Cmd+-`, and `Ctrl/Cmd+0` for fit width.
 - In-document search with `Ctrl/Cmd+F`.
 - Light, dark, and system appearance preferences, plus reduced-motion support.
+- An update notice: Lexleaf tells you when a newer version has been released and links to its download page. It can be turned off in Settings.
 - Offline dictionary data packaged separately from the Apache-2.0 application code.
 
 AI explanation code is present for future evaluation and is disabled by default in v0.1.1; it is not required for PDF reading, dictionary lookup, or saved vocabulary.
@@ -120,6 +121,15 @@ Lexleaf stores its local profile under Electron's per-user data directory (norma
 
 PDF rendering, dictionary lookup, saved vocabulary, reading position, recent documents, and preferences are implemented locally. The dictionary is read from packaged files, and saved vocabulary is stored in a local SQLite database. Lexleaf does not require an account, subscription, telemetry service, cloud document upload, or cloud vocabulary sync for the core workflow.
 
+### Update check
+
+Lexleaf checks whether a newer version has been released so that fixes reach you. When it starts, and at most once a day, it requests the public record of the latest Lexleaf release from GitHub (`api.github.com`) and compares the version number with its own. If a newer version exists it shows a notice with a button that opens the release page in your browser.
+
+- Nothing is downloaded or installed automatically; you choose whether and when to update.
+- The request contains no account, identifier, document, or vocabulary data. As with any web request, GitHub can see the IP address it comes from and the application's user-agent string.
+- You can turn the automatic check off under **Settings → Updates**. With it off, Lexleaf contacts nothing unless you press **Check for updates now**.
+- Versions 0.1.0 and 0.1.1 do not have this check and must be updated by hand from the [releases page](https://github.com/purubhoite/lexleaf/releases/latest).
+
 Optional AI explanation functionality is disabled by default and has separate configuration and network-policy code. Do not interpret the local-first design as a claim that every optional feature or dependency can never make a network request; review and configure optional providers deliberately.
 
 ## Development
@@ -178,7 +188,7 @@ Team roles:
 - Authors and reviewers: [@purubhoite](https://github.com/purubhoite), the repository owner. Changes from anyone else arrive as pull requests and are reviewed by the owner before merging.
 - Approvers: [@purubhoite](https://github.com/purubhoite). Every release is started and approved manually by the owner.
 
-Privacy policy: this program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. See [Local-first architecture and privacy](#local-first-architecture-and-privacy).
+Privacy policy: this program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it, with one exception: the [update check](#update-check), which asks GitHub for the latest release version, sends nothing about the user, and can be turned off in Settings. See [Local-first architecture and privacy](#local-first-architecture-and-privacy).
 
 ## Contributing and support
 

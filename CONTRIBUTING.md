@@ -35,3 +35,5 @@ Application code is Apache-2.0. Third-party datasets, notices, fonts, icons and 
 ## Product policy
 
 Lexleaf V1 is local-first. Do not add telemetry, cloud document upload, authentication, payments, subscriptions or automatic updates without an explicit product decision. AI remains disabled by default in V1.
+
+One exception has been decided: an update notice. Lexleaf may ask GitHub for the latest release version, at most once a day, and tell the reader when a newer one exists. It is on by default, can be turned off in Settings, sends nothing about the reader, and never downloads or installs anything. The destination is a constant in `src/main/update/updateService.ts`; do not make it configurable, add other destinations, or turn the notice into an automatic installer without a new product decision.
