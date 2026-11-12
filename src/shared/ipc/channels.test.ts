@@ -29,6 +29,8 @@ describe('IPC channels', () => {
       'ai:cancel',
       'update:check',
       'update:set-automatic',
+      'update:download',
+      'update:install',
       'update:open-download',
     ]);
   });

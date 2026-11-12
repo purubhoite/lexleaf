@@ -119,6 +119,13 @@ jobs:
           grep -F "Lexleaf-${EXPECTED_VERSION}-x64-setup.exe" "$RUNNER_TEMP/lexleaf-release-checksum/SHA256SUMS.txt" >> dist/SHA256SUMS.txt || { echo 'Existing Windows checksum is missing' >&2; exit 1; }
           cat dist/linux-SHA256SUMS.txt >> dist/SHA256SUMS.txt
           test "$(grep -c '[^[:space:]]' dist/SHA256SUMS.txt)" -eq 3
+          # What an installed AppImage reads to update itself. Releases cut
+          # before the update feature have none of these files.
+          if [[ -f dist/latest-linux.yml ]]; then
+            grep -F "version: ${EXPECTED_VERSION}" dist/latest-linux.yml
+            grep -F "Lexleaf-${EXPECTED_VERSION}-x86_64.AppImage" dist/latest-linux.yml
+            test -s dist/linux-unpacked/resources/app-update.yml
+          fi
 
       - name: Smoke test packaged application under Xvfb
         working-directory: release-source
@@ -140,3 +147,6 @@ jobs:
           gh "${upload_args[@]}"
           checksum_args=(release upload "$EXPECTED_TAG" dist/SHA256SUMS.txt --repo '${{ github.repository }}' --clobber)
           gh "${checksum_args[@]}"
+          if [[ -f dist/latest-linux.yml ]]; then
+            gh release upload "$EXPECTED_TAG" dist/latest-linux.yml --repo '${{ github.repository }}' --clobber
+          fi

@@ -7,6 +7,7 @@ import { LibraryView } from '../library/LibraryView';
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { usePreferences } from '../settings/usePreferences';
 import { Message } from '../ui/Message';
+import { UpdateMessage } from '../update/UpdateMessage';
 import { UpdateSettings } from '../update/UpdateSettings';
 import { useUpdateCheck } from '../update/useUpdateCheck';
 import { useVocabularyLibrary } from '../library/useVocabularyLibrary';
@@ -122,9 +123,9 @@ export const App = ({ bridge }: AppProps): ReactElement => {
    */
   const recovery = useSessionRecovery(bridge);
   /*
-   * The third session-level notice: a newer release exists. Unlike the two
-   * above it is not a problem, so it is the shared `Message` in its `info`
-   * kind, and like them it is said once and the reader closes it.
+   * The third session-level notice: a newer release exists, is being
+   * downloaded, or is ready to install. Like the two above it is the
+   * shared `Message`, said once, and the reader closes it.
    */
   const updates = useUpdateCheck(bridge);
   /*
@@ -314,16 +315,13 @@ export const App = ({ bridge }: AppProps): ReactElement => {
         </Message>
       )}
 
-      {updates.noticeVisible && updates.outcome.status === 'available' && (
-        <Message kind="info" className="shell__persistence" testId="update-notice">
-          Lexleaf {updates.outcome.version} is available.{' '}
-          <button type="button" className="control" onClick={updates.openDownload}>
-            Open the download page
-          </button>{' '}
-          <button type="button" className="control" onClick={updates.dismissNotice}>
-            Dismiss
-          </button>
-        </Message>
+      {updates.noticeVisible && (
+        <UpdateMessage
+          updates={updates}
+          testId="update-notice"
+          className="shell__persistence"
+          dismissible
+        />
       )}
 
       <div

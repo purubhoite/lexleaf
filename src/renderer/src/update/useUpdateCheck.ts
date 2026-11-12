@@ -4,7 +4,7 @@ import type { DesktopBridge } from '@shared/ipc/contracts';
 import type { UpdateIpcState, UpdateOutcome } from '@shared/ipc/updateContracts';
 
 /**
- * What the shell knows about updates, and the three things it can ask.
+ * What the shell knows about updates, and the few things it can ask.
  *
  * The hook asks once when the application starts. That request is not a
  * decision to contact anything: the main process applies the reader's
@@ -22,13 +22,25 @@ export interface UpdateCheck {
   readonly automatic: boolean;
   readonly outcome: UpdateOutcome;
   readonly activity: UpdateActivity;
-  /** True while a newer version is known and the notice was not dismissed. */
+  /** True while there is something to say about a newer version. */
   readonly noticeVisible: boolean;
   readonly checkNow: () => void;
   readonly setAutomatic: (automatic: boolean) => void;
+  /** Downloads the release that was found. Nothing is installed. */
+  readonly download: () => void;
+  /** Closes Lexleaf, installs the downloaded release and starts it again. */
+  readonly install: () => void;
   readonly openDownload: () => void;
   readonly dismissNotice: () => void;
 }
+
+/** The outcomes that are about a particular newer release. */
+const NOTICE_STATUSES: readonly UpdateOutcome['status'][] = [
+  'available',
+  'downloading',
+  'ready',
+  'download-failed',
+];
 
 const IDLE: UpdateOutcome = { status: 'idle' };
 
@@ -113,6 +125,37 @@ export const useUpdateCheck = (bridge: DesktopBridge | null): UpdateCheck => {
     [updates],
   );
 
+  const download = useCallback((): void => {
+    if (updates === null) {
+      return;
+    }
+
+    // Said at once: the request only answers when the download is over.
+    setOutcome((current) =>
+      current.status === 'available' || current.status === 'download-failed'
+        ? { status: 'downloading', version: current.version }
+        : current,
+    );
+    // The notice comes back for the part the reader has to act on.
+    setDismissed(false);
+
+    void updates.download().then(accept, () => {
+      setOutcome((current) =>
+        current.status === 'downloading'
+          ? { status: 'download-failed', version: current.version }
+          : current,
+      );
+    });
+  }, [accept, updates]);
+
+  const install = useCallback((): void => {
+    if (updates !== null) {
+      void updates.install().catch(() => {
+        // The application is about to close; there is nobody to tell.
+      });
+    }
+  }, [updates]);
+
   const openDownload = useCallback((): void => {
     if (updates !== null) {
       void updates.openDownload().catch(() => {
@@ -131,9 +174,11 @@ export const useUpdateCheck = (bridge: DesktopBridge | null): UpdateCheck => {
       automatic,
       outcome,
       activity,
-      noticeVisible: updates !== null && outcome.status === 'available' && !dismissed,
+      noticeVisible: updates !== null && NOTICE_STATUSES.includes(outcome.status) && !dismissed,
       checkNow,
       setAutomatic,
+      download,
+      install,
       openDownload,
       dismissNotice,
     }),
@@ -143,6 +188,8 @@ export const useUpdateCheck = (bridge: DesktopBridge | null): UpdateCheck => {
       checkNow,
       dismissNotice,
       dismissed,
+      download,
+      install,
       openDownload,
       outcome,
       setAutomatic,

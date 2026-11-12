@@ -11,12 +11,12 @@ import type { UpdateService } from '../update/updateService';
 import { createSenderGuard, type IpcHandlerRegistrar } from './senderGuard';
 
 /**
- * The three update channels.
+ * The five update channels.
  *
  * None of them carries an address or a version from the renderer: a check
- * request is one boolean, the setting is one boolean, and "open the
- * download page" has no argument at all — the main process opens the page
- * for the release it found itself, or nothing.
+ * request is one boolean, the setting is one boolean, and "download",
+ * "install" and "open the download page" have no argument at all — the
+ * main process acts on the release it found itself, or does nothing.
  */
 
 export interface UpdateIpcOptions {
@@ -58,6 +58,18 @@ export const registerUpdateIpcHandlers = (
       }
 
       return service.setAutomatic(request.automatic);
+    }),
+  );
+
+  ipc.handle(
+    IpcChannel.UpdateDownload,
+    guard(IpcChannel.UpdateDownload, async (): Promise<UpdateIpcState> => service.download()),
+  );
+
+  ipc.handle(
+    IpcChannel.UpdateInstall,
+    guard(IpcChannel.UpdateInstall, async (): Promise<void> => {
+      await service.install();
     }),
   );
 

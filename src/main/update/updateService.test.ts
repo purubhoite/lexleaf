@@ -57,7 +57,7 @@ describe('the automatic check', () => {
 
     expect(await service.check({ manual: false })).toStrictEqual({
       automatic: true,
-      outcome: { status: 'available', version: '0.2.0' },
+      outcome: { status: 'available', version: '0.2.0', canInstall: false },
     });
     expect(fetchLatestRelease).toHaveBeenCalledExactlyOnceWith(LATEST_RELEASE_ADDRESS);
     expect(settings.current()).toStrictEqual({
@@ -104,6 +104,7 @@ describe('the automatic check', () => {
     expect((await service.check({ manual: false })).outcome).toStrictEqual({
       status: 'available',
       version: '0.3.0',
+      canInstall: false,
     });
     expect(fetchLatestRelease).not.toHaveBeenCalled();
   });
@@ -151,7 +152,7 @@ describe('a check the reader asked for', () => {
 
     expect(await service.check({ manual: true })).toStrictEqual({
       automatic: false,
-      outcome: { status: 'available', version: '0.2.0' },
+      outcome: { status: 'available', version: '0.2.0', canInstall: false },
     });
     expect(fetchLatestRelease).toHaveBeenCalledOnce();
   });
@@ -224,6 +225,163 @@ describe('opening the download page', () => {
   });
 });
 
+describe('downloading and installing', () => {
+  const installerStub = (download: () => Promise<void> = () => Promise.resolve()) => ({
+    download: vi.fn(download),
+    install: vi.fn(),
+  });
+
+  it('offers the in-app install only when this installation has an installer', async () => {
+    const { service } = build({ installer: installerStub() });
+
+    expect((await service.check({ manual: true })).outcome).toStrictEqual({
+      status: 'available',
+      version: '0.2.0',
+      canInstall: true,
+    });
+  });
+
+  it('downloads only when asked, and never installs by itself', async () => {
+    const installer = installerStub();
+    const { service } = build({ installer });
+
+    await service.check({ manual: true });
+
+    expect(installer.download).not.toHaveBeenCalled();
+
+    expect((await service.download()).outcome).toStrictEqual({ status: 'ready', version: '0.2.0' });
+    expect(installer.download).toHaveBeenCalledOnce();
+    expect(installer.install).not.toHaveBeenCalled();
+  });
+
+  it('reports the download while it is running, and shares it between callers', async () => {
+    let finish: () => void = () => {};
+    const installer = installerStub(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const { service } = build({ installer });
+
+    await service.check({ manual: true });
+
+    const first = service.download();
+    const second = service.download();
+
+    await Promise.resolve();
+
+    expect((await service.check({ manual: true })).outcome).toStrictEqual({
+      status: 'downloading',
+      version: '0.2.0',
+    });
+
+    finish();
+
+    expect((await first).outcome.status).toBe('ready');
+    expect((await second).outcome.status).toBe('ready');
+    expect(installer.download).toHaveBeenCalledOnce();
+  });
+
+  it('says so when the download fails, and can be asked again', async () => {
+    const onDiagnostic = vi.fn();
+    let attempts = 0;
+    const installer = installerStub(() => {
+      attempts += 1;
+
+      return attempts === 1 ? Promise.reject(new RangeError('sha512 mismatch')) : Promise.resolve();
+    });
+    const { service } = build({ installer, onDiagnostic });
+
+    await service.check({ manual: true });
+
+    expect((await service.download()).outcome).toStrictEqual({
+      status: 'download-failed',
+      version: '0.2.0',
+    });
+    expect(onDiagnostic).toHaveBeenCalledWith('update download failed: RangeError');
+    expect((await service.download()).outcome.status).toBe('ready');
+  });
+
+  it('keeps a finished download through a later check', async () => {
+    const installer = installerStub();
+    const { service } = build({ installer });
+
+    await service.check({ manual: true });
+    await service.download();
+
+    expect((await service.check({ manual: true })).outcome).toStrictEqual({
+      status: 'ready',
+      version: '0.2.0',
+    });
+    expect((await service.download()).outcome.status).toBe('ready');
+    expect(installer.download).toHaveBeenCalledOnce();
+  });
+
+  it('saves state first, then installs, and only once a download is ready', async () => {
+    const order: string[] = [];
+    const installer = {
+      download: vi.fn(() => Promise.resolve()),
+      install: vi.fn(() => {
+        order.push('install');
+      }),
+    };
+    const { service } = build({
+      installer,
+      beforeInstall: () => {
+        order.push('save');
+
+        return Promise.resolve();
+      },
+    });
+
+    await service.install();
+    await service.check({ manual: true });
+    await service.install();
+
+    expect(order).toStrictEqual([]);
+
+    await service.download();
+    await service.install();
+
+    expect(order).toStrictEqual(['save', 'install']);
+  });
+
+  it('still installs when saving state fails', async () => {
+    const installer = installerStub();
+    const { service } = build({
+      installer,
+      beforeInstall: () => Promise.reject(new Error('disk full')),
+    });
+
+    await service.check({ manual: true });
+    await service.download();
+    await service.install();
+
+    expect(installer.install).toHaveBeenCalledOnce();
+  });
+
+  it('does nothing without an installer or without a newer release', async () => {
+    const without = build();
+
+    await without.service.check({ manual: true });
+
+    expect((await without.service.download()).outcome).toStrictEqual({
+      status: 'available',
+      version: '0.2.0',
+      canInstall: false,
+    });
+
+    const installer = installerStub();
+    const current = build({ installer, fetchLatestRelease: () => release('v0.1.1') });
+
+    await current.service.check({ manual: true });
+
+    expect((await current.service.download()).outcome).toStrictEqual({ status: 'idle' });
+    expect(installer.download).not.toHaveBeenCalled();
+  });
+});
+
 describe('the setting', () => {
   it('is stored, and keeps what is already known', async () => {
     const { service, settings } = build();
@@ -232,7 +390,7 @@ describe('the setting', () => {
 
     expect(await service.setAutomatic(false)).toStrictEqual({
       automatic: false,
-      outcome: { status: 'available', version: '0.2.0' },
+      outcome: { status: 'available', version: '0.2.0', canInstall: false },
     });
     expect(settings.current().automatic).toBe(false);
     expect(settings.current().latestSeenVersion).toBe('0.2.0');

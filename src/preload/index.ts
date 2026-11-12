@@ -193,7 +193,7 @@ const recovery: NonNullable<DesktopBridge['recovery']> = {
 };
 
 /**
- * The update bridge: three fixed methods and no address.
+ * The update bridge: five fixed methods and no address.
  *
  * A reply that does not parse reads as "nothing to report": an update
  * check that went wrong must never interrupt reading.
@@ -207,6 +207,11 @@ const updates: UpdateBridge = {
     parseUpdateState(
       await ipcRenderer.invoke(IpcChannel.UpdateSetAutomatic, { automatic: automatic === true }),
     ) ?? UPDATE_STATE_UNKNOWN,
+  download: async (): Promise<UpdateIpcState> =>
+    parseUpdateState(await ipcRenderer.invoke(IpcChannel.UpdateDownload)) ?? UPDATE_STATE_UNKNOWN,
+  install: async (): Promise<void> => {
+    await ipcRenderer.invoke(IpcChannel.UpdateInstall);
+  },
   openDownload: async (): Promise<void> => {
     await ipcRenderer.invoke(IpcChannel.UpdateOpenDownload);
   },

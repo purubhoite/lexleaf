@@ -13,7 +13,7 @@ import { unavailableVocabularyBridge } from '../testing/vocabularyBridgeStub';
 
 /**
  * The update notice and its settings group, through the application shell:
- * what a reader sees at startup, what the three controls do, and what
+ * what a reader sees at startup, what the controls do, and what
  * reaches the bridge.
  */
 
@@ -22,7 +22,16 @@ const noDocument = (): Promise<DocumentRequestResult> => Promise.resolve({ statu
 const IDLE: UpdateIpcState = { automatic: true, outcome: { status: 'idle' } };
 const AVAILABLE: UpdateIpcState = {
   automatic: true,
-  outcome: { status: 'available', version: '0.2.0' },
+  outcome: { status: 'available', version: '0.2.0', canInstall: false },
+};
+const INSTALLABLE: UpdateIpcState = {
+  automatic: true,
+  outcome: { status: 'available', version: '0.2.0', canInstall: true },
+};
+const READY: UpdateIpcState = { automatic: true, outcome: { status: 'ready', version: '0.2.0' } };
+const DOWNLOAD_FAILED: UpdateIpcState = {
+  automatic: true,
+  outcome: { status: 'download-failed', version: '0.2.0' },
 };
 const CURRENT: UpdateIpcState = { automatic: true, outcome: { status: 'up-to-date' } };
 const FAILED: UpdateIpcState = { automatic: true, outcome: { status: 'failed' } };
@@ -30,6 +39,7 @@ const FAILED: UpdateIpcState = { automatic: true, outcome: { status: 'failed' } 
 const updateBridge = (
   startup: UpdateIpcState,
   manual: UpdateIpcState | Error = startup,
+  downloaded: UpdateIpcState | Error | Promise<UpdateIpcState> = READY,
 ): UpdateBridge => ({
   check: vi.fn((isManual: boolean) =>
     !isManual
@@ -41,6 +51,10 @@ const updateBridge = (
   setAutomatic: vi.fn((automatic: boolean) =>
     Promise.resolve<UpdateIpcState>({ automatic, outcome: startup.outcome }),
   ),
+  download: vi.fn(() =>
+    downloaded instanceof Error ? Promise.reject(downloaded) : Promise.resolve(downloaded),
+  ),
+  install: vi.fn(() => Promise.resolve()),
   openDownload: vi.fn(() => Promise.resolve()),
 });
 
@@ -144,6 +158,99 @@ describe('the update notice in the shell', () => {
   });
 });
 
+describe('updating from inside the application', () => {
+  it('offers the download instead of the page where Lexleaf can install it', async () => {
+    const updates = updateBridge(INSTALLABLE);
+
+    render(<App bridge={bridge(updates)} />);
+
+    const notice = await screen.findByTestId('update-notice');
+
+    expect(notice.textContent).toContain('Lexleaf 0.2.0 is available.');
+    expect(screen.getByRole('button', { name: 'Download update' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Open the download page' })).toBeNull();
+    expect(updates.download).not.toHaveBeenCalled();
+    expect(updates.install).not.toHaveBeenCalled();
+  });
+
+  it('downloads when asked, says so meanwhile, and installs nothing by itself', async () => {
+    let finish: (state: UpdateIpcState) => void = () => {};
+    const pending = new Promise<UpdateIpcState>((resolve) => {
+      finish = resolve;
+    });
+    const updates = updateBridge(INSTALLABLE, INSTALLABLE, pending);
+
+    render(<App bridge={bridge(updates)} />);
+
+    await screen.findByTestId('update-notice');
+    fireEvent.click(screen.getByRole('button', { name: 'Download update' }));
+
+    expect(updates.download).toHaveBeenCalledExactlyOnceWith();
+    expect(screen.getByTestId('update-notice').textContent).toContain('Downloading Lexleaf 0.2.0');
+    expect(screen.queryByRole('button', { name: 'Download update' })).toBeNull();
+
+    finish(READY);
+
+    await screen.findByRole('button', { name: 'Restart and install' });
+    expect(screen.getByTestId('update-notice').textContent).toContain(
+      'Lexleaf 0.2.0 is ready to install. Lexleaf will close and reopen.',
+    );
+    expect(updates.install).not.toHaveBeenCalled();
+  });
+
+  it('installs only when the reader presses the button', async () => {
+    const updates = updateBridge(READY);
+
+    render(<App bridge={bridge(updates)} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Restart and install' }));
+
+    expect(updates.install).toHaveBeenCalledExactlyOnceWith();
+  });
+
+  it('lets the reader put the restart off, and brings the notice back from settings', async () => {
+    const updates = updateBridge(READY, READY);
+
+    render(<App bridge={bridge(updates)} />);
+
+    await screen.findByTestId('update-notice');
+    fireEvent.click(screen.getByRole('button', { name: 'Later' }));
+
+    expect(screen.queryByTestId('update-notice')).toBeNull();
+    expect(updates.install).not.toHaveBeenCalled();
+
+    await openSettings();
+
+    expect(screen.getByTestId('update-status').textContent).toContain('is ready to install');
+    expect(screen.getByRole('button', { name: 'Restart and install' })).toBeTruthy();
+  });
+
+  it.each([
+    ['the download fails', DOWNLOAD_FAILED],
+    ['the bridge rejects', new Error('bridge failure')],
+  ])('says so when %s, and offers another try and the page', async (_name, downloaded) => {
+    const updates = updateBridge(INSTALLABLE, INSTALLABLE, downloaded);
+
+    render(<App bridge={bridge(updates)} />);
+
+    await screen.findByTestId('update-notice');
+    fireEvent.click(screen.getByRole('button', { name: 'Download update' }));
+
+    await screen.findByRole('button', { name: 'Try again' });
+
+    const notice = screen.getByTestId('update-notice');
+
+    expect(notice.textContent).toContain('Lexleaf 0.2.0 could not be downloaded.');
+    expect(notice.getAttribute('role')).toBe('alert');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open the download page' }));
+    expect(updates.openDownload).toHaveBeenCalledExactlyOnceWith();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(updates.download).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('the update group in settings', () => {
   it('is absent from a build with no update bridge', async () => {
     render(<App bridge={bridge()} />);
@@ -160,7 +267,7 @@ describe('the update group in settings', () => {
 
     expect((screen.getByLabelText(/^Check automatically/u) as HTMLInputElement).checked).toBe(true);
     expect(group.textContent).toContain('at most once a day');
-    expect(group.textContent).toContain('Nothing is downloaded or installed for you');
+    expect(group.textContent).toContain('Nothing is downloaded or installed until you ask');
     expect(screen.queryByTestId('update-status')).toBeNull();
   });
 

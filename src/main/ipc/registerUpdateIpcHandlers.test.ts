@@ -12,7 +12,7 @@ const UNTRUSTED = { senderFrame: { url: 'https://example.com/' } };
 
 const AVAILABLE: UpdateIpcState = {
   automatic: true,
-  outcome: { status: 'available', version: '0.2.0' },
+  outcome: { status: 'available', version: '0.2.0', canInstall: true },
 };
 
 const setup = () => {
@@ -21,6 +21,8 @@ const setup = () => {
     setAutomatic: vi.fn((automatic: boolean) =>
       Promise.resolve<UpdateIpcState>({ automatic, outcome: { status: 'idle' } }),
     ),
+    download: vi.fn(() => Promise.resolve(AVAILABLE)),
+    install: vi.fn(() => Promise.resolve()),
     openDownload: vi.fn(),
   };
   const onRejected = vi.fn();
@@ -49,10 +51,12 @@ const setup = () => {
 };
 
 describe('the update channels', () => {
-  it('registers exactly three', () => {
+  it('registers exactly five', () => {
     expect([...setup().handlers.keys()]).toStrictEqual([
       IpcChannel.UpdateCheck,
       IpcChannel.UpdateSetAutomatic,
+      IpcChannel.UpdateDownload,
+      IpcChannel.UpdateInstall,
       IpcChannel.UpdateOpenDownload,
     ]);
   });
@@ -86,6 +90,16 @@ describe('the update channels', () => {
     expect(onRejected).toHaveBeenCalledTimes(2);
   });
 
+  it('downloads and installs with no argument from the renderer', async () => {
+    const { service, call } = setup();
+
+    expect(await call(IpcChannel.UpdateDownload, TRUSTED, { version: '9.9.9' })).toBe(AVAILABLE);
+    await call(IpcChannel.UpdateInstall, TRUSTED, 'https://evil.example/setup.exe');
+
+    expect(service.download).toHaveBeenCalledExactlyOnceWith();
+    expect(service.install).toHaveBeenCalledExactlyOnceWith();
+  });
+
   it('opens the download page with no argument from the renderer', () => {
     const { service, call } = setup();
 
@@ -100,12 +114,16 @@ describe('the update channels', () => {
     for (const channel of [
       IpcChannel.UpdateCheck,
       IpcChannel.UpdateSetAutomatic,
+      IpcChannel.UpdateDownload,
+      IpcChannel.UpdateInstall,
       IpcChannel.UpdateOpenDownload,
     ]) {
       expect(() => call(channel, UNTRUSTED, { manual: true })).toThrow(/untrusted sender/u);
     }
 
     expect(service.check).not.toHaveBeenCalled();
+    expect(service.download).not.toHaveBeenCalled();
+    expect(service.install).not.toHaveBeenCalled();
     expect(service.openDownload).not.toHaveBeenCalled();
   });
 });

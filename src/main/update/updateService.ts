@@ -7,15 +7,17 @@ import {
 } from '@core/update/version';
 import type { UpdateIpcState, UpdateOutcome } from '@shared/ipc/updateContracts';
 
+import type { UpdateInstaller } from './updateInstaller';
 import type { UpdateSettingsStore } from './updateSettings';
 
 /**
  * Finds out whether a newer Lexleaf has been released, and says so.
  *
- * This is a notice, not an updater: nothing is downloaded and nothing is
- * installed. The service asks one fixed public address for the latest
- * release, compares its version with the running one, and remembers the
- * answer. The reader decides what to do about it.
+ * The service asks one fixed public address for the latest release,
+ * compares its version with the running one, and remembers the answer.
+ * Nothing is downloaded until the reader asks for it, and nothing is
+ * installed until the reader asks again. An installation that cannot
+ * replace itself has no installer and is pointed at the download page.
  *
  * The rules, all enforced below and tested:
  *
@@ -29,7 +31,9 @@ import type { UpdateSettingsStore } from './updateSettings';
  *   off, only a check the reader asked for by hand contacts anything.
  * - **At most once a day** for the automatic check. A launch inside that
  *   window answers from what the last check saw.
- * - **Never in the way.** Every failure is the word `failed` or silence;
+ * - **Two separate consents.** Finding an update never downloads it, and
+ *   downloading it never installs it.
+ * - **Never in the way.** Every failure is a word in the reply or silence;
  *   nothing here throws at a caller.
  */
 
@@ -56,14 +60,24 @@ export interface UpdateServiceOptions {
   readonly now: () => Date;
   /** False in development, where the automatic check stays quiet. */
   readonly automaticChecksAllowed?: boolean;
+  /** Present only when this installation can replace itself. */
+  readonly installer?: UpdateInstaller | null;
+  /** Runs before the application is closed to install, e.g. to save state. */
+  readonly beforeInstall?: () => Promise<void>;
   readonly onDiagnostic?: (message: string) => void;
 }
 
 export interface UpdateService {
   check(request: { readonly manual: boolean }): Promise<UpdateIpcState>;
   setAutomatic(automatic: boolean): Promise<UpdateIpcState>;
+  /** Downloads the release that was found. Resolves when it has finished. */
+  download(): Promise<UpdateIpcState>;
+  /** Installs the downloaded release, closing the application to do so. */
+  install(): Promise<void>;
   openDownload(): void;
 }
+
+type DownloadPhase = 'none' | 'downloading' | 'ready' | 'failed';
 
 export const createUpdateService = ({
   currentVersion,
@@ -72,22 +86,57 @@ export const createUpdateService = ({
   openExternal,
   now,
   automaticChecksAllowed = true,
+  installer = null,
+  beforeInstall = async (): Promise<void> => {},
   onDiagnostic = (): void => {},
 }: UpdateServiceOptions): UpdateService => {
   const current = parseReleaseVersion(currentVersion);
   let available: ReleaseVersion | null = null;
+  let phase: DownloadPhase = 'none';
   let inFlight: Promise<UpdateOutcome> | null = null;
+  let downloading: Promise<void> | null = null;
+
+  /** What is known right now about the release that was found, if any. */
+  const known = (): UpdateOutcome | null => {
+    if (available === null) {
+      return null;
+    }
+
+    const version = formatReleaseVersion(available);
+
+    switch (phase) {
+      case 'downloading':
+        return { status: 'downloading', version };
+      case 'ready':
+        return { status: 'ready', version };
+      case 'failed':
+        return { status: 'download-failed', version };
+      default:
+        return { status: 'available', version, canInstall: installer !== null };
+    }
+  };
 
   const outcomeFor = (latest: ReleaseVersion | null): UpdateOutcome => {
+    // A download that is running or finished is not thrown away by a
+    // later check: what was downloaded is still what will be installed.
+    if (phase === 'downloading' || phase === 'ready') {
+      return known() ?? { status: 'up-to-date' };
+    }
+
     if (current === null || latest === null || !isNewerVersion(latest, current)) {
       available = null;
+      phase = 'none';
 
       return { status: 'up-to-date' };
     }
 
+    if (available === null || isNewerVersion(latest, available)) {
+      phase = 'none';
+    }
+
     available = latest;
 
-    return { status: 'available', version: formatReleaseVersion(latest) };
+    return known() ?? { status: 'up-to-date' };
   };
 
   const contact = async (): Promise<UpdateOutcome> => {
@@ -175,13 +224,50 @@ export const createUpdateService = ({
 
       await settings.write({ ...stored, automatic });
 
-      return {
-        automatic,
-        outcome:
-          available === null
-            ? { status: 'idle' }
-            : { status: 'available', version: formatReleaseVersion(available) },
-      };
+      return { automatic, outcome: known() ?? { status: 'idle' } };
+    },
+    download: async (): Promise<UpdateIpcState> => {
+      const { automatic } = await settings.read();
+
+      if (installer !== null && available !== null && phase !== 'ready') {
+        if (downloading === null) {
+          phase = 'downloading';
+          downloading = installer
+            .download()
+            .then(
+              () => {
+                phase = 'ready';
+              },
+              (error: unknown) => {
+                phase = 'failed';
+                onDiagnostic(
+                  `update download failed: ${error instanceof Error ? error.name : 'unknown'}`,
+                );
+              },
+            )
+            .finally(() => {
+              downloading = null;
+            });
+        }
+
+        await downloading;
+      }
+
+      return { automatic, outcome: known() ?? { status: 'idle' } };
+    },
+    install: async (): Promise<void> => {
+      if (installer === null || phase !== 'ready') {
+        return;
+      }
+
+      try {
+        await beforeInstall();
+      } catch {
+        // Saving state is a courtesy; it does not get to block an update
+        // the reader asked for.
+      }
+
+      installer.install();
     },
     openDownload: (): void => {
       if (available !== null) {

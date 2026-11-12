@@ -70,6 +70,8 @@ export const IpcChannel = {
   AiCancel: 'ai:cancel',
   UpdateCheck: 'update:check',
   UpdateSetAutomatic: 'update:set-automatic',
+  UpdateDownload: 'update:download',
+  UpdateInstall: 'update:install',
   UpdateOpenDownload: 'update:open-download',
 } as const;
 

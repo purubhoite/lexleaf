@@ -38,5 +38,10 @@ jobs:
           test -s "$deb"
           ar t "$deb" | grep -q '^debian-binary$'
           sha256sum "$appimage" "$deb" > dist/SHA256SUMS.txt
+          # The files an installed copy needs to update itself.
+          grep -F "version: ${version}" dist/latest-linux.yml
+          grep -F "Lexleaf-${version}-x86_64.AppImage" dist/latest-linux.yml
+          grep -F 'provider: github' dist/linux-unpacked/resources/app-update.yml
+          grep -F 'repo: lexleaf' dist/linux-unpacked/resources/app-update.yml
           timeout 20s xvfb-run -a ./dist/linux-unpacked/lexleaf --no-sandbox --disable-gpu >/tmp/lexleaf-linux.log 2>&1 || status=$?
           if [[ "${status:-0}" -ne 0 && "${status:-0}" -ne 124 ]]; then cat /tmp/lexleaf-linux.log; exit "$status"; fi

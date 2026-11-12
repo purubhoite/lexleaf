@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 
 import { Message } from '../ui/Message';
 
+import { UpdateMessage } from './UpdateMessage';
 import type { UpdateCheck } from './useUpdateCheck';
 
 /**
@@ -31,15 +32,8 @@ const describeOutcome = (updates: UpdateCheck): ReactElement | null => {
   }
 
   switch (updates.outcome.status) {
-    case 'available':
-      return (
-        <Message kind="info" testId="update-status">
-          Lexleaf {updates.outcome.version} is available.{' '}
-          <button type="button" className="control" onClick={updates.openDownload}>
-            Open the download page
-          </button>
-        </Message>
-      );
+    case 'idle':
+      return null;
     case 'up-to-date':
       return (
         <Message kind="info" testId="update-status">
@@ -53,7 +47,7 @@ const describeOutcome = (updates: UpdateCheck): ReactElement | null => {
         </Message>
       );
     default:
-      return null;
+      return <UpdateMessage updates={updates} testId="update-status" />;
   }
 };
 
@@ -67,8 +61,9 @@ export const UpdateSettings = ({ updates }: UpdateSettingsProps): ReactElement |
       <legend className="settings__legend">Updates</legend>
       <p className="settings__note">
         Lexleaf can ask GitHub, at most once a day, whether a newer version has been released, and
-        tell you when one has. Nothing is downloaded or installed for you, and nothing about you,
-        your documents or your saved words is sent. This is the only setting that uses the internet.
+        tell you when one has. Nothing is downloaded or installed until you ask, and nothing about
+        you, your documents or your saved words is sent. This is the only setting that uses the
+        internet.
       </p>
 
       <label className="settings__choice">

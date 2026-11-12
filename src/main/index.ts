@@ -70,6 +70,11 @@ import { createExplanationStore } from './vocabulary/explanationStore';
 import { createSqliteVocabularyRepository } from './vocabulary/sqliteVocabularyRepository';
 import { createVocabularyService } from './vocabulary/vocabularyService';
 import type { WindowThemeController } from './theme/windowTheme';
+import {
+  canInstallUpdates,
+  createElectronUpdaterInstaller,
+  type AutoUpdaterLike,
+} from './update/updateInstaller';
 import { createUpdateService } from './update/updateService';
 import { UPDATE_SETTINGS_FILE, createUpdateSettingsStore } from './update/updateSettings';
 import { createMainWindow } from './window/createMainWindow';
@@ -583,9 +588,9 @@ const bootstrap = async (): Promise<void> => {
   });
 
   /*
-   * The update notice. It tells the reader a newer release exists and
-   * opens its download page when asked; it downloads and installs nothing.
-   * This is the only request the application makes without being asked,
+   * Updates. The application tells the reader a newer release exists;
+   * downloading it and installing it each wait for the reader to ask.
+   * The check is the only request the application makes without being asked,
    * the reader can turn it off, and it carries nothing about them: no
    * body, no identifier, no stored credentials.
    */
@@ -621,6 +626,31 @@ const bootstrap = async (): Promise<void> => {
     // A development build is not something a reader installed: it stays
     // quiet unless the check is asked for by hand.
     automaticChecksAllowed: app.isPackaged,
+    /*
+     * Only a Windows installation and a Linux AppImage can replace
+     * themselves. Everything else — a Debian package, a development
+     * build — gets the notice and the download page instead.
+     */
+    installer: canInstallUpdates({
+      packaged: app.isPackaged,
+      platform: process.platform,
+      env: process.env,
+    })
+      ? createElectronUpdaterInstaller({
+          currentVersion: app.getVersion(),
+          // Loaded on first use, so a build in which the library fails to
+          // load still starts and still offers the download page.
+          load: async () => (await import('electron-updater')).autoUpdater as AutoUpdaterLike,
+          onDiagnostic: (message) => {
+            console.info(`${LOG_PREFIX} ${message}`);
+          },
+        })
+      : null,
+    // The reader's place is written out before the application is closed
+    // to install: the installer does not wait for a debounced write.
+    beforeInstall: async () => {
+      await readerState.flush();
+    },
     onDiagnostic: (message) => {
       console.info(`${LOG_PREFIX} ${message}`);
     },

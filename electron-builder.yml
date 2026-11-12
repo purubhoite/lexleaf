@@ -1,6 +1,16 @@
 appId: com.intelligentpdfreader.poc
 productName: Lexleaf
 artifactName: Lexleaf-${version}-${arch}.${ext}
+# Where an installed copy looks for a newer release when the reader asks
+# it to update itself. The build writes this into the application
+# (resources/app-update.yml) and produces the release metadata that names
+# the installer and its SHA-512. Nothing is uploaded by the build: the
+# release workflows run it with --publish never and upload the files.
+publish:
+  provider: github
+  owner: purubhoite
+  repo: lexleaf
+  releaseType: release
 asar: true
 files:
   - out/**/*

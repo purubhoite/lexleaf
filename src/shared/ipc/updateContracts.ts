@@ -4,16 +4,28 @@ import { formatReleaseVersion, parseReleaseVersion } from '@core/update/version'
  * What the renderer may know and say about updates.
  *
  * The renderer never names an address, a repository or a version of its
- * own. It can ask for a check, switch the automatic check on or off, and
- * ask the main process to open the download page for the release the main
- * process itself found. Everything coming back is a closed set of words
- * and, at most, one validated version number.
+ * own. It can ask for a check, switch the automatic check on or off, ask
+ * for the update the main process found to be downloaded and installed,
+ * and ask for that release's download page to be opened. Everything
+ * coming back is a closed set of words and, at most, one validated
+ * version number.
  */
 
 export type UpdateOutcome =
   | { readonly status: 'idle' }
   | { readonly status: 'up-to-date' }
-  | { readonly status: 'available'; readonly version: string }
+  /**
+   * A newer release exists. `canInstall` says whether this installation
+   * can download and install it itself; otherwise the reader is pointed
+   * at the download page.
+   */
+  | { readonly status: 'available'; readonly version: string; readonly canInstall: boolean }
+  | { readonly status: 'downloading'; readonly version: string }
+  /** Downloaded and verified; it is installed when the reader says so. */
+  | { readonly status: 'ready'; readonly version: string }
+  /** The download did not complete. The download page still works. */
+  | { readonly status: 'download-failed'; readonly version: string }
+  /** The check itself could not be made. */
   | { readonly status: 'failed' };
 
 export interface UpdateIpcState {
@@ -30,6 +42,13 @@ export interface UpdateBridge {
    */
   readonly check: (manual: boolean) => Promise<UpdateIpcState>;
   readonly setAutomatic: (automatic: boolean) => Promise<UpdateIpcState>;
+  /**
+   * Downloads the release the main process found. Resolves when the
+   * download has finished, one way or the other. Nothing is installed.
+   */
+  readonly download: () => Promise<UpdateIpcState>;
+  /** Closes Lexleaf, installs the downloaded release and starts it again. */
+  readonly install: () => Promise<void>;
   /** Opens the download page of the available release in the browser. */
   readonly openDownload: () => Promise<void>;
 }
@@ -48,20 +67,28 @@ const parseOutcome = (value: unknown): UpdateOutcome | null => {
     return null;
   }
 
-  switch (value['status']) {
-    case 'idle':
-      return { status: 'idle' };
-    case 'up-to-date':
-      return { status: 'up-to-date' };
-    case 'failed':
-      return { status: 'failed' };
-    case 'available': {
-      const version = parseReleaseVersion(value['version']);
+  const status = value['status'];
 
-      return version === null
-        ? null
-        : { status: 'available', version: formatReleaseVersion(version) };
-    }
+  if (status === 'idle' || status === 'up-to-date' || status === 'failed') {
+    return { status };
+  }
+
+  const parsed = parseReleaseVersion(value['version']);
+
+  if (parsed === null) {
+    return null;
+  }
+
+  const version = formatReleaseVersion(parsed);
+
+  switch (status) {
+    case 'available':
+      // Only an explicit `true` offers the in-app install.
+      return { status, version, canInstall: value['canInstall'] === true };
+    case 'downloading':
+    case 'ready':
+    case 'download-failed':
+      return { status, version };
     default:
       return null;
   }
@@ -77,7 +104,7 @@ export const parseUpdateState = (value: unknown): UpdateIpcState | null => {
   return outcome === null ? null : { automatic: value['automatic'], outcome };
 };
 
-/** The one argument of a check request. Anything but `true` is automatic. */
+/** The one argument of a check request. */
 export const parseCheckRequest = (value: unknown): { readonly manual: boolean } | null =>
   isObject(value) && typeof value['manual'] === 'boolean' ? { manual: value['manual'] } : null;
 

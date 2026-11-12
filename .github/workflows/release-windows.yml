@@ -139,15 +139,30 @@ jobs:
       - name: Verify installer and create checksum
         shell: pwsh
         run: |
-          $installer = Get-ChildItem dist -Filter '*.exe' -Recurse | Sort-Object Length -Descending | Select-Object -First 1
-          if ($null -eq $installer) { throw 'NSIS installer was not generated.' }
+          $ErrorActionPreference = 'Stop'
           $expectedName = "Lexleaf-$env:LEXLEAF_VERSION-x64-setup.exe"
-          Copy-Item $installer.FullName (Join-Path $installer.DirectoryName $expectedName)
-          $published = Join-Path $installer.DirectoryName $expectedName
-          $hash = (Get-FileHash $published -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  $expectedName" | Out-File (Join-Path $installer.DirectoryName 'SHA256SUMS.txt') -Encoding ascii
+          $dist = (Resolve-Path dist).Path
+          $published = Join-Path $dist $expectedName
+          if (-not (Test-Path -LiteralPath $published -PathType Leaf)) { throw "Expected installer missing: $expectedName" }
+          if ((Get-Item -LiteralPath $published).Length -le 0) { throw 'Installer is empty.' }
+          $hash = (Get-FileHash -LiteralPath $published -Algorithm SHA256).Hash.ToLowerInvariant()
+          $checksumPath = Join-Path $dist 'SHA256SUMS.txt'
+          "$hash  $expectedName" | Out-File -LiteralPath $checksumPath -Encoding ascii
+          # What an installed copy reads to update itself: the release
+          # metadata must name this installer and this version, and the
+          # packaged application must carry the address it asks.
+          $updateInfoPath = Join-Path $dist 'latest.yml'
+          $blockmapPath = "$published.blockmap"
+          foreach ($required in @($updateInfoPath, $blockmapPath, (Join-Path $dist 'win-unpacked/resources/app-update.yml'))) {
+            if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Update file missing: $required" }
+          }
+          $updateInfo = Get-Content -LiteralPath $updateInfoPath -Raw
+          if (-not $updateInfo.Contains("version: $env:LEXLEAF_VERSION")) { throw 'latest.yml does not name this version.' }
+          if (-not $updateInfo.Contains($expectedName)) { throw 'latest.yml does not name this installer.' }
           "INSTALLER_PATH=$published" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "CHECKSUM_PATH=$(Join-Path $installer.DirectoryName 'SHA256SUMS.txt')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CHECKSUM_PATH=$checksumPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "UPDATE_INFO_PATH=$updateInfoPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "BLOCKMAP_PATH=$blockmapPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Dry-run release eligibility
         if: inputs.dry_run
@@ -159,7 +174,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          foreach ($name in @('LEXLEAF_VERSION', 'LEXLEAF_TAG', 'INSTALLER_PATH', 'CHECKSUM_PATH')) {
+          foreach ($name in @('LEXLEAF_VERSION', 'LEXLEAF_TAG', 'INSTALLER_PATH', 'CHECKSUM_PATH', 'UPDATE_INFO_PATH', 'BLOCKMAP_PATH')) {
             if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) { throw "$name is empty." }
           }
           if (-not (Test-Path -LiteralPath $env:INSTALLER_PATH -PathType Leaf)) { throw 'Installer path does not exist.' }
@@ -172,4 +187,4 @@ jobs:
           The installer is unsigned; Windows SmartScreen may display a warning.
           The bundled Open English WordNet dictionary is distributed with its separate attribution and license notices.
           "@
-          gh release create $env:LEXLEAF_TAG $env:INSTALLER_PATH $env:CHECKSUM_PATH --title "Lexleaf $env:LEXLEAF_VERSION" --notes $notes
+          gh release create $env:LEXLEAF_TAG $env:INSTALLER_PATH $env:CHECKSUM_PATH $env:UPDATE_INFO_PATH $env:BLOCKMAP_PATH --title "Lexleaf $env:LEXLEAF_VERSION" --notes $notes
