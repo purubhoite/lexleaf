@@ -49,7 +49,7 @@ export type PageSpanKind =
  * Written out, one class to a kind, so that the stylesheet tests can see
  * that every kind has a rule and every rule a user.
  */
-const HIGHLIGHT_CLASS: Readonly<Record<PageSpanKind, string>> = {
+export const HIGHLIGHT_CLASS: Readonly<Record<PageSpanKind, string>> = {
   match: 'highlight highlight--match',
   'current-match': 'highlight highlight--current-match',
   cursor: 'highlight highlight--cursor',

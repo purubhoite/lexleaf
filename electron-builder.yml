@@ -29,6 +29,11 @@ fileAssociations:
     description: PDF document
     mimeType: application/pdf
     role: Viewer
+  - ext: epub
+    name: EPUB book
+    description: EPUB book
+    mimeType: application/epub+zip
+    role: Viewer
 win:
   icon: resources/icons/lexleaf.ico
   target:

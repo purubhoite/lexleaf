@@ -491,7 +491,7 @@ export const App = ({ bridge }: AppProps): ReactElement => {
 
       {draggingFile && (
         <div className="shell__drop" data-testid="drop-target" aria-hidden="true">
-          <p className="shell__drop-text">Drop the PDF to open it</p>
+          <p className="shell__drop-text">Drop the file to open it</p>
         </div>
       )}
     </div>

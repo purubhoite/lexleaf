@@ -266,7 +266,7 @@ describe('a file held over the window', () => {
 
     drag('dragenter', ['Files']);
 
-    expect(screen.getByTestId('drop-target').textContent).toBe('Drop the PDF to open it');
+    expect(screen.getByTestId('drop-target').textContent).toBe('Drop the file to open it');
 
     drag('dragleave', ['Files']);
 

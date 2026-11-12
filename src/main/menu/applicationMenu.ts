@@ -48,8 +48,8 @@ export const buildApplicationMenu = ({
     {
       label: '&File',
       submenu: [
-        command('Open PDF…', 'open-document'),
-        command('Close PDF', 'close-document'),
+        command('Open…', 'open-document'),
+        command('Close', 'close-document'),
         separator,
         command('Print…', 'print'),
         separator,

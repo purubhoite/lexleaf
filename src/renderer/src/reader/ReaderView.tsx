@@ -58,6 +58,8 @@ import { highlightAt, isBookmarked, type Highlight } from '@core/annotations/ann
 import { AnnotationPopup, type PopupAnchor } from './annotations/AnnotationPopup';
 import { selectionParts, textPlaceAtPoint } from './annotations/selectionParts';
 import { useAnnotations, type NewSelection } from './annotations/useAnnotations';
+import { EpubPageSurface } from './epub/EpubPageSurface';
+import { isEpub } from './epub/epubDocument';
 import { PrintDialog } from './print/PrintDialog';
 import { ReaderSidebar, type SidebarTab } from './sidebar/ReaderSidebar';
 import { NO_VOICE_MESSAGE, useReadAloud } from './speech/useReadAloud';
@@ -94,6 +96,9 @@ import { WordAnnouncement } from './WordAnnouncement';
  * the link and the reader renders the target, and a drifting string would
  * fail silently — the link would simply do nothing.
  */
+/** The largest an EPUB is made by "fit width" or "fit page". */
+const EPUB_FIT_LIMIT = 1.3;
+
 export const DOCUMENT_SCROLLER_ID = 'document-scroller';
 
 /**
@@ -206,7 +211,7 @@ export const ReaderView = ({
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab | null>(null);
   const [printOpen, setPrintOpen] = useState(false);
-  const [viewMode, setViewMode] = useViewMode();
+  const [chosenViewMode, setViewMode] = useViewMode();
   const [popup, setPopup] = useState<AnnotationPopupState | null>(null);
   const [voiceNoticeDismissed, setVoiceNoticeDismissed] = useState(false);
   const readAloud = useReadAloud();
@@ -238,7 +243,14 @@ export const ReaderView = ({
   );
 
   const marks = useAnnotations(bridge, documentId, ready?.name ?? '');
-  const rotation = marks.annotations.rotation;
+  /*
+   * An EPUB has chapters of running text, not pages: there is nothing to
+   * set two-up or to turn on its side, so it is always one scrolling
+   * column, upright, whatever was chosen for the last PDF.
+   */
+  const epub = isEpub(pdfDocument) ? pdfDocument : null;
+  const viewMode = epub === null ? chosenViewMode : 'continuous';
+  const rotation = epub === null ? marks.annotations.rotation : 0;
   const history = useJumpHistory(documentId);
 
   // A page turned a quarter is as wide as it was tall.
@@ -262,7 +274,11 @@ export const ReaderView = ({
       : one;
   }, [metrics.reference, sideways, viewMode]);
 
-  const scale = resolveScale(zoom, reference, viewport);
+  const fittedScale = resolveScale(zoom, reference, viewport);
+  // "Fit" on a wide window would make a book's type enormous; it stops at
+  // a comfortable reading size. Zooming by hand goes as far as it likes.
+  const scale =
+    epub !== null && zoom.mode !== 'fixed' ? Math.min(fittedScale, EPUB_FIT_LIMIT) : fittedScale;
   const layout = useMemo(
     () =>
       createPageLayout(sizes, scale, PAGE_GAP, {
@@ -647,6 +663,7 @@ export const ReaderView = ({
    * when none is open.
    */
   const hasDocument = ready !== null;
+  const paged = epub === null;
   const hasOutline = outline.length > 0;
 
   /** Goes to a page from somewhere else in the book, remembering where from. */
@@ -695,13 +712,13 @@ export const ReaderView = ({
     (tab: SidebarTab | null): void => {
       setSidebarTab((current) => {
         if (tab === null) {
-          return current === null ? (hasOutline ? 'contents' : 'pages') : null;
+          return current === null ? (hasOutline || !paged ? 'contents' : 'pages') : null;
         }
 
         return current === tab ? null : tab;
       });
     },
-    [hasOutline],
+    [hasOutline, paged],
   );
 
   const toggleBookmark = useCallback((): void => {
@@ -788,7 +805,7 @@ export const ReaderView = ({
           }
           break;
         case 'toggle-thumbnails':
-          if (hasDocument) {
+          if (hasDocument && paged) {
             toggleSidebar('pages');
           }
           break;
@@ -809,7 +826,7 @@ export const ReaderView = ({
           goBack();
           break;
         case 'print':
-          if (hasDocument) {
+          if (hasDocument && paged) {
             setPrintOpen(true);
           }
           break;
@@ -823,12 +840,12 @@ export const ReaderView = ({
           setViewMode('two');
           break;
         case 'rotate-right':
-          if (hasDocument) {
+          if (hasDocument && paged) {
             rotatePages(1);
           }
           break;
         case 'rotate-left':
-          if (hasDocument) {
+          if (hasDocument && paged) {
             rotatePages(-1);
           }
           break;
@@ -869,6 +886,7 @@ export const ReaderView = ({
     setViewMode,
     rotatePages,
     readSelectionAloud,
+    paged,
   ]);
 
   useEffect(() => {
@@ -1021,6 +1039,7 @@ export const ReaderView = ({
           zoom={zoom}
           scale={scale}
           searchOpen={searchOpen}
+          paged={paged}
           sidebarOpen={sidebarTab !== null}
           onToggleSidebar={(): void => {
             toggleSidebar(null);
@@ -1155,7 +1174,8 @@ export const ReaderView = ({
       <div className="reader__body">
         {ready !== null && sidebarTab !== null && !readingMode && (
           <ReaderSidebar
-            tab={sidebarTab}
+            tab={paged || sidebarTab !== 'pages' ? sidebarTab : 'contents'}
+            paged={paged}
             onTabChange={setSidebarTab}
             onClose={(): void => {
               setSidebarTab(null);
@@ -1247,7 +1267,7 @@ export const ReaderView = ({
         >
           {state.status === 'empty' && (
             <section className="start" aria-label="Start reading">
-              <h2>Open a PDF to begin</h2>
+              <h2>Open a PDF or EPUB to begin</h2>
               <p className="start__hint">
                 While reading, double-click any word to see its definition, then save it for later.
               </p>
@@ -1257,11 +1277,11 @@ export const ReaderView = ({
                 onClick={(): void => void openDialog()}
               >
                 <Icon name="open" />
-                Open PDF…
+                Open…
               </button>
               <p className="start__hint">
-                You can also drop a PDF anywhere on this window, or right-click a PDF and choose
-                Open with Lexleaf.
+                You can also drop a file anywhere on this window, or right-click one and choose Open
+                with Lexleaf.
               </p>
               <h3>Recent documents</h3>
               <RecentDocuments
@@ -1305,7 +1325,7 @@ export const ReaderView = ({
               */}
               <Message kind="problem">{state.message}</Message>
               <button type="button" className="control" onClick={(): void => void openDialog()}>
-                Open another PDF…
+                Open another file…
               </button>
             </section>
           )}
@@ -1341,7 +1361,25 @@ export const ReaderView = ({
               {pagesInWindow(liveWindow).map((pageNumber) => {
                 const box = pageAt(layout, pageNumber);
 
-                return box === null ? null : (
+                if (box === null) {
+                  return null;
+                }
+
+                return epub !== null ? (
+                  <EpubPageSurface
+                    key={pageNumber}
+                    document={epub}
+                    documentId={ready.documentId}
+                    pageNumber={pageNumber}
+                    scale={scale}
+                    top={box.top}
+                    width={box.width}
+                    height={box.height}
+                    registry={registry}
+                    spans={spansFor(pageNumber)}
+                    onTextPresence={handleTextPresence}
+                  />
+                ) : (
                   <PageSurface
                     key={pageNumber}
                     document={ready.document}

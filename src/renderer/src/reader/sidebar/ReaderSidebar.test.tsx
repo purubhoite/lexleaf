@@ -71,6 +71,13 @@ describe('the sidebar', () => {
     expect(props.onTabChange).toHaveBeenCalledWith('notes');
   });
 
+  it('has no Pages section for a book without pages', () => {
+    show('contents', { paged: false });
+
+    expect(screen.queryByTestId('sidebar-tab-pages')).toBeNull();
+    expect(screen.getAllByRole('tab')).toHaveLength(3);
+  });
+
   it('says so when the book has no contents, and points at the pages', () => {
     show('contents', { outline: [] });
 

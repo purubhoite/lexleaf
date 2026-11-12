@@ -23,6 +23,8 @@ export interface ReaderToolbarProps {
   readonly zoom: ZoomState;
   readonly scale: number;
   readonly searchOpen: boolean;
+  /** Whether the document has real pages. An EPUB does not: no page views, rotation or print. */
+  readonly paged?: boolean;
   readonly sidebarOpen: boolean;
   readonly onToggleSidebar: () => void;
   /** Whether there is a place to go back to after a jump. */
@@ -58,6 +60,7 @@ export const ReaderToolbar = ({
   zoom,
   scale,
   searchOpen,
+  paged = true,
   sidebarOpen,
   onToggleSidebar,
   canGoBack,
@@ -126,7 +129,7 @@ export const ReaderToolbar = ({
       <div className="reader__group reader__group--document" role="group" aria-label="File">
         <button type="button" className="control" onClick={onOpen}>
           <Icon name="open" />
-          Open PDF…
+          Open…
         </button>
         <button type="button" className="control" onClick={onClose}>
           Close
@@ -279,37 +282,39 @@ export const ReaderToolbar = ({
         </button>
       </div>
 
-      <div className="reader__group" role="group" aria-label="Page view">
-        <label className="reader__zoom">
-          <span className="visually-hidden">Page view</span>
-          <select
-            className="control control--field"
-            value={viewMode}
-            data-testid="view-mode"
-            onChange={(event): void => {
-              const chosen = PAGE_LAYOUT_MODES.find((mode) => mode === event.target.value);
+      {paged && (
+        <div className="reader__group" role="group" aria-label="Page view">
+          <label className="reader__zoom">
+            <span className="visually-hidden">Page view</span>
+            <select
+              className="control control--field"
+              value={viewMode}
+              data-testid="view-mode"
+              onChange={(event): void => {
+                const chosen = PAGE_LAYOUT_MODES.find((mode) => mode === event.target.value);
 
-              if (chosen !== undefined) {
-                onViewModeChange(chosen);
-              }
-            }}
+                if (chosen !== undefined) {
+                  onViewModeChange(chosen);
+                }
+              }}
+            >
+              <option value="continuous">Scrolling</option>
+              <option value="single">One page</option>
+              <option value="two">Two pages</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            className="control"
+            aria-label="Rotate pages"
+            title="Rotate pages"
+            data-testid="rotate"
+            onClick={onRotate}
           >
-            <option value="continuous">Scrolling</option>
-            <option value="single">One page</option>
-            <option value="two">Two pages</option>
-          </select>
-        </label>
-        <button
-          type="button"
-          className="control"
-          aria-label="Rotate pages"
-          title="Rotate pages"
-          data-testid="rotate"
-          onClick={onRotate}
-        >
-          <Icon name="rotate-right" />
-        </button>
-      </div>
+            <Icon name="rotate-right" />
+          </button>
+        </div>
+      )}
 
       <div className="reader__group" role="group" aria-label="Bookmark and print">
         <button
@@ -323,16 +328,18 @@ export const ReaderToolbar = ({
         >
           <Icon name="bookmark" />
         </button>
-        <button
-          type="button"
-          className="control"
-          aria-label="Print"
-          title="Print"
-          data-testid="print"
-          onClick={onPrint}
-        >
-          <Icon name="print" />
-        </button>
+        {paged && (
+          <button
+            type="button"
+            className="control"
+            aria-label="Print"
+            title="Print"
+            data-testid="print"
+            onClick={onPrint}
+          >
+            <Icon name="print" />
+          </button>
+        )}
       </div>
 
       <div className="reader__group" role="group" aria-label="Search">

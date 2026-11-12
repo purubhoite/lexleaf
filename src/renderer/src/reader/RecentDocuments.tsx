@@ -56,7 +56,7 @@ export const RecentDocuments = ({
     // empty. The control it names is the one directly above this list.
     return (
       <Message kind="empty">
-        No documents have been opened yet. Use “Open PDF…” to start reading.
+        No documents have been opened yet. Use “Open…” to start reading.
       </Message>
     );
   }
