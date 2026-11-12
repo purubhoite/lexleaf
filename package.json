@@ -1,7 +1,7 @@
 {
   "name": "intelligent-pdf-reader",
   "productName": "Lexleaf",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Local-first desktop PDF reader that lets users understand unfamiliar words without leaving the document.",
   "license": "Apache-2.0",
