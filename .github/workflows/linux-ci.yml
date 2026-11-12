@@ -38,6 +38,10 @@ jobs:
           test -s "$deb"
           ar t "$deb" | grep -q '^debian-binary$'
           sha256sum "$appimage" "$deb" > dist/SHA256SUMS.txt
+          # The crash-reporter exclusion must be installed, and must name the
+          # executable the package really installs.
+          dpkg-deb --fsys-tarfile "$deb" | tar -xO --wildcards '*etc/apport/report-ignore/lexleaf' | grep -Fx '/opt/Lexleaf/lexleaf'
+          dpkg-deb --fsys-tarfile "$deb" | tar -t | grep -Ex '(\./)?opt/Lexleaf/lexleaf'
           # The files an installed copy needs to update itself.
           grep -F "version: ${version}" dist/latest-linux.yml
           grep -F "Lexleaf-${version}-x86_64.AppImage" dist/latest-linux.yml

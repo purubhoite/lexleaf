@@ -37,3 +37,9 @@ linux:
   description: A local-first desktop PDF reader with offline dictionary lookup.
   icon: resources/icons/lexleaf-logo.png
   artifactName: Lexleaf-${version}-${arch}.${ext}
+deb:
+  # Tells Ubuntu's crash reporter to leave Lexleaf alone. Its "relaunch"
+  # restarts a crashed helper process on its own, which then fills the
+  # system log; see resources/linux/apport-report-ignore.
+  fpm:
+    - resources/linux/apport-report-ignore=/etc/apport/report-ignore/lexleaf
