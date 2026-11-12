@@ -1,3 +1,6 @@
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import { parseDocumentArgument, parseDroppedDocumentPath } from './initialDocument';
@@ -24,14 +27,22 @@ describe('parseDocumentArgument', () => {
     ).toBe('C:\\Books\\Harbour.PDF');
   });
 
+  // These two go through the operating system's own path rules, so the
+  // expected value is built with them rather than written out.
   it('accepts a file address, decoded', () => {
-    expect(parseDocumentArgument(['/opt/Lexleaf/lexleaf', 'file:///books/the%20harbour.pdf'])).toBe(
-      '/books/the harbour.pdf',
-    );
+    const path = resolve('books', 'the harbour.pdf');
+    const address = pathToFileURL(path).href;
+
+    expect(address).toContain('the%20harbour.pdf');
+    expect(parseDocumentArgument(['lexleaf', address])).toBe(path);
   });
 
   it('resolves a relative name against the directory it was typed in', () => {
-    expect(parseDocumentArgument(['lexleaf', 'harbour.pdf'], '/books')).toBe('/books/harbour.pdf');
+    const directory = resolve('books');
+
+    expect(parseDocumentArgument(['lexleaf', 'harbour.pdf'], directory)).toBe(
+      join(directory, 'harbour.pdf'),
+    );
     expect(parseDocumentArgument(['lexleaf', 'harbour.pdf'])).toBeNull();
   });
 
