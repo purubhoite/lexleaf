@@ -1,9 +1,9 @@
 {
   "name": "lexleaf",
   "productName": "Lexleaf",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": true,
-  "description": "Local-first desktop PDF reader that lets users understand unfamiliar words without leaving the document.",
+  "description": "Local-first desktop PDF and EPUB reader that lets users understand unfamiliar words without leaving the document.",
   "license": "Apache-2.0",
   "author": "Lexleaf",
   "main": "out/main/index.js",

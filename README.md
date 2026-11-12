@@ -2,7 +2,7 @@
   <img src="resources/icons/lexleaf-logo.png" alt="Lexleaf logo" width="112" />
   <h1>Lexleaf</h1>
   <p><strong>Read deeper. Stay curious.</strong></p>
-  <p>A local-first desktop PDF reader for looking up unfamiliar words without leaving the page.</p>
+  <p>A local-first desktop reader for PDF and EPUB books, for looking up unfamiliar words without leaving the page.</p>
 
   <p>
     <a href="https://github.com/purubhoite/lexleaf/stargazers"><img src="https://img.shields.io/github/stars/purubhoite/lexleaf?style=flat&label=stars" alt="GitHub stars" /></a>
@@ -20,14 +20,15 @@
 
 ## What Lexleaf does
 
-Lexleaf keeps the reading loop in one place. Open a PDF, select a word, read its dictionary entry, and save it to a vocabulary library for later review. The bundled Open English WordNet-derived dictionary works offline after installation; no account or document upload is required for the core reading workflow.
+Lexleaf keeps the reading loop in one place. Open a PDF or an EPUB book, select a word, read its dictionary entry, and save it to a vocabulary library for later review. The bundled Open English WordNet-derived dictionary works offline after installation; no account or document upload is required for the core reading workflow.
 
 Lexleaf is released for **Windows x64 and Linux x86_64**. The [latest release](https://github.com/purubhoite/lexleaf/releases/latest) always has the newest version of every download. The installer is unsigned because no code-signing certificate is configured, so Windows SmartScreen may display a warning. Check the release's `SHA256SUMS.txt` before running the installer, and use your normal security judgment rather than blindly bypassing a warning.
 
 ## Features
 
 - PDF reading with local rendering powered by PDF.js.
-- Open a PDF the way you open any file: double-click it or use **Open with** once Lexleaf is installed, or drag it onto the Lexleaf window.
+- EPUB reading: books without copy protection open like any PDF, with contents, word lookup, search, highlights and notes, bookmarks, read aloud and your place remembered. Lexleaf shows them in its own plain typography and never uses a book's scripts, styles or fonts. Each chapter counts as one page. Copy-protected (DRM) and fixed-layout books are not supported, and print, thumbnails, two-page view and rotation are for PDFs only.
+- Open a PDF or EPUB the way you open any file: double-click it or use **Open with** once Lexleaf is installed, or drag it onto the Lexleaf window.
 - Table of contents: for a book that has one, **Contents** opens its chapters beside the pages and shows where you are.
 - Vocabulary-first lookup: double-click a word to open its definition.
 - Word navigation with `Alt+Left` and `Alt+Right`, then `Enter` to look up the focused word.
@@ -37,7 +38,6 @@ Lexleaf is released for **Windows x64 and Linux x86_64**. The [latest release](h
 - Reading-position and recent-document persistence.
 - Zoom by pinching on a trackpad or with `Ctrl` + mouse wheel, to any size; or step with `Ctrl/Cmd++`, `Ctrl/Cmd+-`, and `Ctrl/Cmd+0` for fit width.
 - In-document search with `Ctrl/Cmd+F`.
-- EPUB books open alongside PDFs, with contents, word lookup, search, highlights, bookmarks and your place remembered. Books are shown in Lexleaf's own plain typography; the book's styles, fonts and scripts are never used. Each chapter counts as one "page". Copy-protected (DRM) books, fixed-layout books, and print, thumbnails, two-page view and rotation for EPUB are not supported.
 - Highlights in four colours, each with an optional note: select text and choose a colour. They are listed in the sidebar and can be exported as a Markdown file. They are kept by Lexleaf on your computer; the PDF itself is never changed.
 - Bookmarks (`Ctrl/Cmd+D`), and a Back button that returns to where you were after jumping to a chapter, bookmark, note or page.
 - A sidebar with Contents, page thumbnails, Bookmarks and Notes.
@@ -48,7 +48,7 @@ Lexleaf is released for **Windows x64 and Linux x86_64**. The [latest release](h
 - Updates on request: Lexleaf tells you when a newer version has been released and, when you ask, downloads and installs it. The check can be turned off in Settings.
 - Offline dictionary data packaged separately from the Apache-2.0 application code.
 
-AI explanation code is present for future evaluation and is disabled by default; it is not required for PDF reading, dictionary lookup, or saved vocabulary.
+AI explanation code is present for future evaluation and is disabled by default; it is not required for reading, dictionary lookup, or saved vocabulary.
 
 ## Install on Windows
 
@@ -62,7 +62,7 @@ AI explanation code is present for future evaluation and is disabled by default;
    Compare the result with the line for that file in `SHA256SUMS.txt`.
 
 3. Run the installer. It is unsigned; SmartScreen may ask for additional confirmation.
-4. Open Lexleaf and choose **Open PDF…** to begin reading.
+4. Open Lexleaf and choose **Open…** to begin reading.
 
 The published installer is self-contained; end users do not need Node.js or npm.
 
@@ -130,7 +130,7 @@ The crash that started it, where it has been traced, was in the Nouveau graphics
 
 ## How to use it
 
-1. Choose **Open PDF…** and select a PDF, drag a PDF onto the window, or right-click a PDF in your file manager and choose **Open with › Lexleaf**. In a long book, **Contents** lists the chapters.
+1. Choose **Open…** and select a PDF or EPUB, drag one onto the window, or right-click one in your file manager and choose **Open with › Lexleaf**. In a long book, **Contents** lists the chapters.
 2. Double-click an unfamiliar word in the document. Lexleaf shows the available dictionary definition in a popup.
 3. Choose **Save word** to add it to your saved words. The popup then says the word is saved; **Remove from saved words** is a separate button, so a second click never throws a word away.
 4. Choose **Saved words** to search, sort, and revisit them. The list opens beside the page, so the book stays in view, and **Show in book** takes you to the place a word came from.
@@ -149,7 +149,7 @@ The crash that started it, where it has been traced, was in the Nouveau graphics
 | `Ctrl/Cmd 0`                 | Fit page to width                                              |
 | Pinch, or `Ctrl` + wheel     | Zoom in and out smoothly                                       |
 | `Ctrl/Cmd F`                 | Open document search                                           |
-| `Ctrl/Cmd O`                 | Open a PDF                                                     |
+| `Ctrl/Cmd O`                 | Open a PDF or EPUB                                             |
 | `Ctrl/Cmd W`                 | Close the document                                             |
 | `Ctrl/Cmd G`                 | Go to page                                                     |
 | `Ctrl/Cmd Shift O`           | Show or hide Contents                                          |

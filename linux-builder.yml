@@ -38,8 +38,8 @@ linux:
   category: Office
   maintainer: Lexleaf <216851203+purubhoite@users.noreply.github.com>
   syncDesktopName: true
-  synopsis: Read PDFs and build vocabulary
-  description: A local-first desktop PDF reader with offline dictionary lookup.
+  synopsis: Read PDFs and EPUBs and build vocabulary
+  description: A local-first desktop PDF and EPUB reader with offline dictionary lookup.
   icon: resources/icons/lexleaf-logo.png
   artifactName: Lexleaf-${version}-${arch}.${ext}
 deb:
