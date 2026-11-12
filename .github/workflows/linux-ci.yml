@@ -24,6 +24,8 @@ jobs:
           npm run verify:license-compliance
           npm run typecheck
           npm run lint
+          npm test
+          npm run test:integration
           npm run build
       - run: npx electron-builder --linux AppImage deb --x64 --config linux-builder.yml --publish never
       - name: Verify packages and run smoke test

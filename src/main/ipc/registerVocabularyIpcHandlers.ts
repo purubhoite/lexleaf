@@ -107,7 +107,7 @@ export const registerVocabularyIpcHandlers = (
 
   ipc.handle(
     IpcChannel.VocabularyStateForWord,
-    guard(
+    readyGuard(
       IpcChannel.VocabularyStateForWord,
       (raw: unknown): VocabularyIpcResult<SavedWordState> => {
         const request = parseStateForWordRequest(raw);
@@ -137,7 +137,7 @@ export const registerVocabularyIpcHandlers = (
 
   ipc.handle(
     IpcChannel.VocabularySave,
-    guard(
+    readyGuard(
       IpcChannel.VocabularySave,
       async (raw: unknown): Promise<VocabularyIpcResult<SavedWord>> => {
         const request = parseSaveWordRequest(raw);
@@ -257,7 +257,7 @@ export const registerVocabularyIpcHandlers = (
 
   ipc.handle(
     IpcChannel.VocabularyOccurrences,
-    guard(
+    readyGuard(
       IpcChannel.VocabularyOccurrences,
       (raw: unknown): VocabularyIpcResult<readonly SavedOccurrence[]> => {
         const itemId = parseItemId(raw);
