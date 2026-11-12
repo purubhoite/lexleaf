@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, readlinkSync, statSync } from 'node:fs';
 import {
   access,
   open as openFile,
@@ -76,6 +76,7 @@ import {
   createElectronUpdaterInstaller,
   type AutoUpdaterLike,
 } from './update/updateInstaller';
+import { decideAcceleration } from './lifecycle/graphicsAcceleration';
 import {
   ORPHANED_ZYGOTE_SWEEP_INTERVAL_MS,
   parseProcessStat,
@@ -909,6 +910,35 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+/*
+ * Has to happen before the application is ready: once the graphics
+ * process has started, the driver is already loaded. See
+ * `graphicsAcceleration.ts` for which machines this applies to and why.
+ */
+const acceleration = decideAcceleration({
+  platform: process.platform,
+  override: process.env['LEXLEAF_GPU'],
+  probe: {
+    listCards: () => readdirSync('/sys/class/drm'),
+    driverLink: (card) => {
+      try {
+        return readlinkSync(`/sys/class/drm/${card}/device/driver`);
+      } catch {
+        return null;
+      }
+    },
+  },
+});
+
+if (!acceleration.accelerate) {
+  app.disableHardwareAcceleration();
+  console.info(
+    `${LOG_PREFIX} drawing without the graphics card (${
+      acceleration.driver === null ? acceleration.reason : `${acceleration.driver} driver`
+    })`,
+  );
+}
 
 /*
  * R4. One writer, enforced by Electron's own lock, before anything reads
