@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       release_source_sha:
-        description: Original release source commit SHA referenced by v0.2.2
+        description: Original release source commit SHA referenced by v0.2.3
         required: true
         type: string
       release_confirmation:
-        description: Type REPAIR LEXLEAF 0.2.2
+        description: Type REPAIR LEXLEAF 0.2.3
         required: true
         type: string
       license_compliance_confirmation:
@@ -30,8 +30,8 @@ jobs:
       actions: read
     env:
       RELEASE_SOURCE_SHA: ${{ inputs.release_source_sha }}
-      EXPECTED_VERSION: '0.2.2'
-      EXPECTED_TAG: 'v0.2.2'
+      EXPECTED_VERSION: '0.2.3'
+      EXPECTED_TAG: 'v0.2.3'
     steps:
       - name: Check out verified source
         uses: actions/checkout@v4
@@ -71,7 +71,7 @@ jobs:
           if (($release | ConvertFrom-Json).tag_name -cne $env:EXPECTED_TAG) { throw 'Existing release tag mismatch.' }
           $package = Get-Content release-source/package.json -Raw | ConvertFrom-Json
           if ([string]$package.version -cne $env:EXPECTED_VERSION) { throw 'package.json version mismatch.' }
-          if ('${{ inputs.release_confirmation }}' -cne 'REPAIR LEXLEAF 0.2.2') { throw 'Repair confirmation mismatch.' }
+          if ('${{ inputs.release_confirmation }}' -cne 'REPAIR LEXLEAF 0.2.3') { throw 'Repair confirmation mismatch.' }
           if ('${{ inputs.license_compliance_confirmation }}' -cne 'REVIEWED OEWN AND PRINCETON LICENSES') { throw 'License confirmation mismatch.' }
           "LEXLEAF_VERSION=$([string]$package.version)" | Out-File $env:GITHUB_ENV -Encoding utf8
 

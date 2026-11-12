@@ -20,11 +20,38 @@ export interface PageSize {
 
 export interface LaidOutPage {
   readonly pageNumber: number;
-  /** Offset of the page's top edge from the top of the scrolling content. */
   readonly top: number;
   readonly width: number;
   readonly height: number;
+  /**
+   * Where the page's left edge sits, measured from the centre line of the
+   * pages. `null` for a page that is simply centred, which is every page
+   * outside the two-page view.
+   */
+  readonly left: number | null;
 }
+
+/**
+ * How pages are arranged.
+ *
+ * - `continuous`: one column, one page under another. What Lexleaf has
+ *   always done.
+ * - `single`: one page at a time. Each page has a slot at least as tall
+ *   as the window, so only one is in view, and scrolling moves from one
+ *   to the next.
+ * - `two`: pages side by side in pairs, as an open book.
+ */
+export const PAGE_LAYOUT_MODES = ['continuous', 'single', 'two'] as const;
+
+export type PageLayoutMode = (typeof PAGE_LAYOUT_MODES)[number];
+
+export interface LayoutView {
+  readonly mode: PageLayoutMode;
+  /** The height of the window's document area; used by `single`. */
+  readonly viewportHeight?: number;
+}
+
+export const CONTINUOUS_VIEW: LayoutView = { mode: 'continuous' };
 
 export interface PageLayout {
   readonly pages: readonly LaidOutPage[];
@@ -44,6 +71,98 @@ export interface ReadingPoint {
 /** Vertical space between two pages, in CSS pixels. */
 export const PAGE_GAP = 20;
 
+/*
+ * Pairs of pages, side by side. Both pages of a pair start at the same
+ * height, so the tops never decrease from one page to the next — which
+ * the binary search in `pageAtOffset` depends on.
+ */
+const layOutSpreads = (sizes: readonly PageSize[], scale: number, gap: number): PageLayout => {
+  const pages: LaidOutPage[] = [];
+  let top = 0;
+  let contentWidth = 0;
+
+  for (let index = 0; index < sizes.length; index += 2) {
+    const left = sizes[index];
+    const right = sizes[index + 1];
+
+    if (left === undefined) {
+      break;
+    }
+
+    const leftWidth = left.width * scale;
+    const leftHeight = left.height * scale;
+
+    pages.push({
+      pageNumber: index + 1,
+      top,
+      width: leftWidth,
+      height: leftHeight,
+      left: -(leftWidth + gap / 2),
+    });
+
+    // The last page of an odd-length book sits where a left page would.
+    const rightWidth = right === undefined ? leftWidth : right.width * scale;
+    const rightHeight = right === undefined ? 0 : right.height * scale;
+
+    if (right !== undefined) {
+      pages.push({
+        pageNumber: index + 2,
+        top,
+        width: rightWidth,
+        height: rightHeight,
+        left: gap / 2,
+      });
+    }
+
+    contentWidth = Math.max(contentWidth, 2 * Math.max(leftWidth, rightWidth) + gap);
+    top += Math.max(leftHeight, rightHeight) + gap;
+  }
+
+  return { pages, totalHeight: Math.max(0, top - gap), contentWidth, scale, gap };
+};
+
+/**
+ * Lays the pages out for a zoom and a view. Pure and cheap: it is run
+ * again whenever either changes.
+ */
+export const createPageLayout = (
+  sizes: readonly PageSize[],
+  scale: number,
+  gap: number = PAGE_GAP,
+  view: LayoutView = CONTINUOUS_VIEW,
+): PageLayout => {
+  if (view.mode === 'two') {
+    return layOutSpreads(sizes, scale, gap);
+  }
+
+  const pages: LaidOutPage[] = [];
+  let top = 0;
+  let contentWidth = 0;
+
+  // One page at a time: every page gets a slot as tall as the window (or
+  // as the page, if that is taller) and sits in the middle of it.
+  const slot = view.mode === 'single' ? Math.max(0, view.viewportHeight ?? 0) : 0;
+
+  for (const [index, size] of sizes.entries()) {
+    const width = size.width * scale;
+    const height = size.height * scale;
+    const room = Math.max(height + gap, slot);
+    const inset = view.mode === 'single' ? (room - height) / 2 : 0;
+
+    pages.push({ pageNumber: index + 1, top: top + inset, width, height, left: null });
+    contentWidth = Math.max(contentWidth, width);
+    top += view.mode === 'single' ? room : height + gap;
+  }
+
+  return {
+    pages,
+    totalHeight: view.mode === 'single' ? top : Math.max(0, top - gap),
+    contentWidth,
+    scale,
+    gap,
+  };
+};
+
 /**
  * Where in the window the "page you are reading" is taken to be.
  *
@@ -55,34 +174,6 @@ export const READING_ANCHOR_FRACTION = 0.3;
 
 const clamp = (value: number, low: number, high: number): number =>
   Math.min(Math.max(value, low), high);
-
-export const createPageLayout = (
-  sizes: readonly PageSize[],
-  scale: number,
-  gap: number = PAGE_GAP,
-): PageLayout => {
-  const pages: LaidOutPage[] = [];
-  let top = 0;
-  let contentWidth = 0;
-
-  for (const [index, size] of sizes.entries()) {
-    const width = size.width * scale;
-    const height = size.height * scale;
-
-    pages.push({ pageNumber: index + 1, top, width, height });
-    contentWidth = Math.max(contentWidth, width);
-    top += height + gap;
-  }
-
-  return {
-    pages,
-    // No trailing gap after the last page.
-    totalHeight: Math.max(0, top - gap),
-    contentWidth,
-    scale,
-    gap,
-  };
-};
 
 export const pageAt = (layout: PageLayout, pageNumber: number): LaidOutPage | null =>
   layout.pages[pageNumber - 1] ?? null;
@@ -106,6 +197,14 @@ export const pageAtOffset = (layout: PageLayout, offset: number): number => {
     } else {
       high = middle - 1;
     }
+  }
+
+  // In the two-page view both pages of a pair start at the same height;
+  // the pair is named by its first page.
+  const found = layout.pages[low];
+
+  if (found !== undefined && found.left !== null && found.left > 0) {
+    return low;
   }
 
   return low + 1;

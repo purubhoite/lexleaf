@@ -69,6 +69,39 @@ const MILESTONE_5_TEST_IDS = [
 
 /** Added since: three in 6.2 and 6.3, one in 6.4, seven in 6.8, one in M7.2. */
 const ADDED_AFTER_MILESTONE_5 = [
+  // Highlights and notes, bookmarks and "back", the sidebar with its page
+  // thumbnails, the page views and rotation, printing, and reading aloud.
+  // The colour buttons and the sidebar tabs are named from their values
+  // (`highlight-yellow`, `sidebar-tab-notes`) and so are not listed.
+  'annotation-popup',
+  'annotations-write-failed',
+  'bookmark-entry',
+  'bookmark-toggle',
+  'bookmarks',
+  'dictionary-listen',
+  'go-back',
+  'highlight-copy',
+  'highlight-listen',
+  'highlight-note',
+  'highlight-note-field',
+  'highlight-remove',
+  'note-entry',
+  'notes',
+  'notes-export',
+  'notes-export-result',
+  'print',
+  'print-dialog',
+  'print-from',
+  'print-go',
+  'print-progress',
+  'print-to',
+  'read-aloud',
+  'read-aloud-unavailable',
+  'rotate',
+  'sidebar',
+  'thumbnail',
+  'thumbnails',
+  'view-mode',
   // 0.2.3's interface work: the side panel, the shared notice area, the
   // first-book tip, reading mode, the drop target, the page colour, About
   // in the settings, and the popup's separate "saved" and "remove".

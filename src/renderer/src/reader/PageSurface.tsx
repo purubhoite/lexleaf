@@ -30,8 +30,35 @@ import { rectsForSpan, type HighlightRect } from './pdf/textRanges';
 export interface PageSpan {
   readonly start: number;
   readonly end: number;
-  readonly kind: 'match' | 'current-match' | 'cursor' | 'occurrence';
+  readonly kind: PageSpanKind;
+  /** A highlight that carries a note is drawn with a line under it. */
+  readonly noted?: boolean;
 }
+
+export type PageSpanKind =
+  | 'match'
+  | 'current-match'
+  | 'cursor'
+  | 'occurrence'
+  | 'mark-yellow'
+  | 'mark-green'
+  | 'mark-blue'
+  | 'mark-pink';
+
+/*
+ * Written out, one class to a kind, so that the stylesheet tests can see
+ * that every kind has a rule and every rule a user.
+ */
+const HIGHLIGHT_CLASS: Readonly<Record<PageSpanKind, string>> = {
+  match: 'highlight highlight--match',
+  'current-match': 'highlight highlight--current-match',
+  cursor: 'highlight highlight--cursor',
+  occurrence: 'highlight highlight--occurrence',
+  'mark-yellow': 'highlight highlight--mark highlight--mark-yellow',
+  'mark-green': 'highlight highlight--mark highlight--mark-green',
+  'mark-blue': 'highlight highlight--mark highlight--mark-blue',
+  'mark-pink': 'highlight highlight--mark highlight--mark-pink',
+};
 
 export interface PageSurfaceProps {
   readonly document: OpenedPdf;
@@ -42,6 +69,10 @@ export interface PageSurfaceProps {
   readonly top: number;
   readonly width: number;
   readonly height: number;
+  /** The left edge, from the centre line; `null` or absent for a centred page. */
+  readonly left?: number | null;
+  /** Quarter turns added by the reader, in degrees. */
+  readonly rotation?: number;
   readonly registry: PageRegistry;
   readonly spans: readonly PageSpan[];
   readonly showTextLayer: boolean;
@@ -57,6 +88,8 @@ export const PageSurface = ({
   top,
   width,
   height,
+  left = null,
+  rotation = 0,
   registry,
   spans,
   showTextLayer,
@@ -68,7 +101,7 @@ export const PageSurface = ({
   const textLayerRef = useRef<HTMLDivElement>(null);
   const [render, dispatch] = useReducer(pageRenderReducer, initialPageRenderState);
   const [highlights, setHighlights] = useState<
-    readonly (HighlightRect & { kind: PageSpan['kind'] })[]
+    readonly (HighlightRect & { kind: PageSpanKind; noted: boolean })[]
   >([]);
 
   useEffect(() => {
@@ -104,6 +137,7 @@ export const PageSurface = ({
           textLayerContainer,
           scale,
           pixelRatio: window.devicePixelRatio,
+          rotation,
         });
 
         cancel = (): void => {
@@ -152,7 +186,7 @@ export const PageSurface = ({
       registry.release(pageNumber, generation);
       setHighlights([]);
     };
-  }, [pdfDocument, documentId, pageNumber, scale, registry, onRendered, onTextPresence]);
+  }, [pdfDocument, documentId, pageNumber, scale, rotation, registry, onRendered, onTextPresence]);
 
   // Highlights are measured from the rendered text layer, so they are
   // recomputed when the page finishes rendering and whenever the spans or
@@ -171,10 +205,11 @@ export const PageSurface = ({
         rectsForSpan(container, page.layer, span.start, span.end).map((rect) => ({
           ...rect,
           kind: span.kind,
+          noted: span.noted === true,
         })),
       ),
     );
-  }, [spans, render.phase, render.generation, scale, pageNumber, registry]);
+  }, [spans, render.phase, render.generation, scale, rotation, pageNumber, registry]);
 
   const attributes = { [PAGE_NUMBER_ATTRIBUTE]: pageNumber };
 
@@ -187,6 +222,9 @@ export const PageSurface = ({
         top: `${String(top)}px`,
         width: `${String(width)}px`,
         height: `${String(height)}px`,
+        // Beside its neighbour in the two-page view; centred by the
+        // stylesheet otherwise.
+        ...(left === null ? {} : { left: `calc(50% + ${String(left)}px)`, transform: 'none' }),
       }}
       aria-label={`Page ${String(pageNumber)}`}
       role="img"
@@ -199,7 +237,11 @@ export const PageSurface = ({
           <span
             // Rectangles are positional and have no identity of their own.
             key={`${rect.kind}:${String(index)}:${String(rect.left)}:${String(rect.top)}`}
-            className={`highlight highlight--${rect.kind}`}
+            className={
+              rect.noted
+                ? `${HIGHLIGHT_CLASS[rect.kind]} highlight--noted`
+                : HIGHLIGHT_CLASS[rect.kind]
+            }
             style={{
               left: `${String(rect.left)}px`,
               top: `${String(rect.top)}px`,

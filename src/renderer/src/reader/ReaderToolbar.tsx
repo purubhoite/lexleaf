@@ -4,6 +4,7 @@ import type { ZoomState } from '@core/persistence/types';
 
 import { Icon } from '../ui/Icon';
 
+import { PAGE_LAYOUT_MODES, type PageLayoutMode } from './model/pageLayout';
 import { describeZoom, ZOOM_LEVELS, formatZoomPercentage } from './model/zoom';
 
 /**
@@ -22,10 +23,18 @@ export interface ReaderToolbarProps {
   readonly zoom: ZoomState;
   readonly scale: number;
   readonly searchOpen: boolean;
-  /** Whether the document has a table of contents to show. */
-  readonly hasOutline: boolean;
-  readonly outlineOpen: boolean;
-  readonly onToggleOutline: () => void;
+  readonly sidebarOpen: boolean;
+  readonly onToggleSidebar: () => void;
+  /** Whether there is a place to go back to after a jump. */
+  readonly canGoBack: boolean;
+  readonly onGoBack: () => void;
+  /** Whether the page being read is bookmarked. */
+  readonly bookmarked: boolean;
+  readonly onToggleBookmark: () => void;
+  readonly viewMode: PageLayoutMode;
+  readonly onViewModeChange: (mode: PageLayoutMode) => void;
+  readonly onRotate: () => void;
+  readonly onPrint: () => void;
   readonly onOpen: () => void;
   readonly onClose: () => void;
   readonly onGoToPage: (pageNumber: number) => void;
@@ -49,9 +58,16 @@ export const ReaderToolbar = ({
   zoom,
   scale,
   searchOpen,
-  hasOutline,
-  outlineOpen,
-  onToggleOutline,
+  sidebarOpen,
+  onToggleSidebar,
+  canGoBack,
+  onGoBack,
+  bookmarked,
+  onToggleBookmark,
+  viewMode,
+  onViewModeChange,
+  onRotate,
+  onPrint,
   onOpen,
   onClose,
   onGoToPage,
@@ -65,6 +81,8 @@ export const ReaderToolbar = ({
   // While the reader is not editing it, the field simply shows where they
   // are; it only holds its own value between a keystroke and a submission,
   // so scrolling never fights with typing.
+  // Two pages side by side turn two at a time.
+  const pageStep = viewMode === 'two' ? 2 : 1;
   const [draft, setDraft] = useState<string | null>(null);
   const pageField = draft ?? String(currentPage);
 
@@ -120,22 +138,31 @@ export const ReaderToolbar = ({
 
       <div className="reader__group" role="group" aria-label="Page navigation">
         {/*
-          The contents button lives with page navigation because that is
-          what it is. A document without an outline keeps the button, off,
-          with the reason in its tooltip: a control that comes and goes
-          between books is harder to find than one that says "not here".
+          One button for the sidebar, which holds the contents, the page
+          thumbnails, the bookmarks and the notes. It is always there, so
+          it is always in the same place, whatever the book has in it.
         */}
         <button
           type="button"
           className="control"
           data-testid="outline-toggle"
-          aria-expanded={hasOutline && outlineOpen}
-          disabled={!hasOutline}
-          title={hasOutline ? 'Table of contents' : 'This document has no table of contents'}
-          onClick={onToggleOutline}
+          aria-label="Sidebar"
+          aria-expanded={sidebarOpen}
+          title="Sidebar"
+          onClick={onToggleSidebar}
         >
-          <Icon name="contents" />
-          Contents
+          <Icon name="sidebar" />
+        </button>
+        <button
+          type="button"
+          className="control"
+          data-testid="go-back"
+          aria-label="Back to where you were"
+          title="Back to where you were"
+          disabled={!canGoBack}
+          onClick={onGoBack}
+        >
+          <Icon name="back" />
         </button>
         <button
           type="button"
@@ -172,9 +199,9 @@ export const ReaderToolbar = ({
           className="control"
           aria-label="Next page"
           title="Next page"
-          disabled={currentPage >= pageCount}
+          disabled={currentPage + pageStep > pageCount}
           onClick={(): void => {
-            onGoToPage(currentPage + 1);
+            onGoToPage(currentPage + pageStep);
           }}
         >
           <Icon name="chevron-right" />
@@ -249,6 +276,62 @@ export const ReaderToolbar = ({
           onClick={onZoomIn}
         >
           <Icon name="plus" />
+        </button>
+      </div>
+
+      <div className="reader__group" role="group" aria-label="Page view">
+        <label className="reader__zoom">
+          <span className="visually-hidden">Page view</span>
+          <select
+            className="control control--field"
+            value={viewMode}
+            data-testid="view-mode"
+            onChange={(event): void => {
+              const chosen = PAGE_LAYOUT_MODES.find((mode) => mode === event.target.value);
+
+              if (chosen !== undefined) {
+                onViewModeChange(chosen);
+              }
+            }}
+          >
+            <option value="continuous">Scrolling</option>
+            <option value="single">One page</option>
+            <option value="two">Two pages</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          className="control"
+          aria-label="Rotate pages"
+          title="Rotate pages"
+          data-testid="rotate"
+          onClick={onRotate}
+        >
+          <Icon name="rotate-right" />
+        </button>
+      </div>
+
+      <div className="reader__group" role="group" aria-label="Bookmark and print">
+        <button
+          type="button"
+          className={bookmarked ? 'control control--on' : 'control'}
+          aria-label={bookmarked ? 'Remove bookmark from this page' : 'Bookmark this page'}
+          aria-pressed={bookmarked}
+          title={bookmarked ? 'Remove bookmark from this page' : 'Bookmark this page'}
+          data-testid="bookmark-toggle"
+          onClick={onToggleBookmark}
+        >
+          <Icon name="bookmark" />
+        </button>
+        <button
+          type="button"
+          className="control"
+          aria-label="Print"
+          title="Print"
+          data-testid="print"
+          onClick={onPrint}
+        >
+          <Icon name="print" />
         </button>
       </div>
 

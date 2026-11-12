@@ -42,6 +42,12 @@ import {
 
 import { resolveDevServerOrigin } from './environment';
 import { createAppInfo } from './ipc/appInfo';
+import {
+  ANNOTATIONS_FILE,
+  createAnnotationStore,
+  exportAnnotations,
+} from './annotations/annotationStore';
+import { registerAnnotationIpcHandlers } from './ipc/registerAnnotationIpcHandlers';
 import { buildApplicationMenu } from './menu/applicationMenu';
 import { IpcChannel } from '@shared/ipc/channels';
 import { registerAiIpcHandlers } from './ipc/registerAiIpcHandlers';
@@ -786,6 +792,45 @@ const bootstrap = async (): Promise<void> => {
     );
   };
 
+  /*
+   * Highlights, notes and bookmarks: one file beside the reading state,
+   * and the three channels the window reaches it through.
+   */
+  const annotationStore = createAnnotationStore({
+    filePath: join(app.getPath('userData'), ANNOTATIONS_FILE),
+    fileSystem: {
+      read: (path) => readFile(path, 'utf8'),
+      write: (path, contents) => writeFile(path, contents, 'utf8'),
+      rename: (from, to) => rename(from, to),
+    },
+    onDiagnostic: (message) => {
+      console.warn(`${LOG_PREFIX} ${message}`);
+    },
+  });
+
+  registerAnnotationIpcHandlers(ipcMain, {
+    store: annotationStore,
+    exportDocument: (documentId) =>
+      exportAnnotations(documentId, {
+        store: annotationStore,
+        chooseDestination: async (suggestedName) => {
+          const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+          const options = {
+            title: 'Export highlights and notes',
+            defaultPath: join(app.getPath('documents'), suggestedName),
+            filters: [{ name: 'Markdown', extensions: ['md'] }],
+          };
+          const selection = await (window === undefined
+            ? dialog.showSaveDialog(options)
+            : dialog.showSaveDialog(window, options));
+
+          return selection.canceled || selection.filePath === '' ? null : selection.filePath;
+        },
+        write: (path, contents) => writeFile(path, contents, 'utf8'),
+      }),
+    devServerOrigin,
+  });
+
   registerAppIpcHandlers(ipcMain, {
     appInfo: createAppInfo({
       name: packageMetadata.productName,
@@ -996,6 +1041,15 @@ const acceleration = decideAcceleration({
   override: process.env['LEXLEAF_GPU'],
   probe: displayDriverProbe,
 });
+
+/*
+ * Reading aloud uses the voices installed on this computer. On Linux those
+ * come from Speech Dispatcher, which Chromium only talks to when asked.
+ * The switch does nothing where Speech Dispatcher is not installed.
+ */
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('enable-speech-dispatcher');
+}
 
 if (!acceleration.accelerate) {
   app.disableHardwareAcceleration();

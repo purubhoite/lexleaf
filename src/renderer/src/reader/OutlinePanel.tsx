@@ -16,7 +16,8 @@ export interface OutlinePanelProps {
   readonly entries: readonly PdfOutlineEntry[];
   readonly currentPage: number;
   readonly onGoToPage: (pageNumber: number) => void;
-  readonly onClose: () => void;
+  /** Hides the panel. Absent inside the sidebar, which has its own way to close. */
+  readonly onClose?: () => void;
 }
 
 export const OutlinePanel = ({
@@ -39,12 +40,14 @@ export const OutlinePanel = ({
 
   return (
     <nav className="outline" aria-label="Contents" data-testid="outline">
-      <div className="outline__head">
-        <h2 className="outline__title">Contents</h2>
-        <button type="button" className="control" onClick={onClose} aria-label="Hide contents">
-          Hide
-        </button>
-      </div>
+      {onClose !== undefined && (
+        <div className="outline__head">
+          <h2 className="outline__title">Contents</h2>
+          <button type="button" className="control" onClick={onClose} aria-label="Hide contents">
+            Hide
+          </button>
+        </div>
+      )}
       <ol className="outline__list">
         {entries.map((entry, index) => {
           const isActive = index === active;

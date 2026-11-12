@@ -32,6 +32,7 @@ import {
 import { useSaveWord } from './vocabulary/useSaveWord';
 import {
   createPageLayout,
+  PAGE_GAP,
   currentPageAt,
   offsetOfPageTop,
   offsetOfPosition,
@@ -53,7 +54,15 @@ import { RecentDocuments } from './RecentDocuments';
 import type { CommandSource } from '../app/commandBus';
 import { Icon } from '../ui/Icon';
 
-import { OutlinePanel } from './OutlinePanel';
+import { highlightAt, isBookmarked, type Highlight } from '@core/annotations/annotations';
+import { AnnotationPopup, type PopupAnchor } from './annotations/AnnotationPopup';
+import { selectionParts, textPlaceAtPoint } from './annotations/selectionParts';
+import { useAnnotations, type NewSelection } from './annotations/useAnnotations';
+import { PrintDialog } from './print/PrintDialog';
+import { ReaderSidebar, type SidebarTab } from './sidebar/ReaderSidebar';
+import { NO_VOICE_MESSAGE, useReadAloud } from './speech/useReadAloud';
+import { useJumpHistory } from './useJumpHistory';
+import { useViewMode } from './useViewMode';
 import { SearchPanel } from './SearchPanel';
 import { useDocumentOutline } from './useDocumentOutline';
 import { useDocumentSearch } from './useDocumentSearch';
@@ -114,6 +123,20 @@ const PAGE_TINT_CLASS: Readonly<Record<Preferences['pageTint'], string>> = {
 };
 
 const megabytes = (bytes: number): string => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+/** What the bar by a selection or a highlight is showing. */
+type AnnotationPopupState =
+  | {
+      readonly kind: 'selection';
+      readonly anchor: PopupAnchor;
+      readonly parts: readonly NewSelection[];
+    }
+  | {
+      readonly kind: 'highlight';
+      readonly anchor: PopupAnchor;
+      readonly id: string;
+      readonly noteOpen: boolean;
+    };
 
 export interface ReaderViewProps {
   readonly bridge: DesktopBridge | null;
@@ -181,7 +204,12 @@ export const ReaderView = ({
   const [zoom, setZoom] = useState<ZoomState>(DEFAULT_ZOOM);
   const [password, setPassword] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
-  const [outlineOpen, setOutlineOpen] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab | null>(null);
+  const [printOpen, setPrintOpen] = useState(false);
+  const [viewMode, setViewMode] = useViewMode();
+  const [popup, setPopup] = useState<AnnotationPopupState | null>(null);
+  const [voiceNoticeDismissed, setVoiceNoticeDismissed] = useState(false);
+  const readAloud = useReadAloud();
   const [showTextLayer, setShowTextLayer] = useState(false);
   const [selfCheck, setSelfCheck] = useState<SelfCheckReport | null>(null);
   const [renderMilliseconds, setRenderMilliseconds] = useState<number | null>(null);
@@ -209,8 +237,40 @@ export const ReaderView = ({
     onWriteHealth,
   );
 
-  const scale = resolveScale(zoom, metrics.reference, viewport);
-  const layout = useMemo(() => createPageLayout(metrics.sizes, scale), [metrics.sizes, scale]);
+  const marks = useAnnotations(bridge, documentId, ready?.name ?? '');
+  const rotation = marks.annotations.rotation;
+  const history = useJumpHistory(documentId);
+
+  // A page turned a quarter is as wide as it was tall.
+  const sideways = rotation === 90 || rotation === 270;
+  const sizes = useMemo(
+    () =>
+      sideways
+        ? metrics.sizes.map((size) => ({ width: size.height, height: size.width }))
+        : metrics.sizes,
+    [metrics.sizes, sideways],
+  );
+  const reference = useMemo(() => {
+    const one =
+      metrics.reference !== null && sideways
+        ? { width: metrics.reference.height, height: metrics.reference.width }
+        : metrics.reference;
+
+    // "Fit" in the two-page view fits the pair, not one page of it.
+    return one !== null && viewMode === 'two'
+      ? { width: one.width * 2 + PAGE_GAP, height: one.height }
+      : one;
+  }, [metrics.reference, sideways, viewMode]);
+
+  const scale = resolveScale(zoom, reference, viewport);
+  const layout = useMemo(
+    () =>
+      createPageLayout(sizes, scale, PAGE_GAP, {
+        mode: viewMode,
+        viewportHeight: viewport.height,
+      }),
+    [sizes, scale, viewMode, viewport.height],
+  );
 
   const currentPage = currentPageAt(layout, scrollTop, viewport.height);
   const visible = visiblePageRange(layout, scrollTop, viewport.height);
@@ -354,7 +414,9 @@ export const ReaderView = ({
   });
   const pendingRestore = useRef<ReadingPosition | null>(null);
   const restoredFor = useRef<number | null>(null);
-  const lastScale = useRef(scale);
+  // Anything that moves every page: the size, the arrangement, the turn.
+  const arrangement = `${String(scale)}:${viewMode}:${String(rotation)}`;
+  const lastScale = useRef(arrangement);
 
   // Written after the commit, so the layout effect that reacts to a zoom
   // change still sees where the reader was *before* the pages were resized.
@@ -419,16 +481,16 @@ export const ReaderView = ({
 
   // Changing zoom keeps the reader where they were reading.
   useLayoutEffect(() => {
-    if (lastScale.current === scale) {
+    if (lastScale.current === arrangement) {
       return;
     }
 
-    lastScale.current = scale;
+    lastScale.current = arrangement;
 
     if (pendingRestore.current === null && viewport.height > 0) {
       scrollTo(offsetOfPosition(layout, position.current, viewport.height));
     }
-  }, [scale, layout, scrollTo, viewport.height]);
+  }, [arrangement, layout, scrollTo, viewport.height]);
 
   // Remember where we are. Recording is throttled inside the recorder.
   useEffect(() => {
@@ -491,7 +553,18 @@ export const ReaderView = ({
 
   const spansFor = useCallback(
     (pageNumber: number): PageSpan[] => {
-      const spans: PageSpan[] = search.state.matches
+      // The reader's own highlights go down first, so that a search match
+      // or the word under the cursor is drawn over them, not hidden.
+      const spans: PageSpan[] = marks.annotations.highlights
+        .filter((highlight) => highlight.page === pageNumber)
+        .map((highlight) => ({
+          start: highlight.start,
+          end: highlight.end,
+          kind: `mark-${highlight.colour}` as const,
+          noted: highlight.note.trim().length > 0,
+        }));
+
+      const matches: PageSpan[] = search.state.matches
         .filter((match) => match.pageNumber === pageNumber)
         .map((match) => ({
           start: match.start,
@@ -503,6 +576,8 @@ export const ReaderView = ({
               ? ('current-match' as const)
               : ('match' as const),
         }));
+
+      spans.push(...matches);
 
       const found = navigation.highlight;
 
@@ -522,7 +597,13 @@ export const ReaderView = ({
 
       return spans;
     },
-    [search.state.matches, currentMatch, navigation.highlight, words.interaction],
+    [
+      marks.annotations.highlights,
+      search.state.matches,
+      currentMatch,
+      navigation.highlight,
+      words.interaction,
+    ],
   );
 
   /* ---------------------------------------------------------------- *
@@ -568,6 +649,114 @@ export const ReaderView = ({
   const hasDocument = ready !== null;
   const hasOutline = outline.length > 0;
 
+  /** Goes to a page from somewhere else in the book, remembering where from. */
+  const jumpToPage = useCallback(
+    (pageNumber: number): void => {
+      // Turning to the next page or pair is reading on, not a jump.
+      if (Math.abs(pageNumber - position.current.page) > 2) {
+        history.remember(position.current);
+      }
+
+      revealPage(pageNumber);
+    },
+    [history, revealPage],
+  );
+
+  const goBack = useCallback((): void => {
+    const place = history.back();
+
+    if (place !== null) {
+      scrollTo(offsetOfPosition(layout, place, viewport.height));
+    }
+  }, [history, layout, scrollTo, viewport.height]);
+
+  const goToHighlight = useCallback(
+    (highlight: Highlight): void => {
+      history.remember(position.current);
+
+      const page = registry.get(highlight.page);
+      const laidOut = pageAt(layout, highlight.page);
+      const [rect] =
+        page === null
+          ? []
+          : rectsForSpan(page.container, page.layer, highlight.start, highlight.end);
+
+      scrollTo(
+        rect === undefined || laidOut === null
+          ? offsetOfPageTop(layout, highlight.page, viewport.height)
+          : laidOut.top + rect.top - viewport.height * 0.35,
+      );
+    },
+    [history, layout, registry, scrollTo, viewport.height],
+  );
+
+  /** Opens the sidebar on a section, or closes it if that section is showing. */
+  const toggleSidebar = useCallback(
+    (tab: SidebarTab | null): void => {
+      setSidebarTab((current) => {
+        if (tab === null) {
+          return current === null ? (hasOutline ? 'contents' : 'pages') : null;
+        }
+
+        return current === tab ? null : tab;
+      });
+    },
+    [hasOutline],
+  );
+
+  const toggleBookmark = useCallback((): void => {
+    if (!hasDocument) {
+      return;
+    }
+
+    // A bookmark is named after the chapter it falls in, where there is one.
+    const chapter = [...outline]
+      .filter((entry) => entry.pageNumber !== null && entry.pageNumber <= currentPage)
+      .sort((left, right) => (left.pageNumber ?? 0) - (right.pageNumber ?? 0))
+      .pop();
+
+    marks.toggleBookmark(currentPage, chapter?.title ?? '');
+  }, [hasDocument, outline, currentPage, marks]);
+
+  const rotatePages = marks.rotate;
+  const speak = readAloud.speak;
+  const stopSpeaking = readAloud.stop;
+
+  /** Reads the selected text, or failing that the word under the cursor. */
+  const readSelectionAloud = useCallback((): void => {
+    const selected = window.getSelection()?.toString().trim() ?? '';
+    const word = words.interaction?.hit;
+    const text = selected.length > 0 ? selected : word?.kind === 'word' ? word.word.display : '';
+
+    if (text.length > 0) {
+      setVoiceNoticeDismissed(false);
+      speak(text);
+    }
+  }, [words.interaction, speak]);
+
+  // The bar belongs to a place on screen; once the page moves it is stale.
+  useEffect(() => {
+    setPopup(null);
+  }, [scrollTop, documentId, arrangement]);
+
+  // A looked-up word and a selection bar would sit on top of each other.
+  useEffect(() => {
+    if (dictionaryOpen) {
+      setPopup(null);
+    }
+  }, [dictionaryOpen]);
+
+  // Nothing carries on being read from a book that has been closed.
+  useEffect(() => {
+    stopSpeaking();
+    setPrintOpen(false);
+  }, [documentId, stopSpeaking]);
+
+  const popupHighlight =
+    popup?.kind === 'highlight'
+      ? (marks.annotations.highlights.find((highlight) => highlight.id === popup.id) ?? null)
+      : null;
+
   useEffect(() => {
     if (commands === undefined) {
       return undefined;
@@ -594,8 +783,58 @@ export const ReaderView = ({
           pageFieldRef.current?.select();
           break;
         case 'toggle-contents':
-          if (hasOutline) {
-            setOutlineOpen((open) => !open);
+          if (hasDocument) {
+            toggleSidebar('contents');
+          }
+          break;
+        case 'toggle-thumbnails':
+          if (hasDocument) {
+            toggleSidebar('pages');
+          }
+          break;
+        case 'toggle-bookmarks':
+          if (hasDocument) {
+            toggleSidebar('bookmarks');
+          }
+          break;
+        case 'toggle-notes':
+          if (hasDocument) {
+            toggleSidebar('notes');
+          }
+          break;
+        case 'toggle-bookmark':
+          toggleBookmark();
+          break;
+        case 'go-back':
+          goBack();
+          break;
+        case 'print':
+          if (hasDocument) {
+            setPrintOpen(true);
+          }
+          break;
+        case 'view-continuous':
+          setViewMode('continuous');
+          break;
+        case 'view-single':
+          setViewMode('single');
+          break;
+        case 'view-two':
+          setViewMode('two');
+          break;
+        case 'rotate-right':
+          if (hasDocument) {
+            rotatePages(1);
+          }
+          break;
+        case 'rotate-left':
+          if (hasDocument) {
+            rotatePages(-1);
+          }
+          break;
+        case 'read-aloud':
+          if (hasDocument) {
+            readSelectionAloud();
           }
           break;
         case 'zoom-in':
@@ -620,11 +859,16 @@ export const ReaderView = ({
     openDialog,
     close,
     hasDocument,
-    hasOutline,
     closeDictionary,
     zoomIn,
     zoomOut,
     scale,
+    toggleSidebar,
+    toggleBookmark,
+    goBack,
+    setViewMode,
+    rotatePages,
+    readSelectionAloud,
   ]);
 
   useEffect(() => {
@@ -642,6 +886,9 @@ export const ReaderView = ({
           closeDictionary();
           return;
         }
+
+        setPopup(null);
+        stopSpeaking();
 
         setSearchOpen(false);
         words.clear();
@@ -686,7 +933,7 @@ export const ReaderView = ({
     return (): void => {
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [scale, words, zoomIn, zoomOut, dictionary, dictionaryOpen, closeDictionary]);
+  }, [scale, words, zoomIn, zoomOut, dictionary, dictionaryOpen, closeDictionary, stopSpeaking]);
 
   /* ---------------------------------------------------------------- *
    * Page callbacks
@@ -774,14 +1021,25 @@ export const ReaderView = ({
           zoom={zoom}
           scale={scale}
           searchOpen={searchOpen}
-          hasOutline={hasOutline}
-          outlineOpen={outlineOpen}
-          onToggleOutline={(): void => {
-            setOutlineOpen((open) => !open);
+          sidebarOpen={sidebarTab !== null}
+          onToggleSidebar={(): void => {
+            toggleSidebar(null);
+          }}
+          canGoBack={history.canGoBack}
+          onGoBack={goBack}
+          bookmarked={isBookmarked(marks.annotations, currentPage)}
+          onToggleBookmark={toggleBookmark}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onRotate={(): void => {
+            rotatePages(1);
+          }}
+          onPrint={(): void => {
+            setPrintOpen(true);
           }}
           onOpen={(): void => void openDialog()}
           onClose={(): void => void close()}
-          onGoToPage={revealPage}
+          onGoToPage={jumpToPage}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
           onZoomChange={setZoom}
@@ -839,6 +1097,36 @@ export const ReaderView = ({
           the reader, and neither is announced: they describe the document,
           they are not events (6.5, audit C-5).
         */}
+        {ready !== null && marks.writeFailed && (
+          <div className="reader__notice" data-testid="annotations-write-failed">
+            <Message kind="problem">
+              Your highlights and bookmarks could not be saved to disk. They are kept while this
+              window stays open; export your notes to keep a copy.
+            </Message>
+          </div>
+        )}
+        {readAloud.status === 'speaking' && (
+          <div className="reader__notice" data-testid="read-aloud">
+            <Message kind="busy">Reading aloud…</Message>
+            <button type="button" className="control" onClick={stopSpeaking}>
+              Stop
+            </button>
+          </div>
+        )}
+        {readAloud.status === 'unavailable' && !voiceNoticeDismissed && (
+          <div className="reader__notice" data-testid="read-aloud-unavailable">
+            <Message kind="info">{NO_VOICE_MESSAGE}</Message>
+            <button
+              type="button"
+              className="control"
+              onClick={(): void => {
+                setVoiceNoticeDismissed(true);
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         {ready !== null && scanNotice === 'document' && (
           <div className="reader__notice" data-testid="scan-notice">
             <Message kind="info" announce={false}>
@@ -865,14 +1153,28 @@ export const ReaderView = ({
       </div>
 
       <div className="reader__body">
-        {ready !== null && outlineOpen && outline.length > 0 && !readingMode && (
-          <OutlinePanel
-            entries={outline}
-            currentPage={currentPage}
-            onGoToPage={revealPage}
+        {ready !== null && sidebarTab !== null && !readingMode && (
+          <ReaderSidebar
+            tab={sidebarTab}
+            onTabChange={setSidebarTab}
             onClose={(): void => {
-              setOutlineOpen(false);
+              setSidebarTab(null);
             }}
+            document={ready.document}
+            outline={outline}
+            sizes={sizes}
+            rotation={rotation}
+            currentPage={currentPage}
+            annotations={marks.annotations}
+            onGoToPage={jumpToPage}
+            onGoToHighlight={goToHighlight}
+            onRemoveBookmark={(bookmark): void => {
+              marks.toggleBookmark(bookmark.page, bookmark.label);
+            }}
+            onRemoveHighlight={(highlight): void => {
+              marks.remove(highlight.id);
+            }}
+            {...(marks.exportDocument === undefined ? {} : { onExport: marks.exportDocument })}
           />
         )}
         <div
@@ -883,10 +1185,55 @@ export const ReaderView = ({
           role="region"
           aria-label="Document"
           onPointerDown={(event): void => {
+            setPopup(null);
             words.handlePointerDown({ clientX: event.clientX, clientY: event.clientY });
           }}
-          onMouseUp={(): void => {
+          onMouseUp={(event): void => {
             words.handleSelectionChanged();
+
+            // A double-click looks the word up; the bar is for a selection
+            // the reader dragged out, or for a highlight they clicked.
+            if (ready === null || event.detail === 2 || event.button !== 0) {
+              return;
+            }
+
+            const selection = window.getSelection();
+
+            if (selection !== null && !selection.isCollapsed && selection.rangeCount > 0) {
+              const parts = selectionParts(
+                {
+                  startNode: selection.anchorNode,
+                  startOffset: selection.anchorOffset,
+                  endNode: selection.focusNode,
+                  endOffset: selection.focusOffset,
+                },
+                registry,
+              );
+              const box = selection.getRangeAt(0).getBoundingClientRect();
+
+              if (parts.length > 0) {
+                setPopup({
+                  kind: 'selection',
+                  parts,
+                  anchor: { left: box.left, top: box.top, width: box.width, height: box.height },
+                });
+              }
+
+              return;
+            }
+
+            const place = textPlaceAtPoint(document, registry, event.clientX, event.clientY);
+            const existing =
+              place === null ? null : highlightAt(marks.annotations, place.page, place.index);
+
+            if (existing !== null) {
+              setPopup({
+                kind: 'highlight',
+                id: existing.id,
+                noteOpen: existing.note.trim().length > 0,
+                anchor: { left: event.clientX, top: event.clientY - 10, width: 0, height: 20 },
+              });
+            }
           }}
           onDoubleClick={(): void => {
             // Single click keeps its Milestone 2 behaviour; the second click
@@ -1002,6 +1349,8 @@ export const ReaderView = ({
                     pageNumber={pageNumber}
                     scale={scale}
                     top={box.top}
+                    left={box.left}
+                    rotation={rotation}
                     width={box.width}
                     height={box.height}
                     registry={registry}
@@ -1045,8 +1394,96 @@ export const ReaderView = ({
             loading={dictionary.state.status === 'loading'}
             result={dictionary.state.result}
             onClose={closeDictionary}
+            onListen={(): void => {
+              setVoiceNoticeDismissed(false);
+              speak(dictionary.state.request?.word.display ?? '');
+            }}
             save={saveWord}
             explain={explainInContext}
+          />
+        )}
+        {ready !== null &&
+          popup !== null &&
+          (popup.kind === 'selection' || popupHighlight !== null) && (
+            <AnnotationPopup
+              anchor={popup.anchor}
+              highlight={popupHighlight}
+              noteOpen={popup.kind === 'highlight' && popup.noteOpen}
+              onColour={(colour): void => {
+                if (popup.kind === 'highlight') {
+                  marks.recolour(popup.id, colour);
+
+                  return;
+                }
+
+                marks.highlight(popup.parts, colour);
+                window.getSelection()?.removeAllRanges();
+                setPopup(null);
+              }}
+              onOpenNote={(): void => {
+                if (popup.kind === 'highlight') {
+                  setPopup({ ...popup, noteOpen: !popup.noteOpen });
+
+                  return;
+                }
+
+                // A note needs something to hang on: the words are highlighted first.
+                const id = marks.highlight(popup.parts, 'yellow');
+
+                window.getSelection()?.removeAllRanges();
+                setPopup(
+                  id === null
+                    ? null
+                    : { kind: 'highlight', id, noteOpen: true, anchor: popup.anchor },
+                );
+              }}
+              onNoteChange={(note): void => {
+                if (popup.kind === 'highlight') {
+                  marks.setNote(popup.id, note);
+                }
+              }}
+              onRemove={(): void => {
+                if (popup.kind === 'highlight') {
+                  marks.remove(popup.id);
+                }
+
+                setPopup(null);
+              }}
+              onListen={(): void => {
+                const text =
+                  popupHighlight?.text ??
+                  (popup.kind === 'selection'
+                    ? popup.parts.map((part) => part.text).join(' ')
+                    : '');
+
+                setVoiceNoticeDismissed(false);
+                speak(text);
+              }}
+              onCopy={(): void => {
+                const text =
+                  popupHighlight?.text ??
+                  (popup.kind === 'selection'
+                    ? popup.parts.map((part) => part.text).join(' ')
+                    : '');
+
+                void navigator.clipboard.writeText(text).catch(() => undefined);
+                setPopup(null);
+              }}
+              onClose={(): void => {
+                setPopup(null);
+              }}
+            />
+          )}
+        {ready !== null && printOpen && (
+          <PrintDialog
+            document={ready.document}
+            documentName={ready.name}
+            pageCount={pageCount}
+            currentPage={currentPage}
+            rotation={rotation}
+            onClose={(): void => {
+              setPrintOpen(false);
+            }}
           />
         )}
       </div>

@@ -1,5 +1,11 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
+import {
+  EMPTY_ANNOTATIONS,
+  parseDocumentAnnotations,
+  type AnnotationsExportOutcome,
+  type DocumentAnnotations,
+} from '@core/annotations/annotations';
 import { IpcChannel } from '@shared/ipc/channels';
 import { parseMenuCommand, type MenuCommand } from '@shared/ipc/menuCommands';
 import type { DictionaryQuery, DictionaryResult } from '@core/dictionary/types';
@@ -253,6 +259,58 @@ const desktopBridge: DesktopBridge = {
     } catch {
       // Reading mode still hides the bars if the window cannot go full screen.
     }
+  },
+  annotations: {
+    load: async (documentId: string): Promise<DocumentAnnotations> => {
+      try {
+        // Parsed again on this side: the page is handed a well-formed set
+        // whatever the main process answered.
+        return parseDocumentAnnotations(
+          await ipcRenderer.invoke(IpcChannel.AnnotationsLoad, documentId),
+        );
+      } catch {
+        return EMPTY_ANNOTATIONS;
+      }
+    },
+    save: async (
+      documentId: string,
+      documentName: string,
+      annotations: DocumentAnnotations,
+    ): Promise<boolean> => {
+      try {
+        return (
+          (await ipcRenderer.invoke(
+            IpcChannel.AnnotationsSave,
+            documentId,
+            documentName,
+            annotations,
+          )) === true
+        );
+      } catch {
+        return false;
+      }
+    },
+    exportDocument: async (documentId: string): Promise<AnnotationsExportOutcome> => {
+      try {
+        const outcome: unknown = await ipcRenderer.invoke(IpcChannel.AnnotationsExport, documentId);
+        const status =
+          typeof outcome === 'object' && outcome !== null
+            ? (outcome as { status?: unknown }).status
+            : null;
+        const count =
+          typeof outcome === 'object' && outcome !== null
+            ? (outcome as { count?: unknown }).count
+            : null;
+
+        if (status === 'exported' && typeof count === 'number') {
+          return { status, count };
+        }
+
+        return status === 'empty' || status === 'cancelled' ? { status } : { status: 'failed' };
+      } catch {
+        return { status: 'failed' };
+      }
+    },
   },
   reportProblem: async (): Promise<boolean> => {
     try {

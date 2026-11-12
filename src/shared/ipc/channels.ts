@@ -49,6 +49,9 @@ export const IpcChannel = {
    */
   SavePreferences: 'state:save-preferences',
   /** Looks one word up in the bundled offline dictionary. */
+  AnnotationsLoad: 'annotations:load',
+  AnnotationsSave: 'annotations:save',
+  AnnotationsExport: 'annotations:export',
   LookUpWord: 'dictionary:look-up',
   /** Is this word already saved, here or somewhere else? */
   VocabularyStateForWord: 'vocabulary:state-for-word',
