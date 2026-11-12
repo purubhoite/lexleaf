@@ -118,7 +118,7 @@ jobs:
         run: npm run build
 
       - name: Build unpacked Windows application
-        run: npx electron-builder --win dir --x64 --config electron-builder.yml
+        run: npx electron-builder --win dir --x64 --config electron-builder.yml --publish never
 
       - name: Verify packaged dictionary
         run: node scripts/packaging/verify-packaged-output.mjs dist/win-unpacked
@@ -139,6 +139,13 @@ jobs:
           $installed = Get-ChildItem $install -Recurse -Directory | Where-Object { $_.Name -eq 'dictionary' } | Select-Object -First 1
           if (-not $installed) { throw 'installed dictionary directory missing' }
           node scripts/packaging/verify-packaged-output.mjs $install
+          # An unedited executable still carries Electron's name and icon.
+          $appInfo = (Get-Item -LiteralPath (Join-Path $install 'Lexleaf.exe')).VersionInfo
+          if ($appInfo.ProductName -cne 'Lexleaf') { throw "Lexleaf.exe is branded '$($appInfo.ProductName)', not Lexleaf" }
+          # What an installed copy needs to update itself.
+          if (-not (Test-Path -LiteralPath (Join-Path $install 'resources\app-update.yml') -PathType Leaf)) { throw 'app-update.yml missing from the installation' }
+          if (-not (Test-Path -LiteralPath 'dist\latest.yml' -PathType Leaf)) { throw 'latest.yml was not generated' }
+          Get-Content 'dist\latest.yml'
           Write-Output "Installed dictionary verification completed at $install\resources\dictionary"
 
       # Installer and dictionary artifacts intentionally remain on the ephemeral runner.
