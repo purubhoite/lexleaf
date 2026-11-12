@@ -90,8 +90,8 @@ jobs:
           $runs = $runsJson | ConvertFrom-Json
           $verified = @($runs.workflow_runs | Where-Object { $_.conclusion -eq 'success' -and $_.head_sha -eq $env:SOURCE_SHA })
           if ($verified.Count -eq 0) { throw 'No successful Windows verification run exists for source_sha.' }
-          "LEXLEAF_VERSION=$version" | Out-File $env:GITHUB_ENV -Encoding utf8
-          "LEXLEAF_TAG=$tag" | Out-File $env:GITHUB_ENV -Encoding utf8
+          "LEXLEAF_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "LEXLEAF_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Install locked dependencies
         run: npm ci
@@ -146,8 +146,8 @@ jobs:
           $published = Join-Path $installer.DirectoryName $expectedName
           $hash = (Get-FileHash $published -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  $expectedName" | Out-File (Join-Path $installer.DirectoryName 'SHA256SUMS.txt') -Encoding ascii
-          "INSTALLER_PATH=$published" | Out-File $env:GITHUB_ENV -Encoding utf8
-          "CHECKSUM_PATH=$(Join-Path $installer.DirectoryName 'SHA256SUMS.txt')" | Out-File $env:GITHUB_ENV -Encoding utf8
+          "INSTALLER_PATH=$published" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "CHECKSUM_PATH=$(Join-Path $installer.DirectoryName 'SHA256SUMS.txt')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Dry-run release eligibility
         if: inputs.dry_run
@@ -159,6 +159,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          foreach ($name in @('LEXLEAF_VERSION', 'LEXLEAF_TAG', 'INSTALLER_PATH', 'CHECKSUM_PATH')) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) { throw "$name is empty." }
+          }
+          if (-not (Test-Path -LiteralPath $env:INSTALLER_PATH -PathType Leaf)) { throw 'Installer path does not exist.' }
           $notes = @"
           Lexleaf $env:LEXLEAF_VERSION for Windows x64.
 

@@ -12,13 +12,13 @@
   </p>
 
   <p>
-    <a href="https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/Lexleaf-0.1.0-x64-setup.exe"><strong>Download for Windows</strong></a>
+    <a href="https://github.com/purubhoite/lexleaf/releases/download/v0.1.1/Lexleaf-0.1.1-x64-setup.exe"><strong>Download for Windows</strong></a>
     ·
-    <a href="https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/Lexleaf-0.1.0-x86_64.AppImage"><strong>Download for Linux (AppImage)</strong></a>
+    <a href="https://github.com/purubhoite/lexleaf/releases/download/v0.1.1/Lexleaf-0.1.1-x86_64.AppImage"><strong>Download for Linux (AppImage)</strong></a>
     ·
-    <a href="https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/Lexleaf-0.1.0-amd64.deb"><strong>Download for Debian/Ubuntu</strong></a>
+    <a href="https://github.com/purubhoite/lexleaf/releases/download/v0.1.1/Lexleaf-0.1.1-amd64.deb"><strong>Download for Debian/Ubuntu</strong></a>
     ·
-    <a href="https://github.com/purubhoite/lexleaf/releases/tag/v0.1.0">View release notes and checksums</a>
+    <a href="https://github.com/purubhoite/lexleaf/releases/tag/v0.1.1">View release notes and checksums</a>
   </p>
 </div>
 
@@ -26,9 +26,9 @@
 
 Lexleaf keeps the reading loop in one place. Open a PDF, select a word, read its dictionary entry, and save it to a vocabulary library for later review. The bundled Open English WordNet-derived dictionary works offline after installation; no account or document upload is required for the core reading workflow.
 
-The current release is **v0.1.0 for Windows x64**. The installer is unsigned because no code-signing certificate is configured, so Windows SmartScreen may display a warning. Check the release's `SHA256SUMS.txt` before running the installer, and use your normal security judgment rather than blindly bypassing a warning.
+The current release is **v0.1.1 for Windows x64 and Linux x86_64**. The installer is unsigned because no code-signing certificate is configured, so Windows SmartScreen may display a warning. Check the release's `SHA256SUMS.txt` before running the installer, and use your normal security judgment rather than blindly bypassing a warning.
 
-## Features in v0.1.0
+## Features in v0.1.1
 
 - PDF reading with local rendering powered by PDF.js.
 - Vocabulary-first lookup: double-click a word to open its definition.
@@ -41,18 +41,18 @@ The current release is **v0.1.0 for Windows x64**. The installer is unsigned bec
 - Light, dark, and system appearance preferences, plus reduced-motion support.
 - Offline dictionary data packaged separately from the Apache-2.0 application code.
 
-AI explanation code is present for future evaluation and is disabled by default in v0.1.0; it is not required for PDF reading, dictionary lookup, or saved vocabulary.
+AI explanation code is present for future evaluation and is disabled by default in v0.1.1; it is not required for PDF reading, dictionary lookup, or saved vocabulary.
 
 ## Install on Windows
 
-1. Download [Lexleaf-0.1.0-x64-setup.exe](https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/Lexleaf-0.1.0-x64-setup.exe) from the existing [v0.1.0 release](https://github.com/purubhoite/lexleaf/releases/tag/v0.1.0).
+1. Download [Lexleaf-0.1.1-x64-setup.exe](https://github.com/purubhoite/lexleaf/releases/download/v0.1.1/Lexleaf-0.1.1-x64-setup.exe) from the [v0.1.1 release](https://github.com/purubhoite/lexleaf/releases/tag/v0.1.1).
 2. Download `SHA256SUMS.txt` from the same release and verify the installer before opening it:
 
    ```powershell
-   (Get-FileHash .\Lexleaf-0.1.0-x64-setup.exe -Algorithm SHA256).Hash
+   (Get-FileHash .\Lexleaf-0.1.1-x64-setup.exe -Algorithm SHA256).Hash
    ```
 
-   Compare the result with the `Lexleaf-0.1.0-x64-setup.exe` line in `SHA256SUMS.txt`.
+   Compare the result with the `Lexleaf-0.1.1-x64-setup.exe` line in `SHA256SUMS.txt`.
 
 3. Run the installer. It is unsigned; SmartScreen may ask for additional confirmation.
 4. Open Lexleaf and choose **Open PDF…** to begin reading.
@@ -61,20 +61,20 @@ The published installer is self-contained; end users do not need Node.js or npm.
 
 ## Install on Linux
 
-Lexleaf's Linux release targets **x86_64 / amd64** and is distributed as an AppImage and a Debian package. These packages are built from the same v0.1.0 source release as the Windows installer.
+Lexleaf's Linux release targets **x86_64 / amd64** and is distributed as an AppImage and a Debian package. These packages are built from the same v0.1.1 source release as the Windows installer.
 
-- [Download the AppImage](https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/Lexleaf-0.1.0-x86_64.AppImage)
-- [Download the Debian package](https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/Lexleaf-0.1.0-amd64.deb)
-- [Download SHA256SUMS.txt](https://github.com/purubhoite/lexleaf/releases/download/v0.1.0/SHA256SUMS.txt)
-- [Open the v0.1.0 release page](https://github.com/purubhoite/lexleaf/releases/tag/v0.1.0)
+- [Download the AppImage](https://github.com/purubhoite/lexleaf/releases/download/v0.1.1/Lexleaf-0.1.1-x86_64.AppImage)
+- [Download the Debian package](https://github.com/purubhoite/lexleaf/releases/download/v0.1.1/Lexleaf-0.1.1-amd64.deb)
+- [Download SHA256SUMS.txt](https://github.com/purubhoite/lexleaf/releases/download/v0.1.1/SHA256SUMS.txt)
+- [Open the v0.1.1 release page](https://github.com/purubhoite/lexleaf/releases/tag/v0.1.1)
 
 ### AppImage
 
 Download the AppImage, make it executable, and launch it:
 
 ```bash
-chmod +x Lexleaf-0.1.0-x86_64.AppImage
-./Lexleaf-0.1.0-x86_64.AppImage
+chmod +x Lexleaf-0.1.1-x86_64.AppImage
+./Lexleaf-0.1.1-x86_64.AppImage
 ```
 
 ### Debian and Ubuntu
@@ -82,7 +82,7 @@ chmod +x Lexleaf-0.1.0-x86_64.AppImage
 Install the `.deb` package with `apt`:
 
 ```bash
-sudo apt install ./Lexleaf-0.1.0-amd64.deb
+sudo apt install ./Lexleaf-0.1.1-amd64.deb
 ```
 
 Launch **Lexleaf** from your desktop application menu, or run `lexleaf` from a terminal. Remove it with:
