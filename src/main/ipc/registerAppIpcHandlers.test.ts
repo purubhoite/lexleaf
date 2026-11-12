@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { IpcChannel } from '@shared/ipc/channels';
 import type { AppInfo } from '@shared/ipc/contracts';
@@ -41,14 +41,14 @@ const createFakeIpc = (): FakeIpc => {
 describe('registerAppIpcHandlers', () => {
   it('registers only the approved channels', () => {
     const ipc = createFakeIpc();
-    registerAppIpcHandlers(ipc, { appInfo, devServerOrigin: null });
+    registerAppIpcHandlers(ipc, { appInfo, reportProblem: () => undefined, devServerOrigin: null });
 
-    expect(ipc.registeredChannels()).toEqual([IpcChannel.GetAppInfo]);
+    expect(ipc.registeredChannels()).toEqual([IpcChannel.GetAppInfo, IpcChannel.ReportProblem]);
   });
 
   it('returns application information to the packaged renderer', () => {
     const ipc = createFakeIpc();
-    registerAppIpcHandlers(ipc, { appInfo, devServerOrigin: null });
+    registerAppIpcHandlers(ipc, { appInfo, reportProblem: () => undefined, devServerOrigin: null });
 
     expect(ipc.invoke(IpcChannel.GetAppInfo, 'file:///app/out/renderer/index.html')).toEqual(
       appInfo,
@@ -57,14 +57,18 @@ describe('registerAppIpcHandlers', () => {
 
   it('returns application information to the dev server renderer', () => {
     const ipc = createFakeIpc();
-    registerAppIpcHandlers(ipc, { appInfo, devServerOrigin: 'http://localhost:5173' });
+    registerAppIpcHandlers(ipc, {
+      appInfo,
+      reportProblem: () => undefined,
+      devServerOrigin: 'http://localhost:5173',
+    });
 
     expect(ipc.invoke(IpcChannel.GetAppInfo, 'http://localhost:5173/index.html')).toEqual(appInfo);
   });
 
   it('rejects a request from an untrusted origin', () => {
     const ipc = createFakeIpc();
-    registerAppIpcHandlers(ipc, { appInfo, devServerOrigin: null });
+    registerAppIpcHandlers(ipc, { appInfo, reportProblem: () => undefined, devServerOrigin: null });
 
     expect(() => ipc.invoke(IpcChannel.GetAppInfo, 'https://attacker.example')).toThrow(
       /untrusted sender/u,
@@ -73,8 +77,42 @@ describe('registerAppIpcHandlers', () => {
 
   it('rejects a request without an identifiable sender', () => {
     const ipc = createFakeIpc();
-    registerAppIpcHandlers(ipc, { appInfo, devServerOrigin: null });
+    registerAppIpcHandlers(ipc, { appInfo, reportProblem: () => undefined, devServerOrigin: null });
 
     expect(() => ipc.invoke(IpcChannel.GetAppInfo, null)).toThrow(/untrusted sender/u);
+  });
+
+  it('opens the problem report for the application, and says whether it could', () => {
+    const ipc = createFakeIpc();
+    const reportProblem = vi.fn();
+    registerAppIpcHandlers(ipc, { appInfo, reportProblem, devServerOrigin: null });
+
+    expect(ipc.invoke(IpcChannel.ReportProblem, 'file:///app/out/renderer/index.html')).toBe(true);
+    // Whatever the page sends, nothing of it reaches the report.
+    expect(reportProblem).toHaveBeenCalledExactlyOnceWith();
+  });
+
+  it('answers false, without throwing, when the report cannot be opened', () => {
+    const ipc = createFakeIpc();
+    registerAppIpcHandlers(ipc, {
+      appInfo,
+      reportProblem: () => {
+        throw new Error('no browser');
+      },
+      devServerOrigin: null,
+    });
+
+    expect(ipc.invoke(IpcChannel.ReportProblem, 'file:///app/out/renderer/index.html')).toBe(false);
+  });
+
+  it('does not open a report for an untrusted origin', () => {
+    const ipc = createFakeIpc();
+    const reportProblem = vi.fn();
+    registerAppIpcHandlers(ipc, { appInfo, reportProblem, devServerOrigin: null });
+
+    expect(() => ipc.invoke(IpcChannel.ReportProblem, 'https://attacker.example')).toThrow(
+      /untrusted sender/u,
+    );
+    expect(reportProblem).not.toHaveBeenCalled();
   });
 });

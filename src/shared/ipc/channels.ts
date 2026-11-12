@@ -9,6 +9,11 @@
 export const IpcChannel = {
   /** Returns static, non-sensitive information about the running application. */
   GetAppInfo: 'app:get-info',
+  /**
+   * Opens a prefilled "new issue" page in the reader's browser. Takes
+   * nothing: the address is built in the main process.
+   */
+  ReportProblem: 'app:report-problem',
   /** Asks the main process to show the "open PDF" dialog and read the choice. */
   OpenDocumentDialog: 'pdf:open-dialog',
   /** Returns the document named on the command line, if there was one. */

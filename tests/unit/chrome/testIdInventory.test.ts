@@ -112,6 +112,10 @@ const ADDED_AFTER_MILESTONE_5 = [
   'outline-entry',
   // The notice a scanned document gets, once, for the whole document.
   'scan-notice',
+  // Reporting a problem from the settings screen.
+  'setting-report-problem',
+  'report-problem',
+  'report-problem-failed',
 ] as const;
 
 /**

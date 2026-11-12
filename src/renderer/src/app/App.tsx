@@ -5,6 +5,7 @@ import type { DesktopBridge } from '@shared/ipc/contracts';
 
 import { LibraryView } from '../library/LibraryView';
 import { SettingsPanel } from '../settings/SettingsPanel';
+import { ReportProblem } from '../support/ReportProblem';
 import { usePreferences } from '../settings/usePreferences';
 import { Message } from '../ui/Message';
 import { UpdateMessage } from '../update/UpdateMessage';
@@ -128,6 +129,7 @@ export const App = ({ bridge }: AppProps): ReactElement => {
    * shared `Message`, said once, and the reader closes it.
    */
   const updates = useUpdateCheck(bridge);
+  const reportProblem = bridge?.reportProblem;
   /*
    * The one copy of the four preferences (ADR-031). It lives here because
    * two different places need it — the settings panel that changes it and
@@ -347,6 +349,7 @@ export const App = ({ bridge }: AppProps): ReactElement => {
           }}
         >
           <UpdateSettings updates={updates} />
+          {reportProblem !== undefined && <ReportProblem onReport={reportProblem} />}
         </SettingsPanel>
       )}
 
