@@ -7,6 +7,11 @@ import type {
   SavedWord,
   SavedWordState,
 } from '@core/vocabulary/types';
+import {
+  parseVocabularyExportFormat,
+  type VocabularyExportFormat,
+  type VocabularyExportOutcome,
+} from '@core/vocabulary/export';
 import { normalizeWord } from '@core/word/normalizeWord';
 import { IpcChannel } from '@shared/ipc/channels';
 import {
@@ -61,6 +66,12 @@ export interface VocabularyIpcOptions {
    */
   readonly afterSave?: (saved: SavedWord, place: { documentId: string; page: number }) => void;
   /** Origin of the Vite dev server, or `null` in production. */
+  /**
+   * Writes the library to a file the reader chooses. Absent in a build or
+   * a test that has no save window to show; the channel is then not
+   * registered at all.
+   */
+  readonly exportLibrary?: (format: VocabularyExportFormat) => Promise<VocabularyExportOutcome>;
   readonly devServerOrigin: string | null;
   /** Database readiness boundary; omitted only by isolated unit tests. */
   readonly ensureReady?: () => Promise<unknown>;
@@ -78,6 +89,7 @@ export const registerVocabularyIpcHandlers = (
     onRejected,
     devServerOrigin,
     afterSave,
+    exportLibrary,
     ensureReady = async (): Promise<void> => {},
     enterOperation = () => (): void => {},
   }: VocabularyIpcOptions,
@@ -270,4 +282,42 @@ export const registerVocabularyIpcHandlers = (
       },
     ),
   );
+
+  if (exportLibrary !== undefined) {
+    ipc.handle(
+      IpcChannel.VocabularyExport,
+      guard(IpcChannel.VocabularyExport, async (raw: unknown): Promise<VocabularyExportOutcome> => {
+        const format = parseVocabularyExportFormat(raw);
+
+        if (format === null) {
+          onRejected('a malformed vocabulary export request was ignored');
+
+          return { status: 'failed' };
+        }
+
+        // The words are read before the export first waits for anything, so
+        // the database is held only for the read. The save window can then
+        // stay open for as long as the reader likes without holding up a
+        // backup, a recovery or quitting.
+        const release = enterOperation();
+
+        if (release === null) {
+          return { status: 'failed' };
+        }
+
+        let pending: Promise<VocabularyExportOutcome>;
+
+        try {
+          await ensureReady();
+          pending = exportLibrary(format);
+        } catch {
+          return { status: 'failed' };
+        } finally {
+          release();
+        }
+
+        return pending.catch((): VocabularyExportOutcome => ({ status: 'failed' }));
+      }),
+    );
+  }
 };

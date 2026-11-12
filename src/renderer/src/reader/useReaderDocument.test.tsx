@@ -38,6 +38,7 @@ const fakeDocument = (label: string, pageCount = 3): OpenedPdf => ({
   getPageText: (pageNumber: number) =>
     Promise.resolve({ pageNumber, segments: [], hasTextLayer: true }),
   getPageSize: () => Promise.resolve({ width: 600, height: 800, rotation: 0 }),
+  getOutline: () => Promise.resolve([]),
   getNativePage: () => Promise.resolve({}),
   close: (): Promise<void> => {
     closed.push(label);

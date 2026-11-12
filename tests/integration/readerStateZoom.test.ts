@@ -110,6 +110,7 @@ const launch = (
         ? Promise.resolve<DocumentRequestResult>({ status: 'none' })
         : readerState.openPath(initialDocumentPath),
     openRecentDocument: (documentId) => readerState.openRecent(documentId),
+    openDroppedDocument: () => undefined,
     devServerOrigin: null,
   });
 

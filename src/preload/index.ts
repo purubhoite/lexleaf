@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 import { IpcChannel } from '@shared/ipc/channels';
 import type { DictionaryQuery, DictionaryResult } from '@core/dictionary/types';
@@ -11,6 +11,7 @@ import {
   type ExplainIpcRequest,
   type StoredExplanationIpcQuery,
 } from '@shared/ipc/aiContracts';
+import { parseVocabularyExportOutcome, type VocabularyExportFormat } from '@core/vocabulary/export';
 import type { Preferences } from '@core/persistence/preferences';
 import {
   DESKTOP_BRIDGE_KEY,
@@ -143,6 +144,15 @@ const vocabulary: VocabularyBridge = {
     askVocabulary(IpcChannel.VocabularySearch, query, parseSearchResults),
   occurrences: async (itemId: string) =>
     askVocabulary(IpcChannel.VocabularyOccurrences, { itemId }, parseOccurrencesResult),
+  exportLibrary: async (format: VocabularyExportFormat) => {
+    try {
+      return parseVocabularyExportOutcome(
+        await ipcRenderer.invoke(IpcChannel.VocabularyExport, format),
+      );
+    } catch {
+      return { status: 'failed' } as const;
+    }
+  },
 };
 
 /**
@@ -258,3 +268,63 @@ const desktopBridge: DesktopBridge = {
 };
 
 contextBridge.exposeInMainWorld(DESKTOP_BRIDGE_KEY, desktopBridge);
+
+/*
+ * Dropping a PDF onto the window opens it.
+ *
+ * Handled here rather than in the page so that no function taking a path
+ * has to be exposed to it. Only a genuine drop is acted on (`isTrusted`:
+ * a script cannot fabricate one), only a single file, and the path is the
+ * one Electron reports for that file — empty for anything that is not a
+ * file on disk. The main process checks the path again and decides.
+ *
+ * Both events are always cancelled when files are involved: Chromium's
+ * own answer to a dropped file is to navigate the window to it.
+ */
+/* The preload is compiled without the DOM library; this is all it needs. */
+interface DroppedFiles {
+  readonly length: number;
+  readonly [index: number]: File | undefined;
+}
+
+interface FileDragEvent {
+  readonly isTrusted: boolean;
+  readonly dataTransfer: { readonly types: readonly string[]; readonly files: DroppedFiles } | null;
+  preventDefault(): void;
+}
+
+const page = globalThis as unknown as {
+  addEventListener(type: 'dragover' | 'drop', listener: (event: FileDragEvent) => void): void;
+};
+
+const carriesFiles = (event: FileDragEvent): boolean =>
+  event.dataTransfer?.types.includes('Files') === true;
+
+page.addEventListener('dragover', (event) => {
+  if (carriesFiles(event)) {
+    event.preventDefault();
+  }
+});
+
+page.addEventListener('drop', (event) => {
+  if (!carriesFiles(event)) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const files = event.dataTransfer?.files;
+  const file = files?.length === 1 ? files[0] : undefined;
+
+  if (!event.isTrusted || file === undefined) {
+    return;
+  }
+
+  const path = webUtils.getPathForFile(file);
+
+  if (path !== '') {
+    void ipcRenderer.invoke(IpcChannel.OpenDroppedDocument, path).catch(() => {
+      // Nothing to tell the page: the window simply stays as it was.
+    });
+  }
+});

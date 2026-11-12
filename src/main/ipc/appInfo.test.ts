@@ -6,13 +6,13 @@ describe('createAppInfo', () => {
   it('passes through the runtime values', () => {
     expect(
       createAppInfo({
-        name: 'Intelligent PDF Reader',
+        name: 'Lexleaf',
         version: '0.1.0',
         electronVersion: '41.10.7',
         chromeVersion: '142.0.0.0',
       }),
     ).toEqual({
-      name: 'Intelligent PDF Reader',
+      name: 'Lexleaf',
       version: '0.1.0',
       electronVersion: '41.10.7',
       chromeVersion: '142.0.0.0',
@@ -21,7 +21,7 @@ describe('createAppInfo', () => {
 
   it('falls back to a readable placeholder when a runtime version is missing', () => {
     const info = createAppInfo({
-      name: 'Intelligent PDF Reader',
+      name: 'Lexleaf',
       version: '0.1.0',
       electronVersion: undefined,
       chromeVersion: '',

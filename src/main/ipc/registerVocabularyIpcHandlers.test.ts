@@ -1,4 +1,5 @@
 import { err, ok } from '@core/result';
+import type { VocabularyExportOutcome } from '@core/vocabulary/export';
 import type { SaveWordRequest, SavedDocumentFacts, SavedWord } from '@core/vocabulary/types';
 import { normalizeWord } from '@core/word/normalizeWord';
 import { IpcChannel } from '@shared/ipc/channels';
@@ -378,6 +379,120 @@ describe('the other channels', () => {
     expect(await invoke(IpcChannel.VocabularyRestore, { itemId: 'item-1' })).toEqual({
       ok: false,
       error: { kind: 'not-found' },
+    });
+  });
+});
+
+describe('the export channel', () => {
+  const registerWithExport = (
+    exportLibrary: (format: 'csv' | 'anki') => Promise<VocabularyExportOutcome>,
+    gate: { enterOperation?: () => (() => void) | null; ensureReady?: () => Promise<void> } = {},
+  ): void => {
+    registerVocabularyIpcHandlers(
+      {
+        handle: (channel, listener): void => {
+          harness.handlers.set(channel, listener);
+        },
+      },
+      {
+        service: service(),
+        describeDocument: () => Promise.resolve(null),
+        transformVersion: () => '1.0.0',
+        onRejected: (message): void => {
+          harness.rejections.push(message);
+        },
+        devServerOrigin: null,
+        exportLibrary,
+        ...gate,
+      },
+    );
+  };
+
+  it('is not there when the application gives no way to export', () => {
+    register();
+
+    expect(harness.handlers.has(IpcChannel.VocabularyExport)).toBe(false);
+  });
+
+  it('passes on the format and returns only the outcome', async () => {
+    const exportLibrary = vi.fn(() =>
+      Promise.resolve<VocabularyExportOutcome>({ status: 'exported', count: 3 }),
+    );
+    registerWithExport(exportLibrary);
+
+    await expect(invoke(IpcChannel.VocabularyExport, 'anki')).resolves.toStrictEqual({
+      status: 'exported',
+      count: 3,
+    });
+    expect(exportLibrary).toHaveBeenCalledExactlyOnceWith('anki');
+  });
+
+  it('ignores anything that is not a format, a path above all', async () => {
+    const exportLibrary = vi.fn(() =>
+      Promise.resolve<VocabularyExportOutcome>({ status: 'exported', count: 3 }),
+    );
+    registerWithExport(exportLibrary);
+
+    for (const payload of ['/etc/passwd', { format: 'csv', path: '/tmp/x' }, null, 'CSV']) {
+      await expect(invoke(IpcChannel.VocabularyExport, payload)).resolves.toStrictEqual({
+        status: 'failed',
+      });
+    }
+
+    expect(exportLibrary).not.toHaveBeenCalled();
+    expect(harness.rejections).toHaveLength(4);
+  });
+
+  it('refuses a sender that is not the application', () => {
+    const exportLibrary = vi.fn(() =>
+      Promise.resolve<VocabularyExportOutcome>({ status: 'cancelled' }),
+    );
+    registerWithExport(exportLibrary);
+
+    expect(() => harness.handlers.get(IpcChannel.VocabularyExport)?.(UNTRUSTED, 'csv')).toThrow(
+      /untrusted sender/,
+    );
+    expect(exportLibrary).not.toHaveBeenCalled();
+  });
+
+  it('does not export while the store is being recovered', async () => {
+    const exportLibrary = vi.fn(() =>
+      Promise.resolve<VocabularyExportOutcome>({ status: 'cancelled' }),
+    );
+    registerWithExport(exportLibrary, { enterOperation: () => null });
+
+    await expect(invoke(IpcChannel.VocabularyExport, 'csv')).resolves.toStrictEqual({
+      status: 'failed',
+    });
+    expect(exportLibrary).not.toHaveBeenCalled();
+  });
+
+  it('lets go of the store while the save window is still open', async () => {
+    const release = vi.fn();
+    let finish: (outcome: VocabularyExportOutcome) => void = () => undefined;
+    registerWithExport(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+      { enterOperation: () => release },
+    );
+
+    const pending = invoke(IpcChannel.VocabularyExport, 'csv');
+    await vi.waitFor(() => {
+      expect(release).toHaveBeenCalledOnce();
+    });
+
+    finish({ status: 'cancelled' });
+
+    await expect(pending).resolves.toStrictEqual({ status: 'cancelled' });
+  });
+
+  it('turns an export that throws into a failure', async () => {
+    registerWithExport(() => Promise.reject(new Error('disk gone')));
+
+    await expect(invoke(IpcChannel.VocabularyExport, 'csv')).resolves.toStrictEqual({
+      status: 'failed',
     });
   });
 });

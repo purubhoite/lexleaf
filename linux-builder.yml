@@ -1,4 +1,4 @@
-appId: com.intelligentpdfreader.poc
+appId: io.github.purubhoite.lexleaf
 productName: Lexleaf
 executableName: lexleaf
 extraMetadata:
@@ -26,7 +26,11 @@ extraResources:
     to: dictionary
     filter:
       - '**/*'
+# Offers Lexleaf under "Open with" for PDF files. The desktop entry passes
+# the file as a command-line argument (src/main/documents/initialDocument.ts).
 linux:
+  mimeTypes:
+    - application/pdf
   target:
     - AppImage
     - deb
@@ -42,4 +46,8 @@ deb:
   # restarts a crashed helper process on its own, which then fills the
   # system log; see resources/linux/apport-report-ignore.
   fpm:
+    # The package was called intelligent-pdf-reader up to 0.2.1. Installing
+    # this one removes that one instead of colliding with its files.
+    - --replaces=intelligent-pdf-reader
+    - --conflicts=intelligent-pdf-reader
     - resources/linux/apport-report-ignore=/etc/apport/report-ignore/lexleaf

@@ -44,6 +44,7 @@ const options = (overrides: Partial<DocumentIpcOptions> = {}): DocumentIpcOption
   chooseDocument: () => Promise.resolve(opened),
   initialDocument: () => Promise.resolve({ status: 'none' } as const),
   openRecentDocument: () => Promise.resolve(opened),
+  openDroppedDocument: () => undefined,
   devServerOrigin: null,
   ...overrides,
 });
@@ -51,7 +52,7 @@ const options = (overrides: Partial<DocumentIpcOptions> = {}): DocumentIpcOption
 const trustedSender = { senderFrame: { url: 'file:///app/out/renderer/index.html' } };
 
 describe('registerDocumentIpcHandlers', () => {
-  it('registers exactly the three document channels', () => {
+  it('registers exactly the four document channels', () => {
     const ipc = createIpc();
 
     registerDocumentIpcHandlers(ipc, options());
@@ -60,6 +61,7 @@ describe('registerDocumentIpcHandlers', () => {
       IpcChannel.OpenDocumentDialog,
       IpcChannel.GetInitialDocument,
       IpcChannel.OpenRecentDocument,
+      IpcChannel.OpenDroppedDocument,
     ]);
   });
 
@@ -151,5 +153,38 @@ describe('registerDocumentIpcHandlers', () => {
       name: null,
     });
     expect(openRecentDocument).not.toHaveBeenCalled();
+  });
+});
+
+describe('the drop channel', () => {
+  it('hands an absolute PDF path to the open pipeline', async () => {
+    const ipc = createIpc();
+    const openDroppedDocument = vi.fn();
+
+    registerDocumentIpcHandlers(ipc, options({ openDroppedDocument }));
+
+    await expect(
+      Promise.resolve(
+        ipc.handlers.get(IpcChannel.OpenDroppedDocument)?.(trustedSender, '/books/harbour.pdf'),
+      ),
+    ).resolves.toBe(true);
+    expect(openDroppedDocument).toHaveBeenCalledExactlyOnceWith('/books/harbour.pdf');
+  });
+
+  it.each([
+    ['a file that is not a PDF', '/etc/passwd'],
+    ['a relative path', 'harbour.pdf'],
+    ['an object', { path: '/books/harbour.pdf' }],
+    ['nothing', undefined],
+  ])('refuses %s', async (_name, raw) => {
+    const ipc = createIpc();
+    const openDroppedDocument = vi.fn();
+
+    registerDocumentIpcHandlers(ipc, options({ openDroppedDocument }));
+
+    await expect(
+      Promise.resolve(ipc.handlers.get(IpcChannel.OpenDroppedDocument)?.(trustedSender, raw)),
+    ).resolves.toBe(false);
+    expect(openDroppedDocument).not.toHaveBeenCalled();
   });
 });

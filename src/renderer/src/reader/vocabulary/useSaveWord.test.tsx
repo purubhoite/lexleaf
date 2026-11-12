@@ -149,6 +149,7 @@ const fakeBridge = (): Fake => {
         },
       }),
     occurrences: () => Promise.resolve({ ok: true, value: [] }),
+    exportLibrary: () => Promise.resolve({ status: 'failed' }),
   };
 
   fake.bridge = { vocabulary } as DesktopBridge;

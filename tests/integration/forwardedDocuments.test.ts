@@ -362,7 +362,7 @@ describe('documents forwarded by later launches (C-1)', () => {
     const app: SingleInstanceApp = {
       requestSingleInstanceLock: () => true,
       on: (_event, handler) => {
-        handler({}, ['/usr/bin/reader']);
+        handler({}, ['/usr/bin/reader'], '/home/reader');
       },
       quit: () => undefined,
     };

@@ -33,9 +33,9 @@ export const AI_FEATURE_ENABLED = false;
 
 export const AI_ADAPTER_ID = 'openai-compatible';
 
-export const ENDPOINT_VARIABLE = 'INTELLIGENT_PDF_READER_AI_ENDPOINT';
-export const MODEL_VARIABLE = 'INTELLIGENT_PDF_READER_AI_MODEL';
-export const KEY_VARIABLE = 'INTELLIGENT_PDF_READER_AI_KEY';
+export const ENDPOINT_VARIABLE = 'LEXLEAF_AI_ENDPOINT';
+export const MODEL_VARIABLE = 'LEXLEAF_AI_MODEL';
+export const KEY_VARIABLE = 'LEXLEAF_AI_KEY';
 
 /** Name of the optional configuration file inside the user data directory. */
 export const CONFIGURATION_FILE = 'ai-provider.json';

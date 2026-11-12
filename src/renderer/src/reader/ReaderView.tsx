@@ -49,7 +49,9 @@ import { Message } from '../ui/Message';
 import { DeveloperDiagnostics } from './DeveloperDiagnostics';
 import { ReaderToolbar } from './ReaderToolbar';
 import { RecentDocuments } from './RecentDocuments';
+import { OutlinePanel } from './OutlinePanel';
 import { SearchPanel } from './SearchPanel';
+import { useDocumentOutline } from './useDocumentOutline';
 import { useDocumentSearch } from './useDocumentSearch';
 import { usePageMetrics } from './usePageMetrics';
 import { useReaderDocument } from './useReaderDocument';
@@ -138,11 +140,13 @@ export const ReaderView = ({
   const [zoom, setZoom] = useState<ZoomState>(DEFAULT_ZOOM);
   const [password, setPassword] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [outlineOpen, setOutlineOpen] = useState(false);
   const [showTextLayer, setShowTextLayer] = useState(false);
   const [selfCheck, setSelfCheck] = useState<SelfCheckReport | null>(null);
   const [renderMilliseconds, setRenderMilliseconds] = useState<number | null>(null);
   const [pagesWithoutText, setPagesWithoutText] = useState<ReadonlySet<number>>(new Set());
   const ready = state.status === 'ready' ? state : null;
+  const outline = useDocumentOutline(ready?.document ?? null);
   const pdfDocument = ready?.document ?? null;
   const pageCount = ready?.pageCount ?? 0;
   const documentId = ready?.documentId ?? null;
@@ -598,6 +602,11 @@ export const ReaderView = ({
           zoom={zoom}
           scale={scale}
           searchOpen={searchOpen}
+          hasOutline={outline.length > 0}
+          outlineOpen={outlineOpen}
+          onToggleOutline={(): void => {
+            setOutlineOpen((open) => !open);
+          }}
           onOpen={(): void => void openDialog()}
           onClose={(): void => void close()}
           onGoToPage={revealPage}
@@ -627,6 +636,16 @@ export const ReaderView = ({
       )}
 
       <div className="reader__body">
+        {ready !== null && outlineOpen && outline.length > 0 && (
+          <OutlinePanel
+            entries={outline}
+            currentPage={currentPage}
+            onGoToPage={revealPage}
+            onClose={(): void => {
+              setOutlineOpen(false);
+            }}
+          />
+        )}
         <div
           className="reader__scroller"
           ref={scrollRef}

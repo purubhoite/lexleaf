@@ -49,6 +49,7 @@ const fakeDocument = (): OpenedPdf => ({
       hasTextLayer: page.hasTextLayer,
     }),
   getPageSize: () => Promise.resolve({ width: 600, height: 800, rotation: 0 }),
+  getOutline: () => Promise.resolve([]),
   getNativePage: () => Promise.resolve({}),
   close: () => Promise.resolve(),
 });

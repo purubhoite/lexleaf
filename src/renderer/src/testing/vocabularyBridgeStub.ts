@@ -23,5 +23,6 @@ export const unavailableVocabularyBridge = (): VocabularyBridge => {
     list: unavailable,
     search: unavailable,
     occurrences: unavailable,
+    exportLibrary: () => Promise.resolve({ status: 'failed' }),
   };
 };

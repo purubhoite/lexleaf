@@ -24,6 +24,7 @@ import {
 } from '@core/persistence/preferences';
 import type { ReadingPosition, ZoomMode, ZoomState } from '@core/persistence/types';
 import type { UpdateBridge } from './updateContracts';
+import type { VocabularyExportFormat, VocabularyExportOutcome } from '@core/vocabulary/export';
 import type { SavedOccurrence, SavedWord, SavedWordState } from '@core/vocabulary/types';
 import type {
   AiIpcResult,
@@ -45,7 +46,7 @@ import type {
 } from './vocabularyContracts';
 
 /** Key under which the preload script exposes the desktop bridge on `window`. */
-export const DESKTOP_BRIDGE_KEY = 'intelligentPdfReader';
+export const DESKTOP_BRIDGE_KEY = 'lexleaf';
 
 /** Static, non-sensitive description of the running application. */
 export interface AppInfo {
@@ -269,6 +270,12 @@ export interface VocabularyBridge {
   readonly occurrences: (
     itemId: string,
   ) => Promise<VocabularyIpcResult<readonly SavedOccurrence[]>>;
+  /**
+   * Writes every saved word to a file. The reader picks the file in the
+   * system's save window; the page chooses only the format and learns only
+   * how many words were written.
+   */
+  readonly exportLibrary: (format: VocabularyExportFormat) => Promise<VocabularyExportOutcome>;
 }
 
 /**

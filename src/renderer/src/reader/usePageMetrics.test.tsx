@@ -29,6 +29,7 @@ const documentOf = (
       rotation: size.rotation ?? 0,
     });
   },
+  getOutline: () => Promise.resolve([]),
   getNativePage: () => Promise.resolve({}),
   close: () => Promise.resolve(),
 });

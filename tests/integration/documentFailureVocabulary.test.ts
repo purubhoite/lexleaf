@@ -254,6 +254,7 @@ describe('the same failures after the service, the channel and the renderer', ()
         chooseDocument: () => subject.openPath(paths[key]),
         initialDocument: () => subject.openPath(paths[key]),
         openRecentDocument: (id) => subject.openRecent(id),
+        openDroppedDocument: () => undefined,
         devServerOrigin: null,
       });
 
@@ -281,6 +282,7 @@ describe('the same failures after the service, the channel and the renderer', ()
       chooseDocument: () => subject.openPath(privatePath),
       initialDocument: () => subject.openPath(privatePath),
       openRecentDocument: (id) => subject.openRecent(id),
+      openDroppedDocument: () => undefined,
       devServerOrigin: null,
     });
 
@@ -309,6 +311,7 @@ describe('the same failures after the service, the channel and the renderer', ()
       chooseDocument: () => subject.openPath(paths.unreadable),
       initialDocument: () => subject.openPath(paths.unreadable),
       openRecentDocument: (id) => subject.openRecent(id),
+      openDroppedDocument: () => undefined,
       devServerOrigin: null,
     });
 
@@ -331,6 +334,7 @@ describe('the same failures after the service, the channel and the renderer', ()
       chooseDocument: () => subject.openPath(paths.missing),
       initialDocument: () => subject.openPath(paths.missing),
       openRecentDocument: (id) => subject.openRecent(id),
+      openDroppedDocument: () => undefined,
       devServerOrigin: null,
     });
 
