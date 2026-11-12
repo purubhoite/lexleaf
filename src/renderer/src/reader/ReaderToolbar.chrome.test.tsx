@@ -227,6 +227,17 @@ describe('the contents button', () => {
     expect(screen.getByTestId('bookmark-toggle').getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('offers no page views, rotation or print for a book without pages', () => {
+    show({ paged: false });
+
+    expect(screen.queryByTestId('view-mode')).toBeNull();
+    expect(screen.queryByTestId('rotate')).toBeNull();
+    expect(screen.queryByTestId('print')).toBeNull();
+    // Bookmarks and Back belong to any book.
+    expect(screen.getByTestId('bookmark-toggle')).toBeDefined();
+    expect(screen.getByTestId('go-back')).toBeDefined();
+  });
+
   it('changes how the pages are set out', () => {
     const onViewModeChange = vi.fn();
     show({ onViewModeChange });

@@ -41,6 +41,8 @@ export interface ReaderSidebarProps {
   readonly tab: SidebarTab;
   readonly onTabChange: (tab: SidebarTab) => void;
   readonly onClose: () => void;
+  /** Whether the document has real pages to show small pictures of. An EPUB does not. */
+  readonly paged?: boolean;
   readonly document: OpenedPdf;
   readonly outline: readonly PdfOutlineEntry[];
   readonly sizes: readonly PageSize[];
@@ -196,6 +198,7 @@ export const ReaderSidebar = ({
   tab,
   onTabChange,
   onClose,
+  paged = true,
   document: pdfDocument,
   outline,
   sizes,
@@ -221,7 +224,7 @@ export const ReaderSidebar = ({
     <aside className="sidebar" aria-label="Sidebar" data-testid="sidebar">
       <div className="sidebar__head">
         <div className="sidebar__tabs" role="tablist" aria-label="Sidebar sections">
-          {SIDEBAR_TABS.map((candidate) => (
+          {SIDEBAR_TABS.filter((candidate) => paged || candidate !== 'pages').map((candidate) => (
             <button
               key={candidate}
               type="button"
@@ -268,7 +271,7 @@ export const ReaderSidebar = ({
             <OutlinePanel entries={outline} currentPage={currentPage} onGoToPage={onGoToPage} />
           ))}
 
-        {tab === 'pages' && (
+        {tab === 'pages' && paged && (
           <ThumbnailList
             document={pdfDocument}
             sizes={sizes}

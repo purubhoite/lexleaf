@@ -5,6 +5,9 @@ import type { OpenedPdf, PdfEngine } from '@core/pdf/pdfEngine';
 import type { DesktopBridge, DocumentPayload, DocumentRequestResult } from '@shared/ipc/contracts';
 
 import { describeDocumentFailure } from './documentFailure';
+import { measureChapter } from './epub/EpubPageSurface';
+import { openEpub } from './epub/epubDocument';
+import { looksLikeZip } from './epub/zip';
 import { createRendererPdfEngine } from './pdf/rendererEngine';
 
 /**
@@ -106,19 +109,24 @@ export const useReaderDocument = (bridge: DesktopBridge | null): ReaderControls 
       await previous?.close();
 
       const started = performance.now();
-      const result = await engine.open({
-        bytes: payload.bytes,
-        label: payload.name,
-        signal: abortController.signal,
-        onProgress: ({ loaded, total }) => {
-          if (requests.current === request) {
-            setState((current) =>
-              current.status === 'loading' ? { ...current, progress: { loaded, total } } : current,
-            );
-          }
-        },
-        ...(password === undefined ? {} : { password }),
-      });
+      // An EPUB is a zip archive, and says so in its first bytes; a PDF never does.
+      const result = looksLikeZip(payload.bytes)
+        ? await openEpub(payload.bytes, payload.name, { measure: measureChapter })
+        : await engine.open({
+            bytes: payload.bytes,
+            label: payload.name,
+            signal: abortController.signal,
+            onProgress: ({ loaded, total }) => {
+              if (requests.current === request) {
+                setState((current) =>
+                  current.status === 'loading'
+                    ? { ...current, progress: { loaded, total } }
+                    : current,
+                );
+              }
+            },
+            ...(password === undefined ? {} : { password }),
+          });
       const loadMilliseconds = Math.round(performance.now() - started);
 
       // Another document was requested while this one was opening. The late

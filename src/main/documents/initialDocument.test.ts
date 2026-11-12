@@ -27,6 +27,13 @@ describe('parseDocumentArgument', () => {
     ).toBe('C:\\Books\\Harbour.PDF');
   });
 
+  it('accepts an EPUB the same way', () => {
+    expect(parseDocumentArgument(['/opt/Lexleaf/lexleaf', '/books/harbour.epub'])).toBe(
+      '/books/harbour.epub',
+    );
+    expect(parseDocumentArgument(['/opt/Lexleaf/lexleaf', '/books/harbour.txt'])).toBeNull();
+  });
+
   // These two go through the operating system's own path rules, so the
   // expected value is built with them rather than written out.
   it('accepts a file address, decoded', () => {

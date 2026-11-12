@@ -31,6 +31,7 @@ extraResources:
 linux:
   mimeTypes:
     - application/pdf
+    - application/epub+zip
   target:
     - AppImage
     - deb

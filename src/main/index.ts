@@ -142,7 +142,11 @@ const chooseDocumentPath = async (): Promise<string | null> => {
   const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
   const options = {
     properties: ['openFile' as const],
-    filters: [{ name: 'PDF documents', extensions: ['pdf'] }],
+    filters: [
+      { name: 'Books and documents', extensions: ['pdf', 'epub'] },
+      { name: 'PDF documents', extensions: ['pdf'] },
+      { name: 'EPUB books', extensions: ['epub'] },
+    ],
   };
 
   const selection = await (window === undefined

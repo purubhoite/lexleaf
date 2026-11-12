@@ -505,7 +505,7 @@ describe('a document that cannot be opened is explained, not quoted (C-3)', () =
     expect(alert.textContent).toContain('Unable to open this PDF.');
     expect(alert.textContent).toContain('The file may be corrupted, encrypted, or unsupported.');
     expect(alert.className).toContain('message--problem');
-    expect(screen.getByRole('button', { name: 'Open another PDF…' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Open another file…' })).toBeDefined();
   });
 
   it("puts none of the engine's wording on the screen", async () => {

@@ -623,6 +623,101 @@
   color: transparent;
 }
 
+/*
+ * An EPUB chapter, shown where a PDF page would be. The book's own styles
+ * are never used: these few rules are all the typography there is. The
+ * chapter is always set at one width and scaled as a whole, so its
+ * colours and sizes are literals of the paper, not chrome tokens.
+ */
+.page--epub {
+  overflow: hidden;
+}
+
+.epub {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  padding: 40px 56px;
+  transform-origin: 0 0;
+  color: #1c1c1c;
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  font-size: 18px;
+  line-height: 1.6;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: text;
+  user-select: text;
+}
+
+.epub :is(h1, h2, h3, h4, h5, h6) {
+  margin: 1.2em 0 0.6em;
+  line-height: 1.25;
+}
+
+.epub h1 {
+  font-size: 1.7em;
+}
+
+.epub h2 {
+  font-size: 1.4em;
+}
+
+.epub h3 {
+  font-size: 1.2em;
+}
+
+.epub :is(h4, h5, h6) {
+  font-size: 1em;
+}
+
+.epub :is(p, ul, ol, dl, blockquote, pre, table, figure) {
+  margin: 0 0 0.9em;
+}
+
+.epub blockquote {
+  padding-inline-start: 1em;
+  border-inline-start: 3px solid #c8c8c8;
+}
+
+.epub pre {
+  font-size: 0.85em;
+  white-space: pre-wrap;
+}
+
+.epub img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.6em auto;
+}
+
+.epub table {
+  max-width: 100%;
+  border-collapse: collapse;
+}
+
+.epub :is(td, th) {
+  padding: 0.2em 0.5em;
+  border: 1px solid #c8c8c8;
+  vertical-align: top;
+}
+
+.epub hr {
+  margin: 1.5em 20%;
+  border: 0;
+  border-top: 1px solid #c8c8c8;
+}
+
+/* Where a chapter is set, out of sight, to find out how tall it is. */
+.epub-measure {
+  position: absolute;
+  top: 0;
+  left: -10000px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* === DOCUMENT SURFACE — end ========================================== */
 
 /* ------------------------------------------------------------------ *

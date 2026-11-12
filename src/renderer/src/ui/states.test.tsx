@@ -103,7 +103,7 @@ describe('an empty state says what to do next (ST-5)', () => {
 
     const empty = screen.getByText(/No documents have been opened yet/);
 
-    expect(empty.textContent).toContain('Open PDF');
+    expect(empty.textContent).toContain('Open…');
     expect(empty.className).toContain('message--empty');
   });
 

@@ -37,6 +37,7 @@ Lexleaf is released for **Windows x64 and Linux x86_64**. The [latest release](h
 - Reading-position and recent-document persistence.
 - Zoom by pinching on a trackpad or with `Ctrl` + mouse wheel, to any size; or step with `Ctrl/Cmd++`, `Ctrl/Cmd+-`, and `Ctrl/Cmd+0` for fit width.
 - In-document search with `Ctrl/Cmd+F`.
+- EPUB books open alongside PDFs, with contents, word lookup, search, highlights, bookmarks and your place remembered. Books are shown in Lexleaf's own plain typography; the book's styles, fonts and scripts are never used. Each chapter counts as one "page". Copy-protected (DRM) books, fixed-layout books, and print, thumbnails, two-page view and rotation for EPUB are not supported.
 - Highlights in four colours, each with an optional note: select text and choose a colour. They are listed in the sidebar and can be exported as a Markdown file. They are kept by Lexleaf on your computer; the PDF itself is never changed.
 - Bookmarks (`Ctrl/Cmd+D`), and a Back button that returns to where you were after jumping to a chapter, bookmark, note or page.
 - A sidebar with Contents, page thumbnails, Bookmarks and Notes.

@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
  */
 const SWITCH = '--open-document=';
 
-const PDF_NAME = /\.pdf$/iu;
+const PDF_NAME = /\.(?:pdf|epub)$/iu;
 
 const isAbsolutePath = (path: string): boolean => posix.isAbsolute(path) || win32.isAbsolute(path);
 
