@@ -1056,8 +1056,6 @@ export const ReaderView = ({
           onPrint={(): void => {
             setPrintOpen(true);
           }}
-          onOpen={(): void => void openDialog()}
-          onClose={(): void => void close()}
           onGoToPage={jumpToPage}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}

@@ -67,8 +67,6 @@ const showToolbar = (zoom: ZoomState = DEFAULT_ZOOM, scale = 1): void => {
       onViewModeChange={(): void => {}}
       onRotate={(): void => {}}
       onPrint={(): void => {}}
-      onOpen={(): void => {}}
-      onClose={(): void => {}}
       onGoToPage={(): void => {}}
       onZoomIn={(): void => {}}
       onZoomOut={(): void => {}}

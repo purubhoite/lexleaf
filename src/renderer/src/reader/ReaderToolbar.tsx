@@ -37,8 +37,6 @@ export interface ReaderToolbarProps {
   readonly onViewModeChange: (mode: PageLayoutMode) => void;
   readonly onRotate: () => void;
   readonly onPrint: () => void;
-  readonly onOpen: () => void;
-  readonly onClose: () => void;
   readonly onGoToPage: (pageNumber: number) => void;
   readonly onZoomIn: () => void;
   readonly onZoomOut: () => void;
@@ -71,8 +69,6 @@ export const ReaderToolbar = ({
   onViewModeChange,
   onRotate,
   onPrint,
-  onOpen,
-  onClose,
   onGoToPage,
   onZoomIn,
   onZoomOut,
@@ -121,19 +117,13 @@ export const ReaderToolbar = ({
         scrolling region that holds the pages, and the 6.4 acceptance
         audit found the two sharing one accessible name (condition C6):
         a reader hearing "Document" had no way to tell which of them had
-        been reached. This group is the file: it opens one, closes one,
-        and names the one that is open. The region keeps the name it has
+        been reached. This group is the file: it names the one that is
+        open. Opening and closing live in the File menu (and Ctrl+O,
+        Ctrl+W) since 0.2.5; the buttons crowded the name out of the bar. The region keeps the name it has
         had since 6.2, because that is the thing a reader is looking for
         when they go looking for the document.
       */}
       <div className="reader__group reader__group--document" role="group" aria-label="File">
-        <button type="button" className="control" onClick={onOpen}>
-          <Icon name="open" />
-          Open…
-        </button>
-        <button type="button" className="control" onClick={onClose}>
-          Close
-        </button>
         <span className="reader__name" title={documentName}>
           {documentName}
         </span>
