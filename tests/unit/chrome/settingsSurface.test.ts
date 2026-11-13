@@ -200,7 +200,11 @@ describe('what the settings surface can send and store', () => {
 
   it('offers in the panel exactly the alphabet, each value once and no other', () => {
     const offered = [...code.panel.matchAll(/value:\s*'([^']*)'/gu)].map((match) => match[1] ?? '');
-    const approved = PREFERENCE_KEYS.flatMap((key) => [...PREFERENCE_VALUES[key]]);
+    // The developer-diagnostics preference is still stored, for files
+    // written by earlier versions, but the panel no longer offers it.
+    const approved = PREFERENCE_KEYS.filter((key) => key !== 'showDeveloperDiagnostics').flatMap(
+      (key) => [...PREFERENCE_VALUES[key]],
+    );
 
     expect([...offered].sort()).toStrictEqual([...approved].sort());
   });

@@ -45,10 +45,8 @@ import { livePageWindow, pagesInWindow } from './model/pageWindow';
 import { nextZoomLevel, previousZoomLevel, resolveScale } from './model/zoom';
 import { PageSurface, type PageSpan } from './PageSurface';
 import { rectsForSpan } from './pdf/textRanges';
-import { runTextLayerSelfCheck, type SelfCheckReport } from './pdf/selfCheck';
 import { Message } from '../ui/Message';
 
-import { DeveloperDiagnostics } from './DeveloperDiagnostics';
 import { ReaderToolbar } from './ReaderToolbar';
 import { RecentDocuments } from './RecentDocuments';
 import type { CommandSource } from '../app/commandBus';
@@ -105,17 +103,6 @@ export const DOCUMENT_SCROLLER_ID = 'document-scroller';
  * The collapsible part of the reading-details panel (CTL-8). The toggle
  * points at it with `aria-controls`, so the two have to agree on one id.
  */
-/** Long documents are sampled rather than checked page by page. */
-const selfCheckPages = (pageCount: number): number[] => {
-  if (pageCount <= 20) {
-    return Array.from({ length: pageCount }, (_, index) => index + 1);
-  }
-
-  const step = Math.floor(pageCount / 20);
-
-  return Array.from({ length: 20 }, (_, index) => Math.min(pageCount, 1 + index * step));
-};
-
 /*
  * Written out rather than assembled, so that the stylesheet tests can see
  * that every tint has a rule and every rule a user.
@@ -215,9 +202,6 @@ export const ReaderView = ({
   const [popup, setPopup] = useState<AnnotationPopupState | null>(null);
   const [voiceNoticeDismissed, setVoiceNoticeDismissed] = useState(false);
   const readAloud = useReadAloud();
-  const [showTextLayer, setShowTextLayer] = useState(false);
-  const [selfCheck, setSelfCheck] = useState<SelfCheckReport | null>(null);
-  const [renderMilliseconds, setRenderMilliseconds] = useState<number | null>(null);
   const [pagesWithoutText, setPagesWithoutText] = useState<ReadonlySet<number>>(new Set());
   const ready = state.status === 'ready' ? state : null;
   const outline = useDocumentOutline(ready?.document ?? null);
@@ -471,7 +455,6 @@ export const ReaderView = ({
     pendingRestore.current = ready.restored;
     setZoom(ready.restored?.zoom ?? openingZoom);
     setPagesWithoutText(new Set());
-    setSelfCheck(null);
     scrollTo(0);
     // `openingZoom` is read only on the open it belongs to: the guard
     // above returns early for every other run, so changing the preference
@@ -957,9 +940,7 @@ export const ReaderView = ({
    * Page callbacks
    * ---------------------------------------------------------------- */
 
-  const handleRendered = useCallback((_pageNumber: number, milliseconds: number): void => {
-    setRenderMilliseconds(milliseconds);
-  }, []);
+  const handleRendered = useCallback((): void => undefined, []);
 
   const handleTextPresence = useCallback((pageNumber: number, hasText: boolean): void => {
     setPagesWithoutText((current) => {
@@ -1391,7 +1372,7 @@ export const ReaderView = ({
                     height={box.height}
                     registry={registry}
                     spans={spansFor(pageNumber)}
-                    showTextLayer={showTextLayer}
+                    showTextLayer={false}
                     onRendered={handleRendered}
                     onTextPresence={handleTextPresence}
                   />
@@ -1402,27 +1383,6 @@ export const ReaderView = ({
         </div>
 
         <WordAnnouncement interaction={words.interaction} />
-        {!import.meta.env.PROD && ready !== null && (
-          <DeveloperDiagnostics
-            startOpen={preferences.showDeveloperDiagnostics === 'on'}
-            interaction={words.interaction}
-            loadMilliseconds={ready.loadMilliseconds}
-            renderMilliseconds={renderMilliseconds}
-            pageCount={pageCount}
-            pagesMeasured={metrics.measured}
-            pagesLive={registry.livePages().length}
-            showTextLayer={showTextLayer}
-            onShowTextLayerChange={setShowTextLayer}
-            onRunSelfCheck={(): void => {
-              void runTextLayerSelfCheck(ready.document, selfCheckPages(pageCount)).then(
-                setSelfCheck,
-                () => undefined,
-              );
-            }}
-            selfCheck={selfCheck}
-          />
-        )}
-
         {dictionaryOpen && dictionaryAnchor !== null && dictionary.state.request !== null && (
           <WordDefinitionPopup
             anchor={dictionaryAnchor}

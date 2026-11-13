@@ -101,15 +101,6 @@ const PAGE_TINT_CHOICES: readonly Choice<Preferences['pageTint']>[] = [
   },
 ];
 
-const DIAGNOSTICS_CHOICES: readonly Choice<Preferences['showDeveloperDiagnostics']>[] = [
-  { value: 'off', label: 'Keep it closed', description: 'The usual view: the document and words.' },
-  {
-    value: 'on',
-    label: 'Open it by default',
-    description: 'Expands the existing developer diagnostics panel as you read.',
-  },
-];
-
 interface ChoiceGroupProps<Key extends PreferenceKey> {
   readonly name: Key;
   readonly legend: string;
@@ -226,18 +217,6 @@ export const SettingsPanel = ({
       selected={preferences.pageTint}
       onChange={onChange}
     />
-
-    {!import.meta.env.PROD && (
-      <ChoiceGroup
-        name="showDeveloperDiagnostics"
-        legend="Developer diagnostics"
-        note="Whether the diagnostics panel under the document starts open. It shows the same information either way."
-        testId="setting-developer-diagnostics"
-        choices={DIAGNOSTICS_CHOICES}
-        selected={preferences.showDeveloperDiagnostics}
-        onChange={onChange}
-      />
-    )}
 
     {children}
   </section>

@@ -22,29 +22,29 @@
 
 :root {
   /* --- Colour: surfaces ------------------------------------------------ */
-  --colour-background: #11141a;
-  --colour-surface: #171b22;
-  --colour-surface-raised: #212733;
-  --colour-scroller: #0c0f14;
+  --colour-background: #000000;
+  --colour-surface: #0d0d0d;
+  --colour-surface-raised: #1c1c1c;
+  --colour-scroller: #000000;
 
   /* --- Colour: text ---------------------------------------------------- */
-  --colour-text: #e8ecf2;
-  --colour-text-muted: #9aa5b5;
+  --colour-text: #ededed;
+  --colour-text-muted: #a3a3a3;
 
   /* --- Colour: lines --------------------------------------------------- */
   /* Separators between regions; decorative, so no contrast floor applies. */
-  --colour-border: #262c37;
+  --colour-border: #262626;
   /*
    * The boundary of anything the reader can operate. Held to 3:1 against the
    * control fill and against both surfaces behind it (WCAG 2.2 section
    * 1.4.11), which the contrast test enforces.
    */
-  --colour-border-strong: #6b7686;
+  --colour-border-strong: #7a7a7a;
 
   /* --- Colour: controls ------------------------------------------------ */
   /* A control is a raised surface the reader can operate. */
   --colour-control: var(--colour-surface-raised);
-  --colour-control-hover: #2c3443;
+  --colour-control-hover: #2b2b2b;
   --colour-focus: #6ea8ff;
 
   /* --- Colour: intent -------------------------------------------------- */

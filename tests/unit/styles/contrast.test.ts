@@ -139,8 +139,8 @@ describe.each(APPEARANCES)('%s appearance', (palette) => {
     it('keeps the failure overlay readable on its own panel', () => {
       // The overlay's panel and text are literals inside the document
       // surface precisely so that neither appearance can dim them.
-      expect(contrastRatio('#e8ecf2', '#11141a')).toBeGreaterThanOrEqual(4.5);
-      expect(contrastRatio('#e8b45a', '#11141a')).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio('#ededed', '#000000')).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio('#e8b45a', '#000000')).toBeGreaterThanOrEqual(4.5);
     });
   });
 });

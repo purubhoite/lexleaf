@@ -387,90 +387,11 @@
   min-width: 0;
 }
 
-/*
- * W7, CTL-9. One disclosure, closed at first paint, holding every piece of
- * developer instrumentation. It is drawn quietly — muted, small — because
- * its collapsed summary is the only part of it a reader should ever notice.
- */
-.diagnostics {
-  color: var(--colour-text-muted);
-  font-size: var(--text-sm);
-}
-
-.diagnostics__body {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
-  padding-top: var(--space-2);
-}
-
-.reader__selfcheck {
-  margin: 0;
-  white-space: pre-line;
-}
-
 .reader__password {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
-}
-
-.reader__stats {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: var(--space-1) var(--space-3);
-  margin: 0;
-  color: var(--colour-text-muted);
-  font-size: var(--text-sm);
-}
-
-.reader__stats dt {
-  color: var(--colour-text-muted);
-}
-
-.reader__stats dd {
-  margin: 0;
-  text-align: right;
-}
-
-.word {
-  padding: var(--space-3);
-  background-color: var(--colour-surface);
-  border: var(--border-width) solid var(--colour-border);
-  border-radius: var(--radius-md);
-}
-
-.word__reason {
-  color: var(--colour-problem);
-}
-
-.word__details {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--space-1) var(--space-3);
-  margin: 0;
-}
-
-.word__details dt {
-  color: var(--colour-text-muted);
-}
-
-.word__details dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.word__headline {
-  font-size: var(--text-lg);
-  font-weight: 600;
-}
-
-.word__timing {
-  margin: var(--space-2) 0 0;
-  color: var(--colour-text-muted);
-  font-size: var(--text-sm);
 }
 
 /* === DOCUMENT SURFACE — begin ======================================== *

@@ -59,28 +59,25 @@ describe('the settings panel', () => {
       'setting-reduce-motion',
       'setting-default-zoom',
       'setting-page-tint',
-      'setting-developer-diagnostics',
     ]);
     expect(groups.map((group) => group.querySelector('legend')?.textContent)).toStrictEqual([
       'Appearance',
       'Motion',
       'Default zoom',
       'Page colour',
-      'Developer diagnostics',
     ]);
   });
 
   it('offers every value of every preference as a radio button', () => {
     panel();
 
-    expect(screen.getAllByRole('radio')).toHaveLength(14);
+    expect(screen.getAllByRole('radio')).toHaveLength(12);
 
     for (const [testId, labels] of [
       ['setting-appearance', ['Match the system', 'Light', 'Dark']],
       ['setting-reduce-motion', ['Match the system', 'Always reduce motion']],
       ['setting-default-zoom', ['Fit width', 'Fit page', 'The zoom I used last']],
       ['setting-page-tint', ['Original', 'Sepia', 'Dimmed', 'Night']],
-      ['setting-developer-diagnostics', ['Keep it closed', 'Open it by default']],
     ] as const) {
       const group = screen.getByTestId(testId);
 
@@ -109,7 +106,6 @@ describe('the settings panel', () => {
       'always',
       'last-used',
       'original',
-      'on',
     ]);
   });
 
@@ -119,13 +115,11 @@ describe('the settings panel', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Dark/u }));
     fireEvent.click(screen.getByRole('radio', { name: /Always reduce motion/u }));
     fireEvent.click(screen.getByRole('radio', { name: /Fit page/u }));
-    fireEvent.click(screen.getByRole('radio', { name: /Open it by default/u }));
 
     expect(onChange.mock.calls).toStrictEqual([
       ['appearance', 'dark'],
       ['reduceMotion', 'always'],
       ['defaultZoomMode', 'fit-page'],
-      ['showDeveloperDiagnostics', 'on'],
     ]);
   });
 
@@ -186,7 +180,6 @@ describe('the settings panel’s accessible structure', () => {
       'defaultZoomMode',
       'pageTint',
       'reduceMotion',
-      'showDeveloperDiagnostics',
     ]);
   });
 
@@ -233,7 +226,7 @@ describe('what the settings panel cannot contain (ADR-031)', () => {
 
     const inputs = [...document.querySelectorAll('input')];
 
-    expect(inputs).toHaveLength(14);
+    expect(inputs).toHaveLength(12);
     expect(inputs.every((input) => input.type === 'radio')).toBe(true);
     expect(document.querySelectorAll('textarea, select, input[type="file"]')).toHaveLength(0);
   });

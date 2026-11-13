@@ -44,7 +44,7 @@ const PDF_JS_PROPERTIES = ['--total-scale-factor', '--font-height', '--scale-x',
  * milestones with no consumer, and ADR-032's four animations now spend
  * every one of the six names.
  */
-const DECLARED_BUT_NOT_YET_CONSUMED = ['--text-xl', '--radius-lg'];
+const DECLARED_BUT_NOT_YET_CONSUMED = ['--text-xl', '--radius-lg', '--colour-problem'];
 
 /**
  * Class names no `className` literal contains: the highlight modifiers are
