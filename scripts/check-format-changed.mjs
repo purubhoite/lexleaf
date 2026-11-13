@@ -8,7 +8,7 @@ const [base = 'FETCH_HEAD', head = 'HEAD'] = process.argv.slice(2);
 const supported = /\.(?:c?js|mjs|json|md|ts|tsx|ya?ml)$/u;
 const workflow = /^\.github\/workflows\/.*\.ya?ml$/u;
 
-const changed = execFileSync('git', ['diff', '--name-only', base, head], { encoding: 'utf8' })
+const changed = execFileSync('git', ['diff', '--name-only', '--diff-filter=d', base, head], { encoding: 'utf8' })
   .split(/\r?\n/u)
   .filter((file) => file.length > 0 && supported.test(file) && !workflow.test(file));
 
