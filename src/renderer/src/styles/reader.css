@@ -494,8 +494,22 @@
   border-bottom: 2px solid var(--colour-mark-noted);
 }
 
+/*
+ * Everything drawn for the page — picture, text and marks — in one box, so
+ * that while the reader zooms it can be stretched as a whole and drawn again
+ * only once the zoom has settled.
+ */
+.page__content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
 .page__canvas {
   display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /*

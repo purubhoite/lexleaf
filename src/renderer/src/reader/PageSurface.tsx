@@ -12,6 +12,7 @@ import {
 import { initialPageRenderState, pageRenderReducer } from './model/pageLifecycle';
 import { renderPage } from './pdf/renderPage';
 import { rectsForSpan, type HighlightRect } from './pdf/textRanges';
+import { useSettledValue } from './useSettledValue';
 
 /**
  * One page of the document, drawn and made interactive.
@@ -60,6 +61,9 @@ export const HIGHLIGHT_CLASS: Readonly<Record<PageSpanKind, string>> = {
   'mark-pink': 'highlight highlight--mark highlight--mark-pink',
 };
 
+/** How long the zoom has to be still before the page is drawn again. */
+const REDRAW_DELAY = 140;
+
 export interface PageSurfaceProps {
   readonly document: OpenedPdf;
   readonly documentId: string;
@@ -103,6 +107,20 @@ export const PageSurface = ({
   const [highlights, setHighlights] = useState<
     readonly (HighlightRect & { kind: PageSpanKind; noted: boolean })[]
   >([]);
+  // The scale the page is *drawn* at. It trails `scale` while the reader is
+  // zooming; in between, what is already drawn is stretched to the new size.
+  const drawnScale = useSettledValue(scale, REDRAW_DELAY);
+  const stretch = drawnScale > 0 ? scale / drawnScale : 1;
+  const stretchRef = useRef(stretch);
+
+  useEffect(() => {
+    stretchRef.current = stretch;
+  }, [stretch]);
+  // What the page last finished drawing for. Until it has drawn once there
+  // is nothing to stretch, and the "Page N" placeholder is shown instead.
+  const [drawnFor, setDrawnFor] = useState<{ document: OpenedPdf; rotation: number } | null>(null);
+  const hasPicture =
+    drawnFor !== null && drawnFor.document === pdfDocument && drawnFor.rotation === rotation;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -135,7 +153,7 @@ export const PageSurface = ({
           page,
           canvas,
           textLayerContainer,
-          scale,
+          scale: drawnScale,
           pixelRatio: window.devicePixelRatio,
           rotation,
         });
@@ -156,12 +174,13 @@ export const PageSurface = ({
           documentId,
           pageNumber,
           generation,
-          scale,
+          scale: drawnScale,
           container,
           layer: rendered.layer,
         });
 
         dispatch({ type: 'rendered', generation });
+        setDrawnFor({ document: pdfDocument, rotation });
         onRendered(pageNumber, Math.round(performance.now() - started));
         onTextPresence(
           pageNumber,
@@ -184,9 +203,17 @@ export const PageSurface = ({
       abandoned = true;
       cancel();
       registry.release(pageNumber, generation);
-      setHighlights([]);
     };
-  }, [pdfDocument, documentId, pageNumber, scale, rotation, registry, onRendered, onTextPresence]);
+  }, [
+    pdfDocument,
+    documentId,
+    pageNumber,
+    drawnScale,
+    rotation,
+    registry,
+    onRendered,
+    onTextPresence,
+  ]);
 
   // Highlights are measured from the rendered text layer, so they are
   // recomputed when the page finishes rendering and whenever the spans or
@@ -195,21 +222,32 @@ export const PageSurface = ({
     const container = containerRef.current;
     const page = registry.get(pageNumber);
 
-    if (container === null || page === null || render.phase !== 'rendered' || spans.length === 0) {
+    if (spans.length === 0) {
       setHighlights([]);
+      return;
+    }
+
+    // Between two drawings the marks already measured stay where they are,
+    // and are stretched with the page, rather than blinking off and on.
+    if (container === null || page === null || render.phase !== 'rendered') {
       return;
     }
 
     setHighlights(
       spans.flatMap((span) =>
         rectsForSpan(container, page.layer, span.start, span.end).map((rect) => ({
-          ...rect,
+          // Measured on screen, where a page that is mid-zoom is stretched;
+          // the marks live inside the stretched box, so that is taken out.
+          left: rect.left / stretchRef.current,
+          top: rect.top / stretchRef.current,
+          width: rect.width / stretchRef.current,
+          height: rect.height / stretchRef.current,
           kind: span.kind,
           noted: span.noted === true,
         })),
       ),
     );
-  }, [spans, render.phase, render.generation, scale, rotation, pageNumber, registry]);
+  }, [spans, render.phase, render.generation, drawnScale, rotation, pageNumber, registry]);
 
   const attributes = { [PAGE_NUMBER_ATTRIBUTE]: pageNumber };
 
@@ -229,30 +267,39 @@ export const PageSurface = ({
       aria-label={`Page ${String(pageNumber)}`}
       role="img"
     >
-      <canvas className="page__canvas" ref={canvasRef} />
-      <div className="page__text textLayer" ref={textLayerRef} />
+      <div
+        className="page__content"
+        style={{
+          width: `${String(width / stretch)}px`,
+          height: `${String(height / stretch)}px`,
+          ...(stretch === 1 ? {} : { transform: `scale(${String(stretch)})` }),
+        }}
+      >
+        <canvas className="page__canvas" ref={canvasRef} />
+        <div className="page__text textLayer" ref={textLayerRef} />
 
-      <div className="page__highlights" aria-hidden="true">
-        {highlights.map((rect, index) => (
-          <span
-            // Rectangles are positional and have no identity of their own.
-            key={`${rect.kind}:${String(index)}:${String(rect.left)}:${String(rect.top)}`}
-            className={
-              rect.noted
-                ? `${HIGHLIGHT_CLASS[rect.kind]} highlight--noted`
-                : HIGHLIGHT_CLASS[rect.kind]
-            }
-            style={{
-              left: `${String(rect.left)}px`,
-              top: `${String(rect.top)}px`,
-              width: `${String(rect.width)}px`,
-              height: `${String(rect.height)}px`,
-            }}
-          />
-        ))}
+        <div className="page__highlights" aria-hidden="true">
+          {highlights.map((rect, index) => (
+            <span
+              // Rectangles are positional and have no identity of their own.
+              key={`${rect.kind}:${String(index)}:${String(rect.left)}:${String(rect.top)}`}
+              className={
+                rect.noted
+                  ? `${HIGHLIGHT_CLASS[rect.kind]} highlight--noted`
+                  : HIGHLIGHT_CLASS[rect.kind]
+              }
+              style={{
+                left: `${String(rect.left)}px`,
+                top: `${String(rect.top)}px`,
+                width: `${String(rect.width)}px`,
+                height: `${String(rect.height)}px`,
+              }}
+            />
+          ))}
+        </div>
       </div>
 
-      {render.phase !== 'rendered' && render.phase !== 'failed' && (
+      {!hasPicture && render.phase !== 'rendered' && render.phase !== 'failed' && (
         <p className="page__overlay">Page {pageNumber}</p>
       )}
       {render.phase === 'failed' && (

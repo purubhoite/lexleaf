@@ -15,7 +15,7 @@ import { gestureFactor, gestureScale, wheelNotchSteps } from './model/gestureZoo
  * dozens of movements a second: drawing for every one of them would make
  * the gesture stutter instead of follow the fingers.
  */
-const COMMIT_INTERVAL = 50;
+const COMMIT_INTERVAL = 16;
 
 export const useGestureZoom = (
   target: RefObject<HTMLElement | null>,
