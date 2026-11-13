@@ -226,7 +226,6 @@ describe('changing a preference from the shell', () => {
       'system',
       'fit-width',
       'original',
-      'off',
     ]);
   });
 });

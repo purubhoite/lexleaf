@@ -62,7 +62,7 @@ body {
   gap: var(--space-1);
   min-height: var(--control-min-size);
   min-width: var(--control-min-size);
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-3);
   border: var(--border-width) solid var(--colour-border-strong);
   border-radius: var(--radius-sm);
   background-color: var(--colour-control);
@@ -90,13 +90,35 @@ body {
 
 /* A control inside a dense surface: no fill until it is pointed at. */
 .control--quiet {
+  padding-inline: var(--space-2);
   border-color: transparent;
   background-color: transparent;
 }
 
 .control--quiet:hover:enabled {
-  border-color: var(--colour-border-strong);
-  background-color: var(--colour-control);
+  border-color: transparent;
+  background-color: var(--colour-control-hover);
+}
+
+/* A quiet control that is switched on, or whose panel is open, stays lit. */
+.control--quiet[aria-pressed='true'],
+.control--quiet[aria-expanded='true'] {
+  background-color: var(--colour-control-hover);
+  color: var(--colour-accent);
+}
+
+/* The one action a screen is for. */
+.control--primary {
+  padding-inline: var(--space-4);
+  border-color: var(--colour-accent);
+  background-color: var(--colour-accent);
+  color: var(--colour-on-accent);
+  font-weight: 600;
+}
+
+.control--primary:hover:enabled {
+  border-color: var(--colour-accent-hover);
+  background-color: var(--colour-accent-hover);
 }
 
 /* ------------------------------------------------------------------ *
@@ -169,7 +191,7 @@ body {
   inline-size: var(--checkbox-size);
   block-size: var(--checkbox-size);
   margin: 0;
-  accent-color: var(--colour-focus);
+  accent-color: var(--colour-accent);
   cursor: pointer;
 }
 
@@ -239,8 +261,6 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3) clamp(0.75rem, 2vw, 1.5rem);
   height: 100%;
   min-height: 0;
 }
@@ -253,7 +273,7 @@ body {
 .shell__actions {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   flex: 0 0 auto;
   /* Last in the bar, and pushed to its far end. */
   margin-inline-start: auto;
@@ -316,10 +336,6 @@ body {
   font-size: var(--text-sm);
 }
 
-.shell__library-toggle[aria-pressed='true'] {
-  border-color: var(--colour-problem);
-}
-
 /* The reader is hidden, never unmounted, while the library is open: the
    open document, its rendered pages and the reader's place in it all
    survive a glance at the word list. */
@@ -339,7 +355,6 @@ body {
  */
 .shell__body {
   display: flex;
-  gap: var(--space-3);
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -352,14 +367,13 @@ body {
 .shell__panel {
   display: flex;
   flex-direction: column;
-  flex: 0 0 clamp(20rem, 34vw, 28rem);
+  flex: 0 0 clamp(20rem, 30vw, 26rem);
   min-width: 0;
   min-height: 0;
-  padding: var(--space-3);
+  padding: var(--space-4);
   overflow-y: auto;
   background-color: var(--colour-surface);
-  border: var(--border-width) solid var(--colour-border);
-  border-radius: var(--radius-md);
+  border-inline-start: var(--border-width) solid var(--colour-border);
 }
 
 /* Inline icons: the size of the text they sit beside, and its colour. */
@@ -449,7 +463,7 @@ body {
 
 .library__header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
 }
@@ -508,9 +522,8 @@ body {
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-3);
-  border: var(--border-width) solid var(--colour-border);
   border-radius: var(--radius-md);
-  background-color: var(--colour-surface);
+  background-color: var(--colour-surface-raised);
 }
 
 .library__card-head {
@@ -612,7 +625,7 @@ body {
 
 .settings__header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
 }
@@ -641,15 +654,16 @@ body {
   flex-direction: column;
   gap: var(--space-2);
   margin: 0;
-  padding: var(--space-4);
-  border: var(--border-width) solid var(--colour-border);
-  border-radius: var(--radius-md);
-  background: var(--colour-surface);
+  padding: var(--space-4) 0 0;
+  border: 0;
+  border-top: var(--border-width) solid var(--colour-border);
 }
 
 .settings__legend {
-  padding: 0 var(--space-2);
-  font-size: var(--text-base);
+  float: inline-start;
+  width: 100%;
+  padding: 0;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
@@ -678,7 +692,7 @@ body {
   block-size: var(--checkbox-size);
   margin: 0;
   margin-block-start: 0.15rem;
-  accent-color: var(--colour-focus);
+  accent-color: var(--colour-accent);
   cursor: pointer;
 }
 

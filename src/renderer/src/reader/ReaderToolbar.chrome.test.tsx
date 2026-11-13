@@ -74,7 +74,8 @@ describe('the toolbar keeps four named groups (CTL-1)', () => {
       'Zoom',
       'Page view',
       'Bookmark and print',
-      'Search',
+      // "Find" since the Search button became icon-only and took the name.
+      'Find',
     ]);
   });
 

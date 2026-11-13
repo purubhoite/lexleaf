@@ -110,7 +110,7 @@ describe('the three appearances', () => {
     // `:root` is already the dark palette, so an explicit dark root matches
     // neither light rule and cannot be reached by the media query.
     expect(tokens).not.toContain("data-theme='dark'");
-    expect(tokens).toMatch(/:root \{[^}]*--colour-background: #11141a/);
+    expect(tokens).toMatch(/:root \{[^}]*--colour-background: #000000/);
   });
 
   it('use no media feature other than the colour-scheme preference', () => {

@@ -8,7 +8,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { IdentifiedWord } from '@core/word/types';
 import type { WordInteraction } from './interaction/resolveInteraction';
 import { WordAnnouncement } from './WordAnnouncement';
-import { WordPanel } from './WordPanel';
 
 /**
  * The identified-word announcement (6.5, Part 2; 6.4 audit, C4 and C3).
@@ -130,33 +129,5 @@ describe('the identified word is announced (A11Y, 6.5 Part 2)', () => {
 
     expect(announcement()).toBe(first);
     expect(announcement().textContent).toBe('jetty');
-  });
-});
-
-describe('the panel that used to announce no longer does (one authoritative region)', () => {
-  it('shows the word without being a live region itself', () => {
-    render(<WordPanel interaction={interactionFor('lighthouse')} interacted />);
-
-    const panel = screen.getByRole('region', { name: 'Identified word' });
-
-    expect(screen.getByTestId('word-display').textContent).toBe('lighthouse');
-    expect(panel.getAttribute('aria-live')).toBeNull();
-    expect(panel.querySelector('[role="status"]')).toBeNull();
-    expect(panel.querySelector('[role="alert"]')).toBeNull();
-  });
-
-  it('keeps its empty state, and keeps it silent', () => {
-    render(<WordPanel interaction={null} interacted={false} />);
-
-    const empty = screen.getByTestId('word-empty');
-
-    expect(empty.textContent).toContain('Point at a word');
-    expect(empty.getAttribute('role')).toBeNull();
-  });
-
-  it('still reports why a miss was a miss, for the reader who can see it', () => {
-    render(<WordPanel interaction={interactionFor(null)} interacted />);
-
-    expect(screen.getByTestId('word-empty').textContent).toContain('not-a-word');
   });
 });

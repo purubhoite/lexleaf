@@ -93,7 +93,7 @@ export const SearchPanel = ({
       </button>
       <button
         type="button"
-        className="control"
+        className="control control--quiet"
         aria-label="Previous match"
         onClick={onPrevious}
         disabled={state.matches.length === 0}
@@ -102,7 +102,7 @@ export const SearchPanel = ({
       </button>
       <button
         type="button"
-        className="control"
+        className="control control--quiet"
         aria-label="Next match"
         onClick={onNext}
         disabled={state.matches.length === 0}
@@ -127,7 +127,7 @@ export const SearchPanel = ({
         {summarise(state)}
       </output>
 
-      <button type="button" className="control" onClick={onClose}>
+      <button type="button" className="control control--quiet" onClick={onClose}>
         Close
       </button>
     </form>

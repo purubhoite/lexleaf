@@ -60,11 +60,6 @@ const MILESTONE_5_TEST_IDS = [
   'vocabulary-error',
   'vocabulary-other-places',
   'vocabulary-save',
-  'word-display',
-  'word-empty',
-  'word-normalized',
-  'word-page',
-  'word-raw',
 ] as const;
 
 /** Added since: three in 6.2 and 6.3, one in 6.4, seven in 6.8, one in M7.2. */
@@ -118,7 +113,6 @@ const ADDED_AFTER_MILESTONE_5 = [
   'skip-to-document',
   'dictionary-popup-arrow',
   'dictionary-status',
-  'developer-diagnostics',
   'word-announcement',
   // 6.8's settings surface: the panel, the two ways in and out of it, and
   // one identifier per preference group. The individual radio buttons
@@ -130,7 +124,6 @@ const ADDED_AFTER_MILESTONE_5 = [
   'setting-appearance',
   'setting-reduce-motion',
   'setting-default-zoom',
-  'setting-developer-diagnostics',
   // M7.2: the one notice a session can raise when reading state stops
   // reaching the disk. It is the shared `Message`, so the identifier
   // arrives through the `testId` prop rather than the attribute.
@@ -198,17 +191,8 @@ describe('the data-testid inventory (AC 27)', () => {
   });
 
   it('counts the milestone-5 inventory, so the list cannot be quietly trimmed', () => {
-    expect(new Set(MILESTONE_5_TEST_IDS).size).toBe(39);
-  });
-
-  it('finds the identifiers the 6.4 move put inside a closed disclosure', () => {
-    const present = rendered();
-
-    // The five word fields are the ones 6.4 actually moved. Spelling them
-    // out means the general rule above cannot be satisfied by a stale copy
-    // of the panel left behind somewhere.
-    for (const id of ['word-display', 'word-empty', 'word-raw', 'word-normalized', 'word-page']) {
-      expect(present.has(id)).toBe(true);
-    }
+    // 34 since the developer diagnostics panel, and the five word fields
+    // that lived in it, were removed from the application.
+    expect(new Set(MILESTONE_5_TEST_IDS).size).toBe(34);
   });
 });

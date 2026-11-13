@@ -67,7 +67,7 @@ export const RecentDocuments = ({
         <li key={recent.id} className="recents__item">
           <button
             type="button"
-            className="control recents__open"
+            className="control control--quiet recents__open"
             disabled={!recent.available}
             onClick={(): void => {
               onOpen(recent.id);
@@ -89,7 +89,7 @@ export const RecentDocuments = ({
           </button>
           <button
             type="button"
-            className="control recents__forget"
+            className="control control--quiet recents__forget"
             aria-label={`Remove ${recent.name} from recent documents`}
             onClick={(): void => {
               onForget(recent.id);

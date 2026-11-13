@@ -167,9 +167,6 @@ const openReader = async (
 const zoomSelect = (): HTMLSelectElement =>
   screen.getByRole<HTMLSelectElement>('combobox', { name: 'Zoom level' });
 
-const diagnostics = (): HTMLDetailsElement =>
-  screen.getByTestId<HTMLDetailsElement>('developer-diagnostics');
-
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -270,63 +267,5 @@ describe('the default zoom preference', () => {
     fireEvent.change(zoomSelect(), { target: { value: '1' } });
 
     expect(zoomSelect().value).toBe('1');
-  });
-});
-
-describe('the developer diagnostics preference', () => {
-  it('keeps the disclosure closed by default (the 6.4 design)', async () => {
-    await openReader();
-
-    expect(diagnostics().open).toBe(false);
-  });
-
-  it('starts the disclosure open when the preference says so', async () => {
-    await openReader({ showDeveloperDiagnostics: 'on' });
-
-    expect(diagnostics().open).toBe(true);
-  });
-
-  it('shows the same fields either way', async () => {
-    // The preference changes what is expanded, never what exists: the
-    // identifiers AC 27 protects are in the DOM in both states.
-    await openReader({ showDeveloperDiagnostics: 'on' });
-
-    for (const id of ['word-raw', 'word-normalized', 'word-page']) {
-      expect(screen.getByTestId(id)).toBeTruthy();
-    }
-  });
-
-  it('lets the reader close it by hand even when the preference opens it', async () => {
-    await openReader({ showDeveloperDiagnostics: 'on' });
-
-    const details = diagnostics();
-
-    details.open = false;
-    fireEvent(details, new Event('toggle'));
-
-    expect(diagnostics().open).toBe(false);
-  });
-
-  it('follows a change of the preference while the reader is open', async () => {
-    const bridge = createBridge();
-
-    const { rerender } = render(
-      <ReaderView bridge={bridge} preferences={{ ...DEFAULT_PREFERENCES }} />,
-    );
-
-    await waitFor(() => {
-      expect(document.querySelector('.textLayer span')).not.toBeNull();
-    });
-
-    expect(diagnostics().open).toBe(false);
-
-    rerender(
-      <ReaderView
-        bridge={bridge}
-        preferences={{ ...DEFAULT_PREFERENCES, showDeveloperDiagnostics: 'on' }}
-      />,
-    );
-
-    expect(diagnostics().open).toBe(true);
   });
 });

@@ -28,7 +28,7 @@ import {
  * enforced by `tests/unit/styles/theme.test.ts`, which reads both files.
  */
 export const WINDOW_BACKGROUND: Readonly<Record<ResolvedTheme, string>> = {
-  dark: '#11141a',
+  dark: '#000000',
   light: '#eef1f6',
 };
 

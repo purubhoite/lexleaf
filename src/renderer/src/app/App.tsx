@@ -315,7 +315,7 @@ export const App = ({ bridge }: AppProps): ReactElement => {
     <div className="shell__actions" role="group" aria-label="Lexleaf">
       <button
         type="button"
-        className="control shell__library-toggle"
+        className="control control--quiet shell__library-toggle"
         data-testid="library-toggle"
         aria-pressed={showLibrary}
         title="Saved words (Ctrl+L)"
@@ -323,33 +323,33 @@ export const App = ({ bridge }: AppProps): ReactElement => {
           bus.dispatch('toggle-saved-words');
         }}
       >
-        <Icon name="bookmark" />
+        <Icon name="book" />
         Saved words
       </button>
       <button
         type="button"
-        className="control shell__reading-toggle"
+        className="control control--quiet shell__reading-toggle"
         data-testid="reading-mode-toggle"
-        title="Reading mode: full screen, nothing but the page (F11)"
+        aria-label="Reading mode"
+        title="Reading mode"
         onClick={(): void => {
           changeReadingMode(true);
         }}
       >
         <Icon name="expand" />
-        Reading mode
       </button>
       <button
         type="button"
-        className="control shell__settings-toggle"
+        className="control control--quiet shell__settings-toggle"
         data-testid="settings-toggle"
+        aria-label="Settings"
         aria-pressed={showSettings}
-        title="Settings (Ctrl+,)"
+        title="Settings"
         onClick={(): void => {
           bus.dispatch('toggle-settings');
         }}
       >
         <Icon name="settings" />
-        Settings
       </button>
     </div>
   );
