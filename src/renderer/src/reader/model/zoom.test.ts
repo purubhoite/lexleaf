@@ -25,22 +25,21 @@ describe('zoom', () => {
     expect([...ZOOM_LEVELS]).toEqual([0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]);
   });
 
-  it('steps up and down through the levels', () => {
-    expect(nextZoomLevel(1)).toBe(1.25);
-    expect(nextZoomLevel(0.5)).toBe(0.75);
-    expect(previousZoomLevel(1)).toBe(0.75);
-    expect(previousZoomLevel(2)).toBe(1.75);
+  it('steps up and down one per cent at a time', () => {
+    expect(nextZoomLevel(1)).toBe(1.01);
+    expect(nextZoomLevel(0.5)).toBe(0.51);
+    expect(previousZoomLevel(1)).toBe(0.99);
+    expect(previousZoomLevel(2)).toBe(1.99);
+    expect(nextZoomLevel(2)).toBe(2.01);
   });
 
-  it('steps to the neighbouring level from a fitted scale between two levels', () => {
-    expect(nextZoomLevel(1.1)).toBe(1.25);
-    expect(previousZoomLevel(1.1)).toBe(1);
+  it('steps from the per cent shown for a fitted scale that is not a whole one', () => {
+    expect(nextZoomLevel(1.1234)).toBe(1.13);
+    expect(previousZoomLevel(1.1234)).toBe(1.11);
   });
 
   it('stops at the ends rather than wrapping or growing without limit', () => {
-    expect(nextZoomLevel(2)).toBe(MAX_SCALE);
     expect(nextZoomLevel(MAX_SCALE)).toBe(MAX_SCALE);
-    expect(previousZoomLevel(0.5)).toBe(MIN_SCALE);
     expect(previousZoomLevel(MIN_SCALE)).toBe(MIN_SCALE);
   });
 
