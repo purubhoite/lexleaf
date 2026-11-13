@@ -33,6 +33,29 @@ describe('the application menu', () => {
     ]);
   });
 
+  it('puts the application’s own menu first on a Mac, and Quit in it', () => {
+    const menu = buildApplicationMenu({
+      send: () => undefined,
+      reportProblem: () => undefined,
+      development: false,
+      platform: 'darwin',
+    });
+
+    expect(menu[0]).toStrictEqual({ role: 'appMenu' });
+    expect(menu.slice(1).map((item) => item.label)).toStrictEqual([
+      '&File',
+      '&Edit',
+      '&View',
+      '&Go',
+      '&Help',
+    ]);
+
+    const file = menu[1]?.submenu as MenuItemConstructorOptions[];
+
+    expect(file.some((item) => item.role === 'quit')).toBe(false);
+    expect(file.at(-1)?.type).not.toBe('separator');
+  });
+
   it('offers every command the window understands, exactly once', () => {
     const { items, send } = build();
 
