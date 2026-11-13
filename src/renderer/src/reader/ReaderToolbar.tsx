@@ -107,8 +107,9 @@ export const ReaderToolbar = ({
   return (
     <header className="reader__bar">
       {/*
-        CTL-1. Four groups, in the order the reader works through them:
-        file, page, zoom, search. Each one is a real `role="group"` with a
+        CTL-1. Groups, in the order the reader works through them: file
+        (with the sidebar and the way back, which belong to the book as a
+        whole), page, zoom, view, marks, search. Each one is a real `role="group"` with a
         name, so landmark-free navigation still reports where a control
         belongs, and `.reader__group` draws the boundary that makes the
         same four groups visible on screen.
@@ -124,12 +125,6 @@ export const ReaderToolbar = ({
         when they go looking for the document.
       */}
       <div className="reader__group reader__group--document" role="group" aria-label="File">
-        <span className="reader__name" title={documentName}>
-          {documentName}
-        </span>
-      </div>
-
-      <div className="reader__group" role="group" aria-label="Page navigation">
         {/*
           One button for the sidebar, which holds the contents, the page
           thumbnails, the bookmarks and the notes. It is always there, so
@@ -137,7 +132,7 @@ export const ReaderToolbar = ({
         */}
         <button
           type="button"
-          className="control"
+          className="control control--quiet"
           data-testid="outline-toggle"
           aria-label="Sidebar"
           aria-expanded={sidebarOpen}
@@ -148,7 +143,7 @@ export const ReaderToolbar = ({
         </button>
         <button
           type="button"
-          className="control"
+          className="control control--quiet"
           data-testid="go-back"
           aria-label="Back to where you were"
           title="Back to where you were"
@@ -157,9 +152,15 @@ export const ReaderToolbar = ({
         >
           <Icon name="back" />
         </button>
+        <span className="reader__name" title={documentName}>
+          {documentName}
+        </span>
+      </div>
+
+      <div className="reader__group" role="group" aria-label="Page navigation">
         <button
           type="button"
-          className="control"
+          className="control control--quiet"
           aria-label="Previous page"
           title="Previous page"
           disabled={currentPage <= 1}
@@ -189,7 +190,7 @@ export const ReaderToolbar = ({
 
         <button
           type="button"
-          className="control"
+          className="control control--quiet"
           aria-label="Next page"
           title="Next page"
           disabled={currentPage + pageStep > pageCount}
@@ -204,7 +205,7 @@ export const ReaderToolbar = ({
       <div className="reader__group" role="group" aria-label="Zoom">
         <button
           type="button"
-          className="control"
+          className="control control--quiet"
           aria-label="Zoom out"
           title="Zoom out"
           onClick={onZoomOut}
@@ -222,7 +223,7 @@ export const ReaderToolbar = ({
             fitted mode states its percentage in its own option.
           */}
           <select
-            className="control"
+            className="control control--quiet"
             value={zoomValue}
             onChange={(event): void => {
               const value = event.target.value;
@@ -263,7 +264,7 @@ export const ReaderToolbar = ({
         </label>
         <button
           type="button"
-          className="control"
+          className="control control--quiet"
           aria-label="Zoom in"
           title="Zoom in"
           onClick={onZoomIn}
@@ -277,7 +278,7 @@ export const ReaderToolbar = ({
           <label className="reader__zoom">
             <span className="visually-hidden">Page view</span>
             <select
-              className="control control--field"
+              className="control control--quiet"
               value={viewMode}
               data-testid="view-mode"
               onChange={(event): void => {
@@ -295,7 +296,7 @@ export const ReaderToolbar = ({
           </label>
           <button
             type="button"
-            className="control"
+            className="control control--quiet"
             aria-label="Rotate pages"
             title="Rotate pages"
             data-testid="rotate"
@@ -309,7 +310,7 @@ export const ReaderToolbar = ({
       <div className="reader__group" role="group" aria-label="Bookmark and print">
         <button
           type="button"
-          className={bookmarked ? 'control control--on' : 'control'}
+          className={bookmarked ? 'control control--quiet control--on' : 'control control--quiet'}
           aria-label={bookmarked ? 'Remove bookmark from this page' : 'Bookmark this page'}
           aria-pressed={bookmarked}
           title={bookmarked ? 'Remove bookmark from this page' : 'Bookmark this page'}
@@ -321,7 +322,7 @@ export const ReaderToolbar = ({
         {paged && (
           <button
             type="button"
-            className="control"
+            className="control control--quiet"
             aria-label="Print"
             title="Print"
             data-testid="print"
@@ -332,15 +333,16 @@ export const ReaderToolbar = ({
         )}
       </div>
 
-      <div className="reader__group" role="group" aria-label="Search">
+      <div className="reader__group" role="group" aria-label="Find">
         <button
           type="button"
-          className="control"
+          className="control control--quiet"
+          aria-label="Search"
           aria-expanded={searchOpen}
+          title="Search"
           onClick={onToggleSearch}
         >
           <Icon name="search" />
-          Search
         </button>
       </div>
 

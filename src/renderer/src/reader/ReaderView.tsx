@@ -1271,7 +1271,7 @@ export const ReaderView = ({
               </p>
               <button
                 type="button"
-                className="control start__open"
+                className="control control--primary start__open"
                 onClick={(): void => void openDialog()}
               >
                 <Icon name="open" />

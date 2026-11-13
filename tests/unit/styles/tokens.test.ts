@@ -244,8 +244,9 @@ describe('the control primitive', () => {
   it('is never smaller than the minimum target size', () => {
     expect(control).toMatch(/min-height:\s*var\(--control-min-size\)/);
     expect(control).toMatch(/min-width:\s*var\(--control-min-size\)/);
-    // 1.5rem at the 16px root size is 24px: WCAG 2.2 section 2.5.8.
-    expect(declarationsOf(sources.tokens, '--control-min-size')).toStrictEqual(['1.5rem']);
+    // WCAG 2.2 section 2.5.8 asks for 24px; since the 0.2.6 redesign the
+    // controls are drawn at 2rem, which is 32px at the 16px root size.
+    expect(declarationsOf(sources.tokens, '--control-min-size')).toStrictEqual(['2rem']);
   });
 
   it('draws its own focus ring from the focus token', () => {

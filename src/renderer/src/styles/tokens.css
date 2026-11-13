@@ -23,9 +23,9 @@
 :root {
   /* --- Colour: surfaces ------------------------------------------------ */
   --colour-background: #11141a;
-  --colour-surface: #1a1f28;
-  --colour-surface-raised: #222936;
-  --colour-scroller: #0b0e13;
+  --colour-surface: #171b22;
+  --colour-surface-raised: #212733;
+  --colour-scroller: #0c0f14;
 
   /* --- Colour: text ---------------------------------------------------- */
   --colour-text: #e8ecf2;
@@ -33,7 +33,7 @@
 
   /* --- Colour: lines --------------------------------------------------- */
   /* Separators between regions; decorative, so no contrast floor applies. */
-  --colour-border: #2b323e;
+  --colour-border: #262c37;
   /*
    * The boundary of anything the reader can operate. Held to 3:1 against the
    * control fill and against both surfaces behind it (WCAG 2.2 section
@@ -44,11 +44,14 @@
   /* --- Colour: controls ------------------------------------------------ */
   /* A control is a raised surface the reader can operate. */
   --colour-control: var(--colour-surface-raised);
-  --colour-control-hover: #303a4b;
+  --colour-control-hover: #2c3443;
   --colour-focus: #6ea8ff;
 
   /* --- Colour: intent -------------------------------------------------- */
-  --colour-accent: #6ea8ff;
+  --colour-accent: #63c99b;
+  --colour-accent-hover: #7ad6ab;
+  /* Text and icons drawn on the accent fill. */
+  --colour-on-accent: #0c1f17;
   /*
    * Failure text. The previous value (#b3261e, inherited from a light-theme
    * palette) measured 2.53:1 on the popup surface; this one measures above
@@ -117,14 +120,17 @@
   --space-6: 2rem;
 
   /* --- Radius ---------------------------------------------------------- */
-  --radius-sm: 4px;
+  --radius-sm: 6px;
   --radius-md: 8px;
   /* The third radius ADR-029 fixes; no rule needs it yet. */
   --radius-lg: 12px;
 
   /* --- Controls -------------------------------------------------------- */
-  /* 24 x 24 CSS pixels is the minimum target size (WCAG 2.2 section 2.5.8). */
-  --control-min-size: 1.5rem;
+  /*
+   * 24 x 24 CSS pixels is the minimum target size (WCAG 2.2 section 2.5.8).
+   * Controls are drawn at 32: comfortable to hit, still compact.
+   */
+  --control-min-size: 2rem;
   --border-width: 1px;
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
@@ -198,14 +204,14 @@
    * on a surface rather than as part of the window. The page's own hairline
    * (document surface, reader.css) is what guarantees the edge is visible.
    */
-  --colour-scroller: #d9dfe8;
+  --colour-scroller: #dfe4ec;
 
   /* --- Colour: text ---------------------------------------------------- */
   --colour-text: #1b2027;
   --colour-text-muted: #556071;
 
   /* --- Colour: lines --------------------------------------------------- */
-  --colour-border: #c7cedb;
+  --colour-border: #d3d9e3;
   --colour-border-strong: #5c6677;
 
   /* --- Colour: controls ------------------------------------------------ */
@@ -213,7 +219,9 @@
   --colour-focus: #0b57d0;
 
   /* --- Colour: intent -------------------------------------------------- */
-  --colour-accent: #0b57d0;
+  --colour-accent: #17784f;
+  --colour-accent-hover: #126241;
+  --colour-on-accent: #ffffff;
   --colour-danger: #b3261e;
   /*
    * Dark amber. The light counterpart of #e8b45a has to clear 4.5:1 as text
@@ -236,14 +244,14 @@
     --colour-background: #eef1f6;
     --colour-surface: #ffffff;
     --colour-surface-raised: #ffffff;
-    --colour-scroller: #d9dfe8;
+    --colour-scroller: #dfe4ec;
 
     /* --- Colour: text -------------------------------------------------- */
     --colour-text: #1b2027;
     --colour-text-muted: #556071;
 
     /* --- Colour: lines ------------------------------------------------- */
-    --colour-border: #c7cedb;
+    --colour-border: #d3d9e3;
     --colour-border-strong: #5c6677;
 
     /* --- Colour: controls ---------------------------------------------- */
@@ -251,7 +259,9 @@
     --colour-focus: #0b57d0;
 
     /* --- Colour: intent ------------------------------------------------ */
-    --colour-accent: #0b57d0;
+    --colour-accent: #17784f;
+    --colour-accent-hover: #126241;
+    --colour-on-accent: #ffffff;
     --colour-danger: #b3261e;
     --colour-problem: #653a00;
 

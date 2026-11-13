@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon';
 import type { ReactElement, ReactNode } from 'react';
 
 import type { PreferenceKey, Preferences } from '@core/persistence/preferences';
@@ -171,11 +172,13 @@ export const SettingsPanel = ({
       <h2 className="settings__title">Settings</h2>
       <button
         type="button"
-        className="control settings__close"
+        className="control control--quiet settings__close"
         data-testid="settings-close"
+        aria-label="Close settings"
+        title="Close settings"
         onClick={onClose}
       >
-        Close settings
+        <Icon name="close" />
       </button>
     </div>
 
