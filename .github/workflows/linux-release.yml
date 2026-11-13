@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       release_confirmation:
-        description: Type PUBLISH LEXLEAF LINUX 0.2.5
+        description: Type PUBLISH LEXLEAF LINUX 0.2.6
         required: true
         type: string
       license_compliance_confirmation:
@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       publish:
-        description: Upload verified assets to existing v0.2.5 release
+        description: Upload verified assets to existing v0.2.6 release
         required: true
         default: false
         type: boolean
@@ -33,8 +33,8 @@ jobs:
       contents: write
     env:
       SOURCE_SHA: ${{ inputs.source_sha }}
-      EXPECTED_VERSION: '0.2.5'
-      EXPECTED_TAG: 'v0.2.5'
+      EXPECTED_VERSION: '0.2.6'
+      EXPECTED_TAG: 'v0.2.6'
     steps:
       - name: Check out workflow source
         uses: actions/checkout@v4
@@ -65,7 +65,7 @@ jobs:
           [[ "$(jq -r '.tag_name' <<<"$release_json")" == "$EXPECTED_TAG" ]] || { echo 'existing release mismatch' >&2; exit 1; }
           version=$(jq -r '.version' release-source/package.json)
           [[ "$version" == "$EXPECTED_VERSION" ]] || { echo 'package version mismatch' >&2; exit 1; }
-          [[ '${{ inputs.release_confirmation }}' == 'PUBLISH LEXLEAF LINUX 0.2.5' ]] || { echo 'release confirmation mismatch' >&2; exit 1; }
+          [[ '${{ inputs.release_confirmation }}' == 'PUBLISH LEXLEAF LINUX 0.2.6' ]] || { echo 'release confirmation mismatch' >&2; exit 1; }
           [[ '${{ inputs.license_compliance_confirmation }}' == 'REVIEWED OEWN AND PRINCETON LICENSES' ]] || { echo 'license confirmation mismatch' >&2; exit 1; }
 
       - name: Set up Node.js
