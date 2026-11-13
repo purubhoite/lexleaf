@@ -506,7 +506,10 @@ const bootstrap = async (): Promise<void> => {
    * the same question it asks at startup and gets the new answer. No
    * second loading mechanism, no new channel, no extra window.
    */
-  let requestedDocumentPath = parseDocumentArgument(process.argv, process.cwd());
+  let requestedDocumentPath =
+    // On a Mac the document that started the application arrives as an
+    // `open-file` event, not on the command line; see the handler below.
+    documentsOpenedEarly.shift() ?? parseDocumentArgument(process.argv, process.cwd());
 
   /*
    * Forwarded documents are delivered one at a time (C-1). The completion
@@ -862,6 +865,7 @@ const bootstrap = async (): Promise<void> => {
         },
         reportProblem,
         development: !app.isPackaged,
+        platform: process.platform,
       }),
     ),
   );
@@ -998,6 +1002,14 @@ const bootstrap = async (): Promise<void> => {
   };
 
   await openMainWindow();
+
+  // From here on a document opened from Finder goes straight to the queue.
+  // Any that arrived while the window was being made follow it now.
+  windowIsUp = true;
+
+  for (const path of documentsOpenedEarly.splice(0)) {
+    forwardedDocuments.enqueue(path);
+  }
 };
 
 /*
@@ -1017,6 +1029,36 @@ const revealWindow = (window: BrowserWindow): void => {
   window.show();
   window.focus();
 };
+
+/*
+ * macOS only. A document opened from Finder — double-clicked, dropped on
+ * the Dock icon, or chosen with "Open With" — is announced by this event
+ * rather than named on the command line, and the first one arrives before
+ * the application is ready. Those are kept until the window exists; after
+ * that the document joins the same queue a second launch's document does
+ * on Windows and Linux. Only a PDF or an EPUB is accepted, by the same
+ * rule the command line follows.
+ */
+const documentsOpenedEarly: string[] = [];
+let windowIsUp = false;
+
+app.on('open-file', (event, path) => {
+  event.preventDefault();
+
+  const requested = parseDocumentArgument(['', path]);
+
+  if (requested === null) {
+    return;
+  }
+
+  if (!windowIsUp || forwardDocument === null) {
+    documentsOpenedEarly.push(requested);
+
+    return;
+  }
+
+  forwardDocument(requested);
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

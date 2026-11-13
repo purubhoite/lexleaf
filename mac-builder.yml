@@ -1,0 +1,41 @@
+appId: io.github.purubhoite.lexleaf
+productName: Lexleaf
+extraMetadata:
+  homepage: https://github.com/purubhoite/lexleaf
+  author:
+    name: Lexleaf
+    email: 216851203+purubhoite@users.noreply.github.com
+asar: true
+files:
+  - out/**/*
+  - package.json
+extraResources:
+  - from: resources/dictionary
+    to: dictionary
+    filter:
+      - '**/*'
+# Offers Lexleaf under "Open With" in Finder. The file arrives as an
+# `open-file` event (src/main/index.ts), not on the command line.
+fileAssociations:
+  - ext: pdf
+    name: PDF document
+    description: PDF document
+    mimeType: application/pdf
+    role: Viewer
+  - ext: epub
+    name: EPUB book
+    description: EPUB book
+    mimeType: application/epub+zip
+    role: Viewer
+mac:
+  category: public.app-category.productivity
+  icon: resources/icons/lexleaf-logo.png
+  # There is no Apple Developer certificate, so the build itself signs
+  # nothing. The test workflow (.github/workflows/mac-test-build.yml) adds
+  # an ad-hoc signature afterwards, without which an Apple Silicon Mac
+  # refuses to start the application at all, and makes the disk images
+  # itself. The result is for testers: macOS still warns that it cannot
+  # check the application, and it cannot update itself.
+  identity: null
+  target:
+    - dir

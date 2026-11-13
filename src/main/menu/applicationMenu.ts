@@ -23,13 +23,22 @@ export interface ApplicationMenuOptions {
   readonly reportProblem: () => void;
   /** Adds Reload and the developer tools. Never in a released build. */
   readonly development: boolean;
+  /**
+   * `process.platform`. On a Mac the first menu is always drawn under the
+   * application's name, so it has to be the application's own menu (About,
+   * Hide, Quit) or File's items would turn up there instead.
+   */
+  readonly platform?: string;
 }
 
 export const buildApplicationMenu = ({
   send,
   reportProblem,
   development,
+  platform,
 }: ApplicationMenuOptions): MenuItemConstructorOptions[] => {
+  const mac = platform === 'darwin';
+
   const command = (label: string, name: MenuCommand): MenuItemConstructorOptions => {
     const key = MENU_COMMAND_KEYS[name];
 
@@ -45,6 +54,7 @@ export const buildApplicationMenu = ({
   const separator: MenuItemConstructorOptions = { type: 'separator' };
 
   return [
+    ...(mac ? [{ role: 'appMenu' } as const] : []),
     {
       label: '&File',
       submenu: [
@@ -62,8 +72,8 @@ export const buildApplicationMenu = ({
         },
         separator,
         command('Settings', 'toggle-settings'),
-        separator,
-        { role: 'quit', label: 'Quit Lexleaf' },
+        // On a Mac, Quit lives in the application's own menu.
+        ...(mac ? [] : [separator, { role: 'quit', label: 'Quit Lexleaf' } as const]),
       ],
     },
     {

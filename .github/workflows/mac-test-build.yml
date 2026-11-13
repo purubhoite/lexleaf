@@ -1,0 +1,117 @@
+name: macOS test build
+
+# Builds Lexleaf for the Mac, for testers. The application carries an ad-hoc
+# signature only: there is no Apple Developer certificate and nothing is
+# notarised, so macOS warns before opening it and it cannot update itself.
+# The disk images go to an existing pre-release, never to a public release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_tag:
+        description: Existing pre-release to attach the disk images to (for example mac-test-0.2.8)
+        required: true
+        type: string
+      publish:
+        description: Attach the disk images to that pre-release
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  mac:
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    env:
+      TEST_TAG: ${{ inputs.test_tag }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Validate the pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$TEST_TAG" =~ ^mac-test-[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]] || { echo 'test_tag must look like mac-test-0.2.8' >&2; exit 1; }
+          release_json=$(gh api "repos/${{ github.repository }}/releases/tags/$TEST_TAG")
+          [[ "$(jq -r '.prerelease' <<<"$release_json")" == true ]] || { echo 'the tag must belong to a pre-release' >&2; exit 1; }
+          version=$(jq -r '.version' package.json)
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.21.1
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare dictionary and run checks
+        run: |
+          npm run dictionary:prepare:production
+          npm run dictionary:verify:production
+          npm run verify:license-compliance
+          npm run typecheck
+          npm run lint
+          npm run build
+
+      - name: Package the application for Apple Silicon and Intel
+        run: npx electron-builder --mac dir --arm64 --x64 --config mac-builder.yml --publish never
+
+      - name: Verify, sign ad hoc and make disk images
+        run: |
+          set -euo pipefail
+          for arch in arm64 x64; do
+            if [[ "$arch" == arm64 ]]; then unpacked=dist/mac-arm64; else unpacked=dist/mac; fi
+            bundle="$unpacked/Lexleaf.app"
+            test -d "$bundle"
+            node scripts/packaging/verify-packaged-output.mjs "$bundle/Contents"
+            plutil -extract CFBundleShortVersionString raw "$bundle/Contents/Info.plist" | grep -Fx "$VERSION"
+            plutil -extract CFBundleIdentifier raw "$bundle/Contents/Info.plist" | grep -Fx 'io.github.purubhoite.lexleaf'
+            lipo -archs "$bundle/Contents/MacOS/Lexleaf"
+            # Ad hoc: no identity, but a valid seal. An Apple Silicon Mac
+            # will not start an application without one.
+            codesign --force --deep --sign - "$bundle"
+            codesign --verify --deep --strict "$bundle"
+            staging="$RUNNER_TEMP/lexleaf-dmg-$arch"
+            mkdir -p "$staging"
+            ditto "$bundle" "$staging/Lexleaf.app"
+            ln -s /Applications "$staging/Applications"
+            image="dist/Lexleaf-$VERSION-mac-$arch.dmg"
+            hdiutil create -volname "Lexleaf $VERSION" -srcfolder "$staging" -ov -format UDZO "$image"
+            hdiutil verify "$image"
+            test -s "$image"
+          done
+          (cd dist && shasum -a 256 "Lexleaf-$VERSION-mac-arm64.dmg" "Lexleaf-$VERSION-mac-x64.dmg" > mac-SHA256SUMS.txt)
+          cat dist/mac-SHA256SUMS.txt
+
+      - name: Smoke test the packaged application
+        run: |
+          set -euo pipefail
+          user_data="$RUNNER_TEMP/lexleaf-smoke"
+          ./dist/mac-arm64/Lexleaf.app/Contents/MacOS/Lexleaf --user-data-dir="$user_data" >"$RUNNER_TEMP/lexleaf-mac.log" 2>&1 &
+          pid=$!
+          sleep 20
+          if ! kill -0 "$pid" 2>/dev/null; then
+            echo 'Lexleaf exited within 20 seconds of starting' >&2
+            cat "$RUNNER_TEMP/lexleaf-mac.log"
+            exit 1
+          fi
+          kill "$pid"
+          cat "$RUNNER_TEMP/lexleaf-mac.log"
+
+      - name: Attach disk images to the pre-release
+        if: inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          upload_args=(release upload "$TEST_TAG" "dist/Lexleaf-$VERSION-mac-arm64.dmg" "dist/Lexleaf-$VERSION-mac-x64.dmg" dist/mac-SHA256SUMS.txt --repo '${{ github.repository }}' --clobber)
+          gh "${upload_args[@]}"
