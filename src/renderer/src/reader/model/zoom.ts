@@ -11,7 +11,7 @@ import type { PageSize } from './pageLayout';
  * not. The resolved scale is derived, never stored as the authority.
  */
 
-/** The levels a reader can step through, as fractions. */
+/** The levels offered in the zoom menu, as fractions. */
 export const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] as const;
 
 export const MIN_SCALE = 0.25;
@@ -27,11 +27,17 @@ export interface ViewportSize {
 
 const clampScale = (scale: number): number => Math.min(Math.max(scale, MIN_SCALE), MAX_SCALE);
 
-export const nextZoomLevel = (scale: number): number =>
-  clampScale(ZOOM_LEVELS.find((level) => level > scale + 0.001) ?? MAX_SCALE);
+/**
+ * One press of zoom in or out, or one notch of the wheel: a single per cent.
+ * A fitted scale is rarely a whole per cent, so the step starts from the
+ * figure the reader sees in the toolbar, which is the rounded one.
+ */
+export const stepZoom = (scale: number, steps: number): number =>
+  clampScale((Math.round(scale * 100) + steps) / 100);
 
-export const previousZoomLevel = (scale: number): number =>
-  clampScale([...ZOOM_LEVELS].reverse().find((level) => level < scale - 0.001) ?? MIN_SCALE);
+export const nextZoomLevel = (scale: number): number => stepZoom(scale, 1);
+
+export const previousZoomLevel = (scale: number): number => stepZoom(scale, -1);
 
 export const fitWidthScale = (page: PageSize, viewport: ViewportSize): number =>
   page.width <= 0 ? 1 : clampScale((viewport.width - VIEWPORT_PADDING) / page.width);

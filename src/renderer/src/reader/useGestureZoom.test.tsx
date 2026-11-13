@@ -82,7 +82,7 @@ describe('zooming by gesture on the document', () => {
     wheel(element, { deltaY: -100, ctrlKey: true });
     vi.runAllTimers();
 
-    expect(onZoom.mock.calls.map((call) => call[0])).toStrictEqual([1.16, 1.35]);
+    expect(onZoom.mock.calls.map((call) => call[0])).toStrictEqual([1.01, 1.02]);
   });
 
   it('reports nothing once the limit is reached', () => {

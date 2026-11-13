@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { gestureFactor, gestureScale } from './gestureZoom';
+import { gestureFactor, gestureScale, wheelNotchSteps } from './gestureZoom';
 import { MAX_SCALE, MIN_SCALE } from './zoom';
 
 describe('zooming by gesture', () => {
@@ -18,6 +18,21 @@ describe('zooming by gesture', () => {
     expect(pinch).toBeCloseTo(1.02, 2);
     expect(notch).toBeCloseTo(1.16, 2);
     expect(hugeNotch).toBe(notch);
+  });
+
+  it('counts a notch of a mouse wheel as one per cent, and a pinch as none', () => {
+    expect(wheelNotchSteps({ deltaY: -100, deltaMode: 0 })).toBe(1);
+    expect(wheelNotchSteps({ deltaY: 120, deltaMode: 0 })).toBe(-1);
+    expect(wheelNotchSteps({ deltaY: -1200, deltaMode: 0 })).toBe(1);
+    expect(wheelNotchSteps({ deltaY: -3, deltaMode: 1 })).toBe(1);
+    expect(wheelNotchSteps({ deltaY: -6, deltaMode: 0 })).toBe(0);
+    expect(wheelNotchSteps({ deltaY: Number.NaN, deltaMode: 0 })).toBe(0);
+  });
+
+  it('adds the notches to the scale one per cent each', () => {
+    expect(gestureScale(0.87, 1, 1)).toBe(0.88);
+    expect(gestureScale(0.87, 1, -3)).toBe(0.84);
+    expect(gestureScale(MAX_SCALE, 1, 2)).toBe(MAX_SCALE);
   });
 
   it('undoes itself: the same movement out and back returns to where it began', () => {

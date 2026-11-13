@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from 'react';
 
-import { gestureFactor, gestureScale } from './model/gestureZoom';
+import { gestureFactor, gestureScale, wheelNotchSteps } from './model/gestureZoom';
 
 /**
  * Pinch to zoom, and Ctrl + wheel.
@@ -39,14 +39,16 @@ export const useGestureZoom = (
     }
 
     let pending = 1;
+    let pendingSteps = 0;
     let timer: number | null = null;
 
     const commit = (): void => {
       timer = null;
 
-      const next = gestureScale(current.current, pending);
+      const next = gestureScale(current.current, pending, pendingSteps);
 
       pending = 1;
+      pendingSteps = 0;
 
       if (next !== current.current) {
         // Kept here as well as in the effect above, so that movements
@@ -63,7 +65,16 @@ export const useGestureZoom = (
 
       // Without this Chromium would zoom the whole window, bar and all.
       event.preventDefault();
-      pending *= gestureFactor(event);
+
+      const steps = wheelNotchSteps(event);
+
+      // A notch of a mouse wheel is one per cent; a pinch follows the fingers.
+      if (steps === 0) {
+        pending *= gestureFactor(event);
+      } else {
+        pendingSteps += steps;
+      }
+
       timer ??= window.setTimeout(commit, COMMIT_INTERVAL);
     };
 
