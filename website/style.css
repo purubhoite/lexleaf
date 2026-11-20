@@ -573,11 +573,16 @@ code {
   font: 0.92em var(--mono);
 }
 
-/* Keep the library screenshot's empty lower half out of the layout. */
-.split .shot img {
-  aspect-ratio: 1200 / 620;
-  object-fit: cover;
-  object-position: top center;
+/* Two screenshots stacked beside the steps, a little smaller than the page
+   width so they do not tower over the text. */
+.shot-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.shot-stack figcaption {
+  margin-top: 10px;
 }
 
 @media (max-width: 900px) {
