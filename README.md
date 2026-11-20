@@ -185,12 +185,6 @@ Lexleaf checks whether a newer version has been released so that fixes reach you
 
 Optional AI explanation functionality is disabled by default and has separate configuration and network-policy code. Do not interpret the local-first design as a claim that every optional feature or dependency can never make a network request; review and configure optional providers deliberately.
 
-## Website
-
-The Lexleaf website, [lexleaf.in](https://lexleaf.in), is in a repository of its own: [purubhoite/lexleaf-website](https://github.com/purubhoite/lexleaf-website). It is a single static page — plain HTML and CSS, no framework, no build step — served by Vercel, which deploys every push to that repository's `main` branch.
-
-It covers what Lexleaf does, how the reading loop works, and the download links for every platform. The page reads the latest release from the GitHub API at runtime, so the version number and file names stay current without being edited. It sets no cookies of its own.
-
 ## Development
 
 Requirements: Node.js **22.13.0 or newer** and npm. The Windows verification environment uses Node.js 22.21.1.
