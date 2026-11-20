@@ -1069,7 +1069,7 @@ export const ReaderView = ({
         region is capped and scrolls within itself, so that however many
         notices there are, the pages keep most of the window.
       */}
-      <div className="reader__notices" data-testid="notices">
+      <div className="reader__notices scroller" data-testid="notices">
         {notices}
 
         {ready !== null && lookupHint.visible && (
@@ -1177,7 +1177,7 @@ export const ReaderView = ({
           />
         )}
         <div
-          className="reader__scroller"
+          className="reader__scroller scroller"
           ref={scrollRef}
           id={DOCUMENT_SCROLLER_ID}
           tabIndex={0}

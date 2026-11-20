@@ -158,7 +158,7 @@ export const SettingsPanel = ({
   onClose,
   children,
 }: SettingsPanelProps): ReactElement => (
-  <section className="settings" aria-label="Settings" data-testid="settings">
+  <section className="settings scroller" aria-label="Settings" data-testid="settings">
     <div className="settings__header">
       <h2 className="settings__title">Settings</h2>
       <button

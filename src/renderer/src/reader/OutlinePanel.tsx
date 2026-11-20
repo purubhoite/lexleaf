@@ -48,7 +48,7 @@ export const OutlinePanel = ({
           </button>
         </div>
       )}
-      <ol className="outline__list">
+      <ol className="outline__list scroller">
         {entries.map((entry, index) => {
           const isActive = index === active;
           const indent = { paddingInlineStart: `calc(var(--space-3) * ${String(entry.depth)})` };

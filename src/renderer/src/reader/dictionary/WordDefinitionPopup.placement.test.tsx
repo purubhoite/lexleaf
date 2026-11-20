@@ -172,7 +172,7 @@ describe('the popup measures what it renders', () => {
     show();
 
     expect(observed).toHaveLength(1);
-    expect(observed[0]?.className).toBe('dictionary-popup__scroll');
+    expect(observed[0]?.classList.contains('dictionary-popup__scroll')).toBe(true);
   });
 
   it('places itself from the measured height, not from the estimate', () => {

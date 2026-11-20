@@ -47,6 +47,21 @@
   --colour-control-hover: #2b2b2b;
   --colour-focus: #6ea8ff;
 
+  /* --- Colour: scrollbars ---------------------------------------------- */
+  /*
+   * The bar itself is drawn on the surface it scrolls and is otherwise
+   * invisible; the thumb is the part that has to be found. It is held to
+   * 3:1 against every surface a panel, the page list or the reader's
+   * scroller can show (WCAG 2.2 section 1.4.11), and it takes the focus
+   * colour when the pointer is on it, the way every control does.
+   *
+   * Chromium draws these for `::-webkit-scrollbar`, which is the only
+   * scrollbar styling a Chromium application can rely on; nothing else in
+   * the renderer knows the bars exist.
+   */
+  --colour-scrollbar-thumb: #6f6f6f;
+  --colour-scrollbar-thumb-hover: #8f8f8f;
+
   /* --- Colour: intent -------------------------------------------------- */
   --colour-accent: #63c99b;
   --colour-accent-hover: #7ad6ab;
@@ -218,6 +233,10 @@
   --colour-control-hover: #e6eaf1;
   --colour-focus: #0b57d0;
 
+  /* --- Colour: scrollbars ---------------------------------------------- */
+  --colour-scrollbar-thumb: #6c788b;
+  --colour-scrollbar-thumb-hover: #5d6879;
+
   /* --- Colour: intent -------------------------------------------------- */
   --colour-accent: #17784f;
   --colour-accent-hover: #126241;
@@ -257,6 +276,10 @@
     /* --- Colour: controls ---------------------------------------------- */
     --colour-control-hover: #e6eaf1;
     --colour-focus: #0b57d0;
+
+    /* --- Colour: scrollbars -------------------------------------------- */
+    --colour-scrollbar-thumb: #6c788b;
+    --colour-scrollbar-thumb-hover: #5d6879;
 
     /* --- Colour: intent ------------------------------------------------ */
     --colour-accent: #17784f;

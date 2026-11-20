@@ -257,7 +257,7 @@ export const ReaderSidebar = ({
       </div>
 
       <div
-        className="sidebar__panel"
+        className="sidebar__panel scroller"
         role="tabpanel"
         id="sidebar-panel"
         aria-labelledby={`sidebar-tab-${tab}`}
