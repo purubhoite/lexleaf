@@ -22,7 +22,7 @@ dependencies, no framework. `index.html` opens in a browser as it is.
   and points each button at the exact file (`-x64-setup.exe`, `-x86_64.AppImage`,
   `-amd64.deb`) and shows the version number. With it off, every button still reaches the
   release page.
-- The macOS buttons point at the `mac-test-0.2.8` pre-release, because the Mac build is a
+- The macOS buttons point at the `mac-test-0.2.9` pre-release, because the Mac build is a
   test build. Update them when a signed Mac release exists.
 - Screenshots are in `assets/`: `lookup.png` (the hero), `reading.png` and `settings.png`
   (beside the steps). All three are 1483 × 1012 captures of the whole window, flattened on
