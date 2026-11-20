@@ -455,7 +455,7 @@ export const App = ({ bridge }: AppProps): ReactElement => {
         </div>
 
         {showSettings && (
-          <aside className="shell__panel" data-testid="side-panel">
+          <aside className="shell__panel scroller" data-testid="side-panel">
             <SettingsPanel
               preferences={preferences}
               onChange={setPreference}
@@ -474,7 +474,7 @@ export const App = ({ bridge }: AppProps): ReactElement => {
         )}
 
         {showLibrary && (
-          <aside className="shell__panel" data-testid="side-panel">
+          <aside className="shell__panel scroller" data-testid="side-panel">
             <LibraryView
               library={library}
               onOpenOrigin={openOrigin}

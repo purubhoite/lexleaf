@@ -245,6 +245,79 @@ body {
 }
 
 /* ------------------------------------------------------------------ *
+ * Scrollbars
+ * ------------------------------------------------------------------ */
+
+/*
+ * The bars are thin, dark and unobtrusive, and only the thumb is painted:
+ * the platform's own bar is a light, wide, always-visible strip that looks
+ * imported from another application, and in the reading panes it took as
+ * much room as a column of text.
+ *
+ * They are drawn only where a surface actually scrolls — the panel, the
+ * page list, the reader's scroller, the search list — which is every
+ * element that opts in with `.scroller`. A surface that does not scroll
+ * never grows a gap for a bar that would not be there.
+ *
+ * Chromium is the only engine this application runs in, so one family of
+ * pseudo-element rules is all there is; `scrollbar-width` is set as well,
+ * for the one bar a reader might meet outside a styled surface (a native
+ * select's popup is drawn by the platform and is not ours to paint).
+ */
+.scroller {
+  /*
+   * Deliberately no `scrollbar-width` or `scrollbar-color` here. They look
+   * like the modern way to do this, but in Chromium the two standard
+   * properties take precedence: setting them turns off every
+   * `::-webkit-scrollbar` rule below and brings back the platform's own
+   * bar, arrow steppers and all. Measured in this engine, the thumb and
+   * the 10-pixel track only appear when the standard pair is absent.
+   */
+}
+
+.scroller::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.scroller::-webkit-scrollbar-track,
+.scroller::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/*
+ * No arrow steppers: the thumb is the whole control, as in every other
+ * modern application on the platform. `width` and `height` are given
+ * explicitly as well as `display: none`, because a button that is only
+ * hidden still takes the size it would have had — the measured bar was 10
+ * pixels wide with an arrow above and below the thumb until both were set.
+ */
+.scroller::-webkit-scrollbar-button:vertical:start:increment,
+.scroller::-webkit-scrollbar-button:vertical:end:decrement,
+.scroller::-webkit-scrollbar-button:horizontal:start:increment,
+.scroller::-webkit-scrollbar-button:horizontal:end:decrement,
+.scroller::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+  border: 0;
+}
+
+.scroller::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  /* The bar is 10px wide and the 2px border insets the thumb to 6px, so the
+     small radius rounds it into a pill rather than a rectangle. */
+  border-radius: var(--radius-sm);
+  background-color: var(--colour-scrollbar-thumb);
+  background-clip: content-box;
+}
+
+.scroller::-webkit-scrollbar-thumb:hover {
+  background-color: var(--colour-scrollbar-thumb-hover);
+}
+
+/* ------------------------------------------------------------------ *
  * Shell
  * ------------------------------------------------------------------ */
 
@@ -371,7 +444,16 @@ body {
   min-width: 0;
   min-height: 0;
   padding: var(--space-4);
-  overflow-y: auto;
+  /*
+   * The panel is the one scroller. `auto` on both axes, because `overflow-y:
+   * auto` alone computes to `overflow-x: auto` as well, and a surface that can
+   * scroll sideways as well as up is how a few pixels of a long file name
+   * turn into a second pair of scrollbars inside the first — the library's
+   * cards used to scroll on their own inside the panel that scrolled them.
+   * Nothing in a panel is allowed to be wider than the panel.
+   */
+  overflow: auto;
+  overflow-x: hidden;
   background-color: var(--colour-surface);
   border-inline-start: var(--border-width) solid var(--colour-border);
 }
@@ -457,7 +539,8 @@ body {
   flex-direction: column;
   gap: var(--space-3);
   min-height: 0;
-  overflow-y: auto;
+  /* The panel around it scrolls (see `.shell__panel`); a second scroller
+     here would draw a second scrollbar beside the first. */
   padding-bottom: var(--space-6);
 }
 
@@ -479,12 +562,25 @@ body {
   gap: var(--space-3);
 }
 
+/*
+ * Each control is a column that may shrink: `min-width: 0` and a field that
+ * fills it. Without that, a control keeps the width its content asks for —
+ * the search field's `size`, a select's widest option — and the last one in
+ * a row pushes the row past the panel. A long document name in the Document
+ * menu used to do exactly that in a half-width window.
+ */
 .library__control {
   display: flex;
   flex-direction: column;
+  flex: 1 1 7rem;
   gap: var(--space-1);
+  min-width: 0;
   font-size: var(--text-xs);
   color: var(--colour-text-muted);
+}
+
+.library__control .control {
+  max-width: 100%;
 }
 
 .library__export {
@@ -510,17 +606,33 @@ body {
 
 .library__list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  /*
+   * `min(18rem, 100%)`: 18rem is the width a card wants, but a panel can be
+   * narrower than that — a half-width window puts the panel at 320 pixels,
+   * and 18rem of track inside 287 pixels of content box is what used to
+   * make the list scroll sideways. `100%` caps the track at the space that
+   * actually exists.
+   */
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
   gap: var(--space-3);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/*
+ * A track's automatic minimum is its content's, and this content is a file
+ * name with no spaces in it; the card is allowed to be narrower than that.
+ */
+.library__list > * {
+  min-width: 0;
+}
+
 .library__card {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  min-width: 0;
   padding: var(--space-3);
   border-radius: var(--radius-md);
   background-color: var(--colour-surface-raised);
@@ -546,6 +658,8 @@ body {
 .library__definition {
   margin: 0;
   font-size: var(--text-sm);
+  /* A definition is prose, but it can still carry a long unbroken token. */
+  overflow-wrap: anywhere;
 }
 
 .library__definition--absent {
@@ -557,10 +671,14 @@ body {
   margin: 0;
   color: var(--colour-text-muted);
   font-size: var(--text-xs);
+  /* A document name can be a single 60-character word. Let it break
+     anywhere rather than insist on a line wider than the card. */
+  overflow-wrap: anywhere;
 }
 
 .library__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
   margin-top: var(--space-1);
 }

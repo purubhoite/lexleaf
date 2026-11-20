@@ -486,7 +486,7 @@ export const WordDefinitionPopup = ({
         lives in here, because an `overflow` of anything but `visible`
         clips absolutely positioned children — including the arrow.
       */}
-      <div className="dictionary-popup__scroll" ref={content}>
+      <div className="dictionary-popup__scroll scroller" ref={content}>
         <header className="dictionary-popup__header">
           <h2 className="dictionary-popup__word">{displayWord}</h2>
           {onListen !== undefined && (
