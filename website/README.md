@@ -31,18 +31,21 @@ dependencies, no framework. `index.html` opens in a browser as it is.
 
 ## Deploying
 
-Hosted on Vercel, connected to this repository, with **Root Directory** set to `website`
-and Framework Preset set to **Other** (no build command; the output is this folder as it
-is). A push to `main` deploys to production; a pull request gets its own preview address.
-
-Domain: `lexleaf.in`, with `www.lexleaf.in` redirecting to it. In Vercel, under
-**Settings › Domains**, add both. Then, at the domain registrar, set the records Vercel
-shows: an `A` record for `@` pointing at Vercel's address, and a `CNAME` record for `www`.
-The nameservers may also be pointed at Vercel instead, which handles both at once.
+See [DEPLOYING.md](DEPLOYING.md): Vercel, then the DNS records at GoDaddy, step by step,
+including what the records mean and how to check the result.
 
 ## Separate repository
 
-A new repository was the first plan, but this GitHub connection may push to existing
-repositories and may not create new ones, so the site lives in this repository instead.
-To move it later: copy this folder into a new repository, point Vercel's Root Directory at
-its root, and delete the folder here.
+The plan is a repository of its own, so the site can be rebuilt without touching the
+application's releases. This folder is ready to become one: it is self-contained, and
+`git subtree split --prefix=website` produces a branch of just these files.
+
+To move it: create the repository empty (no README, no licence), then
+
+```bash
+git subtree split --prefix=website -b site-only   # in a clone of this repository
+git push <new repository> site-only:main
+```
+
+and point Vercel at the new repository with the Root Directory at its root. Delete this
+folder from the application repository once the site is live from its own.
