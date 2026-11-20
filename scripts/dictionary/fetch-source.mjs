@@ -69,6 +69,42 @@ const download = async (url, destination) => {
 };
 
 /**
+ * The places a pinned archive may be fetched from, in the order to try them.
+ *
+ * The project's own URL comes first. The mirrors in `source.json` are the
+ * same release published elsewhere (the Open English WordNet team's GitHub
+ * release), for the days its own server is unreachable. A mirror cannot
+ * substitute different data: whatever arrives is still held to the pinned
+ * size and SHA-256, so a wrong file stops the build rather than shipping.
+ */
+export const archiveSources = (spec) => [spec.url, ...(spec.mirrors ?? [])];
+
+/**
+ * Downloads one pinned file, trying each source in turn.
+ *
+ * @returns {Promise<void>} resolves once a copy is in place
+ */
+const downloadFromAnySource = async (spec, destination, log) => {
+  const sources = archiveSources(spec);
+  const failures = [];
+
+  for (const url of sources) {
+    log(`downloading ${url}`);
+
+    try {
+      await download(url, destination);
+
+      return;
+    } catch (error) {
+      failures.push(`${url}: ${error.message}`);
+      log(`source unavailable, trying the next one`);
+    }
+  }
+
+  throw new Error(`no source could be reached for ${spec.fileName}\n${failures.join('\n')}`);
+};
+
+/**
  * Ensures one pinned file is present and verified.
  *
  * @returns {Promise<string>} the path to the verified file
@@ -77,8 +113,7 @@ const ensureFile = async (spec, cacheDir, log) => {
   const path = join(cacheDir, spec.fileName);
 
   if (!(await exists(path))) {
-    log(`downloading ${spec.url}`);
-    await download(spec.url, path);
+    await downloadFromAnySource(spec, path, log);
   }
 
   const size = (await stat(path)).size;
