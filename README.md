@@ -12,7 +12,9 @@
   </p>
 
   <p>
-    <a href="https://github.com/purubhoite/lexleaf/releases/latest"><strong>Download the latest version</strong></a>
+    <a href="https://lexleaf.in"><strong>lexleaf.in</strong></a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/purubhoite/lexleaf/releases/latest">Download the latest version</a>
     <br />
     Windows installer · Linux AppImage · Debian/Ubuntu package · release notes and checksums
   </p>
@@ -182,6 +184,12 @@ Lexleaf checks whether a newer version has been released so that fixes reach you
 - Versions 0.1.0 and 0.1.1 do not have this check and must be updated by hand from the [releases page](https://github.com/purubhoite/lexleaf/releases/latest).
 
 Optional AI explanation functionality is disabled by default and has separate configuration and network-policy code. Do not interpret the local-first design as a claim that every optional feature or dependency can never make a network request; review and configure optional providers deliberately.
+
+## Website
+
+The Lexleaf website, [lexleaf.in](https://lexleaf.in), is in a repository of its own: [purubhoite/lexleaf-website](https://github.com/purubhoite/lexleaf-website). It is a single static page — plain HTML and CSS, no framework, no build step — served by Vercel, which deploys every push to that repository's `main` branch.
+
+It covers what Lexleaf does, how the reading loop works, and the download links for every platform. The page reads the latest release from the GitHub API at runtime, so the version number and file names stay current without being edited. It sets no cookies of its own.
 
 ## Development
 
