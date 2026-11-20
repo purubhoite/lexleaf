@@ -24,8 +24,10 @@ dependencies, no framework. `index.html` opens in a browser as it is.
   release page.
 - The macOS buttons point at the `mac-test-0.2.8` pre-release, because the Mac build is a
   test build. Update them when a signed Mac release exists.
-- Screenshots are in `assets/`. Replacing one keeps the same file name, so nothing else
-  needs changing.
+- Screenshots are in `assets/`: `lookup.png` (the hero), `reading.png` and `settings.png`
+  (beside the steps). All three are 1483 × 1012 captures of the whole window, flattened on
+  black. Replacing one keeps the same file name, so nothing else needs changing; update
+  the `width` and `height` attributes if the size changes.
 
 ## Deploying
 
