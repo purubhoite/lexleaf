@@ -42,6 +42,12 @@ jobs:
           # executable the package really installs.
           dpkg-deb --fsys-tarfile "$deb" | tar -xO --wildcards '*etc/apport/report-ignore/lexleaf' | grep -Fx '/opt/Lexleaf/lexleaf'
           dpkg-deb --fsys-tarfile "$deb" | tar -t | grep -Ex '(\./)?opt/Lexleaf/lexleaf'
+          # The licence and the notices reach the reader inside the package,
+          # not only in the repository (Apache-2.0 §4(a) and §4(d)). The panel
+          # in the settings reads them back out of the archive, so this is the
+          # same file a reader sees.
+          npx asar list dist/linux-unpacked/resources/app.asar | grep -Fx '/LICENSE'
+          npx asar list dist/linux-unpacked/resources/app.asar | grep -Fx '/NOTICE'
           # The files an installed copy needs to update itself.
           grep -F "version: ${version}" dist/latest-linux.yml
           grep -F "Lexleaf-${version}-x86_64.AppImage" dist/latest-linux.yml

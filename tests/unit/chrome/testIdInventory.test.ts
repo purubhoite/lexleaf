@@ -160,6 +160,13 @@ const ADDED_AFTER_MILESTONE_5 = [
   // nothing said — because the only notice the library rendered belonged
   // to a failed *load*.
   'library-remove-failed',
+  // 0.2.11: the licence panel in the settings. One button per document,
+  // its text, and the line that says a build carries no notices.
+  'setting-licences',
+  'licence-application',
+  'licence-dictionary',
+  'licence-text',
+  'licence-failed',
 ] as const;
 
 /**

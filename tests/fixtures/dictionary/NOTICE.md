@@ -35,8 +35,3 @@ Synthetic test data. Written for this project; not derived from WordNet or any o
 ```
 
 This dictionary distribution is not affiliated with, sponsored by, or endorsed by Princeton University.
-
-### Legal status
-
-No legal review of this redistribution has been carried out. Commercial
-release requires one; see `docs/DICTIONARY_INVESTIGATION.md`.

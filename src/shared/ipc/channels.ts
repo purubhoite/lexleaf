@@ -15,6 +15,11 @@ export const IpcChannel = {
    */
   ReportProblem: 'app:report-problem',
   /**
+   * Returns one of the licence documents shipped with the application.
+   * Takes an id from a closed set, never a path.
+   */
+  ReadLicence: 'app:read-licence',
+  /**
    * Main to window, the only channel in that direction: the name of a
    * menu command. The window does what its own button would have done.
    */

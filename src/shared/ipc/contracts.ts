@@ -360,6 +360,15 @@ export interface DesktopBridge {
    */
   readonly reportProblem?: () => Promise<boolean>;
   /**
+   * The licence and third-party notices shipped with this build.
+   *
+   * Read-only, two documents, no argument naming a file. Absent in a build
+   * that ships none.
+   */
+  readonly licences?: {
+    readonly read: (id: LicenceDocumentId) => Promise<LicenceReadResult>;
+  };
+  /**
    * Listens for commands from the application menu. Returns the function
    * that stops listening. Absent where there is no menu.
    */
@@ -883,4 +892,87 @@ export const parseDictionaryResult = (value: unknown): DictionaryResult | null =
   );
 
   return { status: 'partial', ...answer, absentFields: absent };
+};
+
+/**
+ * The licence and notice documents shipped with the application.
+ *
+ * Two ids, not a path: the renderer asks for "the dictionary notices", and
+ * the main process decides where that is. A reader who wants the licence
+ * for the software they installed should not have to visit GitHub for it,
+ * and a path that came over IPC would be an arbitrary file read.
+ */
+export type LicenceDocumentId = 'application' | 'dictionary';
+
+/** A document the licence panel can show, already decoded. */
+export interface LicenceDocument {
+  readonly id: LicenceDocumentId;
+  readonly title: string;
+  readonly text: string;
+}
+
+/**
+ * Why a document could not be read.
+ *
+ * `not-installed` means this build does not carry it; `unreadable` means it
+ * is there and could not be decoded. Neither carries a message from the
+ * main process.
+ */
+export type LicenceFailure = 'not-installed' | 'unreadable';
+
+export type LicenceReadResult =
+  | { readonly ok: true; readonly value: LicenceDocument }
+  | { readonly ok: false; readonly reason: LicenceFailure };
+
+export const parseLicenceDocumentId = (value: unknown): LicenceDocumentId | null =>
+  value === 'application' || value === 'dictionary' ? value : null;
+
+/**
+ * Validates a licence reply.
+ *
+ * A document is bounded in length: these are two text files and a notice,
+ * and a reply far larger than any of them is not one. The bound is generous
+ * (1 MB) because the Apache licence plus the notice is about 12 KB and the
+ * dictionary notice is smaller still.
+ */
+const MAXIMUM_LICENCE_BYTES = 1_000_000;
+
+export const parseLicenceReadResult = (value: unknown): LicenceReadResult | null => {
+  if (!isObject(value)) {
+    return null;
+  }
+
+  if (value['ok'] === false) {
+    const reason = value['reason'];
+
+    if (reason !== 'not-installed' && reason !== 'unreadable') {
+      return null;
+    }
+
+    return { ok: false, reason };
+  }
+
+  if (value['ok'] !== true) {
+    return null;
+  }
+
+  const document = value['value'];
+
+  if (!isObject(document)) {
+    return null;
+  }
+
+  const id = parseLicenceDocumentId(document['id']);
+
+  if (
+    id === null ||
+    !isNonEmptyString(document['title']) ||
+    typeof document['text'] !== 'string' ||
+    document['text'] === '' ||
+    document['text'].length > MAXIMUM_LICENCE_BYTES
+  ) {
+    return null;
+  }
+
+  return { ok: true, value: { id, title: document['title'], text: document['text'] } };
 };

@@ -10,6 +10,7 @@ import { LibraryView } from '../library/LibraryView';
 import { Icon } from '../ui/Icon';
 import { SettingsPanel } from '../settings/SettingsPanel';
 import { ReportProblem } from '../support/ReportProblem';
+import { Licences } from '../settings/Licences';
 import { usePreferences } from '../settings/usePreferences';
 import { Message } from '../ui/Message';
 import { UpdateMessage } from '../update/UpdateMessage';
@@ -66,7 +67,10 @@ const RuntimeDetails = ({ bridge }: AppProps): ReactElement => {
         Lexleaf application code is available under the Apache-2.0 licence. Third-party components
         and dictionary data retain their own licences.
       </p>
-      <p>See the bundled third-party notices for component and dictionary licensing details.</p>
+      <p>
+        The licence and the third-party notices shipped with this build are under Licences, just
+        above.
+      </p>
       <details>
         <summary>Technical information</summary>
         <dl className="details">
@@ -465,6 +469,7 @@ export const App = ({ bridge }: AppProps): ReactElement => {
             >
               <UpdateSettings updates={updates} />
               {reportProblem !== undefined && <ReportProblem onReport={reportProblem} />}
+              {bridge?.licences !== undefined && <Licences onRead={bridge.licences.read} />}
               <section className="settings__group shell__about" data-testid="about">
                 <h3 className="settings__legend">About Lexleaf</h3>
                 <RuntimeDetails bridge={bridge} />

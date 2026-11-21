@@ -44,6 +44,7 @@ describe('registerAppIpcHandlers', () => {
     registerAppIpcHandlers(ipc, {
       appInfo,
       reportProblem: () => undefined,
+      readLicence: () => ({ ok: false, reason: 'not-installed' }),
       setFullScreen: () => undefined,
       devServerOrigin: null,
     });
@@ -51,6 +52,7 @@ describe('registerAppIpcHandlers', () => {
     expect(ipc.registeredChannels()).toEqual([
       IpcChannel.GetAppInfo,
       IpcChannel.ReportProblem,
+      IpcChannel.ReadLicence,
       IpcChannel.SetFullScreen,
     ]);
   });
@@ -60,6 +62,7 @@ describe('registerAppIpcHandlers', () => {
     registerAppIpcHandlers(ipc, {
       appInfo,
       reportProblem: () => undefined,
+      readLicence: () => ({ ok: false, reason: 'not-installed' }),
       setFullScreen: () => undefined,
       devServerOrigin: null,
     });
@@ -74,6 +77,7 @@ describe('registerAppIpcHandlers', () => {
     registerAppIpcHandlers(ipc, {
       appInfo,
       reportProblem: () => undefined,
+      readLicence: () => ({ ok: false, reason: 'not-installed' }),
       setFullScreen: () => undefined,
       devServerOrigin: 'http://localhost:5173',
     });
@@ -86,6 +90,7 @@ describe('registerAppIpcHandlers', () => {
     registerAppIpcHandlers(ipc, {
       appInfo,
       reportProblem: () => undefined,
+      readLicence: () => ({ ok: false, reason: 'not-installed' }),
       setFullScreen: () => undefined,
       devServerOrigin: null,
     });
@@ -100,6 +105,7 @@ describe('registerAppIpcHandlers', () => {
     registerAppIpcHandlers(ipc, {
       appInfo,
       reportProblem: () => undefined,
+      readLicence: () => ({ ok: false, reason: 'not-installed' }),
       setFullScreen: () => undefined,
       devServerOrigin: null,
     });
@@ -113,6 +119,7 @@ describe('registerAppIpcHandlers', () => {
     registerAppIpcHandlers(ipc, {
       appInfo,
       reportProblem,
+      readLicence: () => ({ ok: false, reason: 'not-installed' }),
       setFullScreen: () => undefined,
       devServerOrigin: null,
     });
@@ -129,6 +136,7 @@ describe('registerAppIpcHandlers', () => {
       reportProblem: () => {
         throw new Error('no browser');
       },
+      readLicence: () => ({ ok: false, reason: 'not-installed' }),
       setFullScreen: () => undefined,
       devServerOrigin: null,
     });
@@ -142,6 +150,7 @@ describe('registerAppIpcHandlers', () => {
     registerAppIpcHandlers(ipc, {
       appInfo,
       reportProblem,
+      readLicence: () => ({ ok: false, reason: 'not-installed' }),
       setFullScreen: () => undefined,
       devServerOrigin: null,
     });

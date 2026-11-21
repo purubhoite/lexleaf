@@ -136,11 +136,6 @@ export const generateNotice = (manifest, licenceHeader) =>
     '',
     'This dictionary distribution is not affiliated with, sponsored by, or endorsed by Princeton University.',
     '',
-    '### Legal status',
-    '',
-    'No legal review of this redistribution has been carried out. Commercial',
-    'release requires one; see `docs/DICTIONARY_INVESTIGATION.md`.',
-    '',
   ].join('\n');
 
 export const NOTICE_REQUIREMENTS = [
