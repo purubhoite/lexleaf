@@ -11,6 +11,7 @@ import {
   parseSearchQuery,
   parseStateForWordRequest,
   parseStateResult,
+  parseVoidResult,
 } from './vocabularyContracts';
 
 /** Both directions are parsed, because neither side is trusted. */
@@ -296,5 +297,46 @@ describe('replies on the way back', () => {
     expect(parseStateResult(undefined)).toBeNull();
     expect(parseStateResult({ ok: 'yes' })).toBeNull();
     expect(parseLibraryPageResult({ ok: true, value: { items: 'all of them' } })).toBeNull();
+  });
+});
+
+/*
+ * Remove and restore answer with nothing, and that must not read as a
+ * failure.
+ *
+ * The parser used to treat any `null` from a reply's value parser as a
+ * malformed reply, which for a reply whose whole payload *is* `null` meant
+ * every success came back to the renderer as
+ * `{ ok: false, error: { kind: 'unavailable', reason: 'unknown' } }`. The
+ * word really was deleted; the popup then said "That word could not be
+ * saved." and the library row came back for an item that no longer
+ * existed. Reported from a reader testing 0.2.9.
+ */
+describe('the reply to a request that has nothing to answer', () => {
+  it('accepts a success, because there is no payload to be wrong', () => {
+    expect(parseVoidResult({ ok: true, value: null })).toEqual({ ok: true, value: null });
+  });
+
+  it('accepts the key being absent, as the handler writes it', () => {
+    // `ok(null)` serialises `value` as null, but a reply that omits it is
+    // still a success rather than a malformed one.
+    expect(parseVoidResult({ ok: true })).toEqual({ ok: true, value: null });
+  });
+
+  it('still passes a failure through unchanged', () => {
+    expect(
+      parseVoidResult({ ok: false, error: { kind: 'unavailable', reason: 'locked' } }),
+    ).toEqual({ ok: false, error: { kind: 'unavailable', reason: 'locked' } });
+  });
+
+  it('still refuses a reply that is not a result', () => {
+    expect(parseVoidResult(undefined)).toBeNull();
+    expect(parseVoidResult(null)).toBeNull();
+    expect(parseVoidResult({ ok: 'yes' })).toBeNull();
+    expect(parseVoidResult({ ok: false })).toBeNull();
+  });
+
+  it('refuses a success carrying a payload it cannot mean', () => {
+    expect(parseVoidResult({ ok: true, value: 'deleted' })).toBeNull();
   });
 });

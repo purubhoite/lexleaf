@@ -68,9 +68,19 @@ const IDLE: Attempt = { state: 'unknown', otherPlaces: 0, error: null };
  * holding the source code. Reason codes are translated here because this is
  * the only place that knows a human is reading them.
  */
-const explain = (failure: VocabularyFailure): string => {
+type AttemptKind = 'save' | 'remove';
+
+const explain = (failure: VocabularyFailure, kind: AttemptKind): string => {
+  /*
+   * The sentence has to name what was attempted. "That word could not be
+   * saved." appeared when a word could not be *removed*, which reads as a
+   * report that the opposite thing happened; a reader testing 0.2.9
+   * reasonably read it as a bug in the save, and it was reported as one.
+   */
+  const verb = kind === 'save' ? 'saved' : 'removed';
+
   if (failure.kind === 'write-failed') {
-    return 'That word could not be saved.';
+    return `That word could not be ${verb}.`;
   }
 
   if (failure.kind === 'not-found') {
@@ -78,7 +88,7 @@ const explain = (failure: VocabularyFailure): string => {
   }
 
   if (failure.kind === 'invalid-request') {
-    return 'That word could not be saved.';
+    return `That word could not be ${verb}.`;
   }
 
   switch (failure.reason) {
@@ -94,7 +104,7 @@ const explain = (failure: VocabularyFailure): string => {
     case 'migration-failed':
       return 'The saved words file could not be upgraded.';
     default:
-      return 'That word could not be saved.';
+      return `That word could not be ${verb}.`;
   }
 };
 
@@ -266,7 +276,7 @@ export const useSaveWord = ({
         }
 
         if (!reply.ok) {
-          setAttempt({ state: 'not-saved', otherPlaces: 0, error: explain(reply.error) });
+          setAttempt({ state: 'not-saved', otherPlaces: 0, error: explain(reply.error, 'save') });
 
           return;
         }
@@ -323,7 +333,7 @@ export const useSaveWord = ({
         setAttempt(
           reply.ok
             ? { state: 'not-saved', otherPlaces: 0, error: null }
-            : { state: 'saved-here', otherPlaces: 0, error: explain(reply.error) },
+            : { state: 'saved-here', otherPlaces: 0, error: explain(reply.error, 'remove') },
         );
       })
       .catch(() => {

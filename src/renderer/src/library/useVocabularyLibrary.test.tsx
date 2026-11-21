@@ -11,6 +11,8 @@ import type { SavedWord } from '@core/vocabulary/types';
 import { act, renderHook, waitFor, type RenderHookResult } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { parseVoidResult } from '@shared/ipc/vocabularyContracts';
+
 import { aSavedWord } from './libraryFixtures';
 import { useVocabularyLibrary, type LibraryControls } from './useVocabularyLibrary';
 
@@ -382,6 +384,77 @@ describe('the vocabulary library', () => {
     });
     expect(result.current.state.undo).toBeNull();
     expect(result.current.state.failure).toEqual({ kind: 'write-failed' });
+  });
+
+  /*
+   * The two bugs a reader reported after 0.2.9, both rooted in one misread
+   * reply. `remove` and `restore` answer with nothing, and the preload
+   * parser turned that "nothing" into a failure, so:
+   *
+   * - the library put the row back, cleared the undo bar and said nothing
+   *   (the notice it set was only rendered for a failed *load*), which is
+   *   what "it jitters and the word is still there" looked like; and
+   * - the popup said "That word could not be saved." for a word that had
+   *   in fact been deleted.
+   *
+   * The fakes above hand back typed replies directly, which is why 155
+   * tests passed while the product was broken. These go through the real
+   * preload parser, which is where the defect lived.
+   */
+  it('treats the reply a successful remove really gets as a success', async () => {
+    // Exactly what `ok(null)` crosses the IPC boundary as.
+    const wire = { ok: true, value: null };
+    const parsed = parseVoidResult(wire);
+
+    expect(parsed).toEqual({ ok: true, value: null });
+
+    const { bridge } = fake({
+      remove: (): Promise<VocabularyIpcResult<null>> =>
+        Promise.resolve(parsed ?? { ok: false, error: { kind: 'unavailable', reason: 'unknown' } }),
+    });
+    const { result } = mount(bridge);
+
+    await waitFor(() => {
+      expect(result.current.state.items).toHaveLength(1);
+    });
+
+    act(() => {
+      result.current.remove(result.current.state.items[0] as SavedWord);
+    });
+
+    // Gone from the list, undo offered, and no failure invented.
+    await waitFor(() => {
+      expect(result.current.state.items).toHaveLength(0);
+    });
+    expect(result.current.state.undo).not.toBeNull();
+    expect(result.current.state.failure).toBeNull();
+  });
+
+  it('clears an earlier failure when the next attempt is made', async () => {
+    const { bridge } = fake({
+      remove: (): Promise<VocabularyIpcResult<null>> =>
+        Promise.resolve({ ok: false, error: { kind: 'write-failed' } }),
+    });
+    const { result } = mount(bridge);
+
+    await waitFor(() => {
+      expect(result.current.state.items).toHaveLength(1);
+    });
+
+    act(() => {
+      result.current.remove(result.current.state.items[0] as SavedWord);
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.failure).toEqual({ kind: 'write-failed' });
+    });
+
+    // The notice must not outlive the attempt it belongs to.
+    act(() => {
+      result.current.remove(result.current.state.items[0] as SavedWord);
+    });
+
+    expect(result.current.state.failure).toBeNull();
   });
 
   it('says so when a word cannot be put back', async () => {

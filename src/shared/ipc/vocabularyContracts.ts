@@ -365,6 +365,47 @@ const parseResult = <T>(
   return failure === null ? null : { ok: false, error: failure };
 };
 
+/**
+ * The same, for a reply that carries no payload.
+ *
+ * `parseResult` decides a reply is malformed when its parser returns
+ * `null`, which is right for every reply with something in it and wrong
+ * for `VocabularyRemove` and `VocabularyRestore`: their `value` is `null`
+ * by definition, so the parser has nothing to accept and the null it
+ * returns was being read as a rejection. The consequence was not a quiet
+ * one. A successful remove reached the renderer as
+ *
+ *     { ok: false, error: { kind: 'unavailable', reason: 'unknown' } }
+ *
+ * so the library took the row off the list, the popup changed to
+ * "That word could not be saved.", and the store had already deleted the
+ * word. Nothing about the store was broken; the reply was misread on the
+ * way back.
+ *
+ * The success arm is checked before any parser runs, so `value` is
+ * validated as `null` where it exists and the result is `null` where the
+ * type says so.
+ */
+const parseVoid = (value: unknown): VocabularyIpcResult<null> | null => {
+  if (!isObject(value)) {
+    return null;
+  }
+
+  if (value['ok'] === true) {
+    return value['value'] === null || value['value'] === undefined
+      ? { ok: true, value: null }
+      : null;
+  }
+
+  if (value['ok'] !== false) {
+    return null;
+  }
+
+  const failure = parseFailure(value['error']);
+
+  return failure === null ? null : { ok: false, error: failure };
+};
+
 const parseState = (value: unknown): SavedWordState | null => {
   if (!isObject(value)) {
     return null;
@@ -532,7 +573,7 @@ export const parseSavedWordResult = (value: unknown): VocabularyIpcResult<SavedW
   parseResult(value, parseSavedWord);
 
 export const parseVoidResult = (value: unknown): VocabularyIpcResult<null> | null =>
-  parseResult(value, () => null);
+  parseVoid(value);
 
 export const parseLibraryPageResult = (
   value: unknown,

@@ -155,6 +155,11 @@ const ADDED_AFTER_MILESTONE_5 = [
   'setting-report-problem',
   'report-problem',
   'report-problem-failed',
+  // 0.2.10: the notice a failed *removal* raises in the library. Until
+  // then a refused remove was silent — the row went and came back with
+  // nothing said — because the only notice the library rendered belonged
+  // to a failed *load*.
+  'library-remove-failed',
 ] as const;
 
 /**
