@@ -230,6 +230,19 @@ export const LibraryView = ({
         </div>
       )}
 
+      {/*
+        A remove that the store refused, while the list itself is fine.
+        The row has already come back (see `useVocabularyLibrary`), and
+        without this notice the only thing the reader would see is a word
+        that flickered and stayed — the same silent failure that made the
+        0.2.9 parser defect so hard to describe in a bug report.
+      */}
+      {state.status === 'ready' && state.failure !== null && (
+        <div className="library__problem" data-testid="library-remove-failed">
+          <Message kind="problem">{describeFailure(state.failure)}</Message>
+        </div>
+      )}
+
       {state.status === 'ready' && state.items.length === 0 && (
         <Message kind="empty" testId="library-empty">
           {state.query.trim().length === 0

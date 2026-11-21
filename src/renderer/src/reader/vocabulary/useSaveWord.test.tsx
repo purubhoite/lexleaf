@@ -403,10 +403,32 @@ describe('removing from the popup', () => {
       rendered.result.current.onRemove();
     });
 
+    // The sentence names the action that failed. It used to say "saved"
+    // after a failed *removal*, which is how a working remove came to be
+    // reported as a broken save.
+    await waitFor(() => {
+      expect(rendered.result.current.error).toBe('That word could not be removed.');
+    });
+    expect(rendered.result.current.state).toBe('saved-here');
+  });
+
+  it('says a word was saved, not removed, when saving fails', async () => {
+    const fake = fakeBridge();
+    fake.save = { ok: false, error: { kind: 'write-failed' } };
+
+    const { rendered } = setUp(fake);
+
+    await waitFor(() => {
+      expect(rendered.result.current.state).toBe('not-saved');
+    });
+
+    act(() => {
+      rendered.result.current.onSave();
+    });
+
     await waitFor(() => {
       expect(rendered.result.current.error).toBe('That word could not be saved.');
     });
-    expect(rendered.result.current.state).toBe('saved-here');
   });
 });
 

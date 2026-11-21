@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       test_tag:
-        description: Existing pre-release to attach the disk images to (for example mac-test-0.2.8)
+        description: Existing pre-release to attach the disk images to (for example mac-test-0.2.10)
         required: true
         type: string
       publish:
@@ -38,7 +38,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          [[ "$TEST_TAG" =~ ^mac-test-[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]] || { echo 'test_tag must look like mac-test-0.2.8' >&2; exit 1; }
+          [[ "$TEST_TAG" =~ ^mac-test-[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]] || { echo 'test_tag must look like mac-test-0.2.10' >&2; exit 1; }
           release_json=$(gh api "repos/${{ github.repository }}/releases/tags/$TEST_TAG")
           [[ "$(jq -r '.prerelease' <<<"$release_json")" == true ]] || { echo 'the tag must belong to a pre-release' >&2; exit 1; }
           version=$(jq -r '.version' package.json)

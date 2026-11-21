@@ -271,6 +271,9 @@ export const useVocabularyLibrary = ({ bridge, active }: LibraryOptions): Librar
         ...current,
         items: current.items.filter((candidate) => candidate.id !== item.id),
         undo: { item, failed: false },
+        // A new attempt replaces the last one's verdict; otherwise a
+        // failure notice would outlive the row it was about.
+        failure: null,
       }));
 
       void vocabulary
