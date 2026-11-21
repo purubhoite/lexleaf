@@ -23,14 +23,6 @@ files:
   # settings, so they must be inside the asar.
   - LICENSE
   - NOTICE
-  # The licence and the notices travel with the binary, not only with the
-  # repository. Apache-2.0 §4(a) requires every recipient of the software to
-  # be given a copy of the License, and §4(d) requires the NOTICE file to
-  # accompany it; a reader who installs Lexleaf and never visits GitHub is
-  # still a recipient. They are read back by the Licences panel in the
-  # settings, so they must be inside the asar.
-  - LICENSE
-  - NOTICE
 extraResources:
   - from: resources/dictionary
     to: dictionary

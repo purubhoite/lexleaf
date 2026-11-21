@@ -54,14 +54,17 @@ const BUILDER_CONFIGS = ['electron-builder.yml', 'linux-builder.yml', 'mac-build
 
 for (const config of BUILDER_CONFIGS) {
   const builderConfig = readFileSync(join(root, config), 'utf8');
-  const filesList = /^files:\n((?:[ \t]+- .*\n)+)/mu.exec(builderConfig);
+  // Take everything indented under `files:` — comments included — and keep
+  // only the list items. Matching `- ` lines directly stopped at the first
+  // comment, which made the check silently pass over a list that had none.
+  const filesList = /^files:\n((?:(?:[ \t]+.*)?\n)+)/mu.exec(builderConfig);
 
   if (filesList === null) throw new Error(`${config} has no files: list to inspect`);
 
   const shipped = filesList[1]
     .split('\n')
-    .map((line) => line.replace(/^[ \t]+- /u, '').trim())
-    .filter((line) => line !== '');
+    .map((line) => /^[ \t]+-[ \t]+(.*)$/u.exec(line)?.[1]?.trim())
+    .filter((entry) => entry !== undefined && entry !== '');
 
   for (const required of ['LICENSE', 'NOTICE']) {
     if (!shipped.includes(required))
