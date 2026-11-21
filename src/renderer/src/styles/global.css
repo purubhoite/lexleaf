@@ -970,3 +970,50 @@ body {
 }
 
 /* === MOTION — end ==================================================== */
+
+/*
+ * Licences (0.2.11).
+ *
+ * A licence is read in full or not at all, so the panel scrolls its own
+ * text rather than the settings screen: the settings stay where the reader
+ * left them, and a long Apache licence cannot push the controls below it
+ * off the screen. The text is monospaced and wraps at word boundaries —
+ * a licence that scrolls sideways would hide paragraphs at 200 % zoom.
+ */
+.licences__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.licences__document {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.licences__title {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.licences__text {
+  margin: 0;
+  padding: var(--space-3);
+  max-block-size: 18rem;
+  overflow: auto;
+  overflow-x: hidden;
+  background: var(--colour-surface);
+  border: var(--border-width) solid var(--colour-border);
+  border-radius: var(--radius-sm);
+  color: var(--colour-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--line-base);
+  /* A URL in a notice is longer than any column: break it rather than
+     let it hang out of the box. */
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

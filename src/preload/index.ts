@@ -23,12 +23,15 @@ import type { Preferences } from '@core/persistence/preferences';
 import {
   DESKTOP_BRIDGE_KEY,
   parseAppInfo,
+  parseLicenceReadResult,
   parseDictionaryResult,
   parseDocumentRequestResult,
   parseReaderStateSnapshot,
   parseStateWriteHealth,
   type AiBridge,
   type AppInfo,
+  type LicenceDocumentId,
+  type LicenceReadResult,
   type DesktopBridge,
   type DocumentRequestResult,
   type ReaderStateSnapshot,
@@ -76,6 +79,20 @@ const getAppInfo = async (): Promise<AppInfo> => {
   }
 
   return appInfo;
+};
+
+/**
+ * Reads a licence document shipped with the build.
+ *
+ * A reply that does not parse becomes `not-installed` rather than an
+ * exception: the licence panel says the build carries no notices, which is
+ * true of what the renderer could see, and the settings screen keeps
+ * working.
+ */
+const readLicence = async (id: LicenceDocumentId): Promise<LicenceReadResult> => {
+  const payload: unknown = await ipcRenderer.invoke(IpcChannel.ReadLicence, id);
+
+  return parseLicenceReadResult(payload) ?? { ok: false, reason: 'not-installed' };
 };
 
 const requestDocument = async (
@@ -311,6 +328,9 @@ const desktopBridge: DesktopBridge = {
         return { status: 'failed' };
       }
     },
+  },
+  licences: {
+    read: readLicence,
   },
   reportProblem: async (): Promise<boolean> => {
     try {

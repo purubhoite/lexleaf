@@ -178,13 +178,13 @@ describe.skipIf(!built)('the built dictionary artifact', () => {
     expect(perLookup).toBeLessThan(1);
   });
 
-  it('ships a notice that carries both licences and claims no legal review', () => {
+  it('ships a notice that carries both licences', () => {
     const notice = readFileSync(join(directory, 'NOTICE.md'), 'utf8');
 
     expect(notice).toMatch(/Princeton University/u);
     expect(notice).toMatch(/Creative Commons Attribution 4\.0/u);
     expect(notice).toMatch(/WordNet/u);
-    expect(notice).toMatch(/No legal review/iu);
     expect(notice).toMatch(/SHA-256/u);
+    expect(notice).not.toMatch(/No legal review/iu);
   });
 });

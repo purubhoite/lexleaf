@@ -81,14 +81,17 @@ describe('fixture artifact', () => {
     }
   });
 
-  it('generates a notice that credits the source, states the modification and claims no legal review', () => {
+  it('generates a notice that credits the source and states the modification', () => {
     const notice = readFileSync(join(first, 'NOTICE.md'), 'utf8');
 
     expect(notice).toMatch(/Synthetic test dictionary fixture-1/u);
     expect(notice).toMatch(/### Licences/u);
     expect(notice).toMatch(/Modified: this fixture is entirely synthetic/u);
     expect(notice).toMatch(/Transform version: 1\.0\.0/u);
-    expect(notice).toMatch(/No legal review of this redistribution has been carried out/u);
+    // The notice is shipped to readers, so it may not claim that no legal
+    // review happened, nor point at a document that is not in the repository.
+    expect(notice).not.toMatch(/No legal review/u);
+    expect(notice).not.toMatch(/docs\//u);
 
     // The notice is derived from the manifest, so every checksum it states
     // is the checksum the manifest recorded.

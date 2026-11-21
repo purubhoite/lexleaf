@@ -32,3 +32,47 @@ for (const text of [
   if (!notice.includes(text.replace(/\s+/gu, ' '))) throw new Error(`notice missing: ${text}`);
 }
 console.log('Dictionary license compliance verified.');
+
+/**
+ * The licence must travel with the binary.
+ *
+ * Apache-2.0 §4(a) requires a copy of the License to reach every recipient
+ * of the software, and §4(d) requires the NOTICE file to accompany it. The
+ * repository is not the distribution: `electron-builder.yml`'s `files:` list
+ * decides what is inside the installer. Until 0.2.11 it listed only the
+ * build output and `package.json`, so an installed Lexleaf carried neither.
+ *
+ * This is a static check of the packaging configuration on purpose: it runs
+ * in every job, needs no build, and fails the moment someone narrows the
+ * list again.
+ */
+// Three configurations build three products: Windows, Linux and Mac. Each
+// has its own `files:` list, so each is checked — a fix applied to one and
+// forgotten in the others ships a licence-free installer to two thirds of
+// the readers.
+const BUILDER_CONFIGS = ['electron-builder.yml', 'linux-builder.yml', 'mac-builder.yml'];
+
+for (const config of BUILDER_CONFIGS) {
+  const builderConfig = readFileSync(join(root, config), 'utf8');
+  const filesList = /^files:\n((?:[ \t]+- .*\n)+)/mu.exec(builderConfig);
+
+  if (filesList === null) throw new Error(`${config} has no files: list to inspect`);
+
+  const shipped = filesList[1]
+    .split('\n')
+    .map((line) => line.replace(/^[ \t]+- /u, '').trim())
+    .filter((line) => line !== '');
+
+  for (const required of ['LICENSE', 'NOTICE']) {
+    if (!shipped.includes(required))
+      throw new Error(`${required} is not shipped inside the installer (${config} files:)`);
+  }
+}
+
+// And the files themselves must be there to be shipped.
+for (const required of ['LICENSE', 'NOTICE']) {
+  if (!existsSync(join(root, required)))
+    throw new Error(`${required} is missing from the repository`);
+}
+
+console.log('Licence and notices are shipped with the application.');

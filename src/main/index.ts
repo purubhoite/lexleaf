@@ -43,6 +43,11 @@ import {
 import { resolveDevServerOrigin } from './environment';
 import { createAppInfo } from './ipc/appInfo';
 import {
+  readLicenceDocumentSafely,
+  type LicenceDocumentId,
+  type LicenceSources,
+} from './licences/licences';
+import {
   ANNOTATIONS_FILE,
   createAnnotationStore,
   exportAnnotations,
@@ -123,6 +128,22 @@ const READER_STATE_FILE = 'reader-state.json';
 const readAiConfigurationFile = (path: string): ConfigurationFileContents | null => {
   try {
     return { contents: readFileSync(path, 'utf8'), mode: statSync(path).mode };
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Reads a text file, including a file inside the asar archive.
+ *
+ * `readFileSync` understands asar paths inside Electron's main process, so
+ * this needs no archive library. It returns `null` for a file that is not
+ * there, which is a normal answer here: a build without its notices has to
+ * still start.
+ */
+const readTextIfPresent = (path: string): string | null => {
+  try {
+    return readFileSync(path, 'utf8');
   } catch {
     return null;
   }
@@ -838,6 +859,18 @@ const bootstrap = async (): Promise<void> => {
     devServerOrigin,
   });
 
+  /*
+   * Where the notices live. Resolved once at startup: the application's own
+   * two files come from beside or inside the asar archive, the dictionary's
+   * from the artifact directory that was already located for the reader.
+   */
+  const licenceSources: LicenceSources = {
+    appPath: app.getAppPath(),
+    resourcesPath: app.isPackaged ? process.resourcesPath : null,
+    packaged: app.isPackaged,
+    dictionaryDirectory: locateArtifact(),
+  };
+
   registerAppIpcHandlers(ipcMain, {
     appInfo: createAppInfo({
       name: packageMetadata.productName,
@@ -846,6 +879,8 @@ const bootstrap = async (): Promise<void> => {
       chromeVersion: process.versions.chrome,
     }),
     reportProblem,
+    readLicence: (id: LicenceDocumentId) =>
+      readLicenceDocumentSafely(id, licenceSources, { readText: readTextIfPresent }),
     setFullScreen: (on) => {
       mainWindow?.setFullScreen(on);
     },
